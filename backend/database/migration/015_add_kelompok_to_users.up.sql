@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN kelompok VARCHAR(50) NULL;
