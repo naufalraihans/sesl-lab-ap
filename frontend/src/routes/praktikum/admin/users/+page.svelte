@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Papa from 'papaparse';
 	import { api } from '$lib/api';
 	import type { Kelas, User } from '$lib/types';
 
@@ -10,6 +11,11 @@
 
 	let editId = $state<number | null>(null);
 	let form = $state({ nim: '', nama: '', kelas_id: null as number | null, shift: 1 as number, kelompok: '' });
+
+	let showImport = $state(false);
+	let importRows = $state<any[]>([]);
+	let importErrors = $state<string[]>([]);
+	let isImporting = $state(false);
 
 	async function load() {
 		try {
@@ -59,14 +65,109 @@
 			await load();
 		} catch (e) { err = (e as Error).message; }
 	}
+
+	function onFileChange(e: Event) {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+		Papa.parse(file, {
+			header: true,
+			skipEmptyLines: true,
+			complete: (results) => {
+				importErrors = [];
+				let valid = [];
+				for (let i = 0; i < results.data.length; i++) {
+					const row = results.data[i] as any;
+					if (!row.NIM || !row.Nama || !row.Kelas) {
+						importErrors.push(`Baris ${i + 1}: Format tidak lengkap. Harus ada header NIM, Nama, Kelas.`);
+						continue;
+					}
+					const k = kelas.find((kl) => kl.nama_kelas === row.Kelas);
+					if (!k) {
+						importErrors.push(`Baris ${i + 1} (${row.NIM}): Kelas "${row.Kelas}" tidak ditemukan di database.`);
+						continue;
+					}
+					valid.push({
+						nim: row.NIM,
+						nama: row.Nama,
+						kelas_id: k.id,
+						shift: Number(row.Shift) || 1,
+						kelompok: row.Kelompok || ''
+					});
+				}
+				if (importErrors.length === 0) importRows = valid;
+				else importRows = [];
+			}
+		});
+	}
+
+	async function importBulk() {
+		if (importRows.length === 0) return;
+		isImporting = true;
+		err = ''; msg = '';
+		try {
+			const res = await api.post<any>('/api/admin/users/bulk', { users: importRows });
+			msg = `Berhasil memproses ${res?.total_processed ?? importRows.length} mahasiswa.`;
+			showImport = false;
+			importRows = [];
+			await load();
+		} catch (e) { err = (e as Error).message; }
+		finally { isImporting = false; }
+	}
+
+	function downloadTemplate() {
+		const csvContent = "NIM,Nama,Kelas,Shift,Kelompok\n12345678,Budi Santoso,4IA01,1,A\n";
+		const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.setAttribute('href', url);
+		link.setAttribute('download', 'template_import_mahasiswa.csv');
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	}
 </script>
 
-<h1 class="mb-4 text-2xl">Manajemen Data User</h1>
+<div class="mb-4 flex items-center justify-between">
+	<h1 class="text-2xl">Manajemen Data User</h1>
+	<div class="space-x-2 flex">
+		<button class="btn-outline" onclick={downloadTemplate}>Unduh Template</button>
+		<button class="btn-primary" onclick={() => (showImport = !showImport)}>
+			{showImport ? 'Tutup Import' : 'Import CSV'}
+		</button>
+	</div>
+</div>
 
 {#if msg}<p class="mb-3 rounded-lg bg-state-success-bg p-3 text-sm text-state-success">{msg}</p>{/if}
 {#if err}<p class="mb-3 rounded-lg bg-state-error-bg p-3 text-sm text-state-error">{err}</p>{/if}
 
 <div class="mb-6 grid gap-4 lg:grid-cols-3">
+	{#if showImport}
+		<div class="card border-primary border-dashed border-2 lg:col-span-3">
+			<h2 class="mb-3 text-lg font-bold">Import Mahasiswa via CSV</h2>
+			<p class="mb-3 text-sm text-ink-caption">
+				Pastikan file CSV memiliki header (baris pertama) persis: <strong>NIM, Nama, Kelas, Shift, Kelompok</strong>.<br/>
+				Jika NIM sudah ada di sistem, data namanya, kelas, dan shift akan di-_update_ tanpa mereset password.
+			</p>
+			<input type="file" accept=".csv" class="mb-3 block w-full text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-primary/90" onchange={onFileChange} />
+			
+			{#if importErrors.length > 0}
+				<div class="mb-3 max-h-48 overflow-y-auto rounded-lg bg-state-error-bg p-3 text-sm text-state-error">
+					<p class="font-bold">Terdapat Error pada file CSV:</p>
+					<ul class="list-inside list-disc">
+						{#each importErrors as ie}<li>{ie}</li>{/each}
+					</ul>
+					<p class="mt-2 font-bold">Harap perbaiki file CSV dan unggah ulang.</p>
+				</div>
+			{/if}
+
+			{#if importRows.length > 0}
+				<p class="mb-2 text-sm font-bold text-state-success">Valid! {importRows.length} data siap diimpor.</p>
+				<button class="btn-primary w-full max-w-sm" onclick={importBulk} disabled={isImporting}>
+					{isImporting ? 'Memproses...' : 'Mulai Import'}
+				</button>
+			{/if}
+		</div>
+	{/if}
 	<div class="card lg:col-span-2">
 		<h2 class="mb-2 text-lg">Akses Register per Kelas</h2>
 		<div class="flex flex-wrap gap-2">

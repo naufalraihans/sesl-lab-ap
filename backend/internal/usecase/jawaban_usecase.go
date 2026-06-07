@@ -80,23 +80,33 @@ func deadlineFrom(mulai *time.Time, durasiMenit int) *time.Time {
 // GetRuang mengembalikan data ruang pengerjaan (soal + jawaban tersimpan + timer).
 // Read-only: tidak memulai timer.
 func (uc *JawabanUsecase) GetRuang(userID, aktivasiSesiID, courseID int) (*dto.RuangCourseResponse, error) {
-	_, _, ac, course, err := uc.loadKonteks(userID, aktivasiSesiID, courseID)
+	_, aktivasi, ac, course, err := uc.loadKonteks(userID, aktivasiSesiID, courseID)
 	if err != nil {
 		return nil, err
 	}
-	return uc.buildRuang(userID, aktivasiSesiID, ac, course)
+	return uc.buildRuang(userID, aktivasi, ac, course)
 }
 
 // Mulai menandai mahasiswa mulai mengerjakan (set waktu_mulai sekali).
-func (uc *JawabanUsecase) Mulai(userID, aktivasiSesiID, courseID int) (*dto.RuangCourseResponse, error) {
-	_, _, ac, course, err := uc.loadKonteks(userID, aktivasiSesiID, courseID)
+func (uc *JawabanUsecase) Mulai(userID int, req dto.MulaiCourseRequest) (*dto.RuangCourseResponse, error) {
+	_, aktivasi, ac, course, err := uc.loadKonteks(userID, req.AktivasiSesiID, req.CourseID)
 	if err != nil {
 		return nil, err
 	}
 	if !ac.IsOpen {
 		return nil, ErrAlreadyDone
 	}
-	p, err := uc.pengerjaan.FindOrCreate(userID, aktivasiSesiID, courseID)
+
+	// Validasi Token hanya jika jenis course adalah ujian
+	if course.Jenis == entity.CourseUjianPraktik {
+		if aktivasi.Token != nil {
+			if req.Token == nil || *req.Token != *aktivasi.Token {
+				return nil, errors.New("token ujian tidak valid")
+			}
+		}
+	}
+
+	p, err := uc.pengerjaan.FindOrCreate(userID, req.AktivasiSesiID, req.CourseID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +121,7 @@ func (uc *JawabanUsecase) Mulai(userID, aktivasiSesiID, courseID int) (*dto.Ruan
 			return nil, err
 		}
 	}
-	return uc.buildRuang(userID, aktivasiSesiID, ac, course)
+	return uc.buildRuang(userID, aktivasi, ac, course)
 }
 
 // AutoSave menyimpan jawaban satu soal (validasi server: open, belum lewat deadline, belum submit).
@@ -216,12 +226,12 @@ func (uc *JawabanUsecase) AutoSubmitExpired() (int, error) {
 }
 
 // buildRuang menyusun response ruang course.
-func (uc *JawabanUsecase) buildRuang(userID, aktivasiSesiID int, ac *entity.AktivasiCourse, course *entity.Course) (*dto.RuangCourseResponse, error) {
-	soalTerpilih, err := uc.terpilih.ListByAktivasiCourse(aktivasiSesiID, course.ID)
+func (uc *JawabanUsecase) buildRuang(userID int, aktivasi *entity.AktivasiSesi, ac *entity.AktivasiCourse, course *entity.Course) (*dto.RuangCourseResponse, error) {
+	soalTerpilih, err := uc.terpilih.ListByAktivasiCourse(aktivasi.ID, course.ID)
 	if err != nil {
 		return nil, err
 	}
-	jawabanList, err := uc.jawaban.ListByMahasiswaCourse(userID, aktivasiSesiID, course.ID)
+	jawabanList, err := uc.jawaban.ListByMahasiswaCourse(userID, aktivasi.ID, course.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -231,15 +241,17 @@ func (uc *JawabanUsecase) buildRuang(userID, aktivasiSesiID int, ac *entity.Akti
 	}
 
 	resp := &dto.RuangCourseResponse{
-		AktivasiSesiID: aktivasiSesiID,
+		AktivasiSesiID: aktivasi.ID,
 		CourseID:       course.ID,
 		Jenis:          string(course.Jenis),
 		DurasiMenit:    course.DurasiMenit,
 		IsOpen:         ac.IsOpen,
+		RequireToken:   course.Jenis == entity.CourseUjianPraktik && aktivasi.Token != nil,
 		Status:         string(entity.StatusBelum),
+		Soal:           make([]dto.SoalTampilResponse, 0),
 	}
 
-	if p, err := uc.pengerjaan.Find(userID, aktivasiSesiID, course.ID); err == nil {
+	if p, err := uc.pengerjaan.Find(userID, aktivasi.ID, course.ID); err == nil {
 		resp.Status = string(p.Status)
 		resp.WaktuMulai = p.WaktuMulai
 		resp.Deadline = deadlineFrom(p.WaktuMulai, course.DurasiMenit)

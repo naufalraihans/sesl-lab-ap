@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"math/rand"
 	"time"
 
 	"lab-ap/internal/dto"
@@ -42,6 +43,29 @@ func (uc *AktivasiUsecase) Get(id int) (*entity.AktivasiSesi, error) {
 		return nil, ErrNotFound
 	}
 	return a, nil
+}
+
+func generateRandomPIN() string {
+	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, 6)
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := range b {
+		b[i] = charset[r.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+func (uc *AktivasiUsecase) GenerateToken(id int) (*entity.AktivasiSesi, error) {
+	aks, err := uc.aktivasi.FindSesiByID(id)
+	if err != nil {
+		return nil, ErrNotFound
+	}
+	pin := generateRandomPIN()
+	aks.Token = &pin
+	if err := uc.aktivasi.UpdateSesi(aks); err != nil {
+		return nil, err
+	}
+	return aks, nil
 }
 
 // Aktivasi mengaktifkan sesi untuk kelas+shift, melakukan gacha (untuk sesi normal),

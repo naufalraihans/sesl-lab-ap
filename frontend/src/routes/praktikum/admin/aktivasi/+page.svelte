@@ -6,7 +6,7 @@
 
 	interface AktivasiSesi {
 		id: number; sesi_praktikum_id: number; kelas_id: number; shift: number;
-		is_active: boolean; activated_at: string;
+		is_active: boolean; activated_at: string; token?: string;
 		sesi?: { judul_sesi: string };
 		kelas?: { nama_kelas: string };
 		aktivasi_courses?: AktivasiCourse[];
@@ -88,6 +88,19 @@
 			await selectAktivasi(selected);
 		} catch (e) { err = (e as Error).message; }
 	}
+
+	async function generateToken(a: AktivasiSesi) {
+		err = ''; msg = '';
+		if (!confirm('Generate/Reset PIN ujian untuk kelas ini?')) return;
+		try {
+			await api.post(`/api/admin/aktivasi/${a.id}/token`);
+			msg = 'PIN Ujian berhasil dibuat/direset.';
+			await load();
+			if (selected && selected.id === a.id) {
+				await selectAktivasi(selected);
+			}
+		} catch (e) { err = (e as Error).message; }
+	}
 </script>
 
 <h1 class="mb-4 text-2xl">Aktivasi Sesi</h1>
@@ -143,9 +156,21 @@
 
 {#if selected}
 	<hr class="my-6 border-gray-200" />
-	<h2 class="mb-3 text-xl">
-		{selected.sesi?.judul_sesi} — {selected.kelas?.nama_kelas} Shift {selected.shift}
-	</h2>
+	<div class="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+		<h2 class="text-xl">
+			{selected.sesi?.judul_sesi} — {selected.kelas?.nama_kelas} Shift {selected.shift}
+		</h2>
+		<div class="flex items-center gap-3">
+			{#if selected.token}
+				<div class="bg-primary/10 border-2 border-primary text-primary px-4 py-1.5 rounded-lg font-mono text-xl font-bold tracking-widest shadow-inner">
+					{selected.token}
+				</div>
+			{/if}
+			<button class="btn-primary" onclick={() => generateToken(selected!)}>
+				🔑 {selected.token ? 'Reset PIN' : 'Generate PIN'}
+			</button>
+		</div>
+	</div>
 
 	<h3 class="mb-2 text-lg">Buka / Tutup Course</h3>
 	<p class="mb-3 text-xs text-ink-caption">Menutup course = auto-submit massal untuk semua mahasiswa yang belum submit.</p>

@@ -9,6 +9,7 @@ type AktivasiSesi struct {
 	KelasID         int       `gorm:"not null;uniqueIndex:idx_aktivasi_sesi_kelas_shift" json:"kelas_id"`
 	Shift           int       `gorm:"not null;uniqueIndex:idx_aktivasi_sesi_kelas_shift" json:"shift"`
 	IsActive        bool      `gorm:"default:true" json:"is_active"`
+	Token           *string   `gorm:"type:varchar(10)" json:"token"`
 	ActivatedAt     time.Time `json:"activated_at"`
 
 	Sesi            *SesiPraktikum   `gorm:"foreignKey:SesiPraktikumID" json:"sesi,omitempty"`

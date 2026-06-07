@@ -124,7 +124,9 @@
 							</div>
 							<div class="mt-3 rounded-lg border border-gray-100 bg-surface-muted p-3">
 								<p class="mb-1 text-xs font-medium text-ink-caption">Soal:</p>
-								<p class="whitespace-pre-wrap text-sm text-ink-body">{r.teks_soal}</p>
+								<div class="prose prose-sm max-w-none text-ink-body">
+									{@html r.teks_soal}
+								</div>
 							</div>
 							<div class="mt-2 rounded-lg border border-gray-100 bg-surface-muted p-3">
 								<p class="mb-1 text-xs font-medium text-ink-caption">Jawaban:</p>

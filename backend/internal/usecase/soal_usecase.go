@@ -3,6 +3,9 @@ package usecase
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
+
+	"github.com/microcosm-cc/bluemonday"
 
 	"lab-ap/internal/dto"
 	"lab-ap/internal/entity"
@@ -25,13 +28,19 @@ func (uc *SoalUsecase) Create(req dto.SoalRequest) (*entity.Soal, error) {
 	if _, err := uc.course.FindByID(req.CourseID); err != nil {
 		return nil, ErrNotFound
 	}
+	p := createSanitizer()
+
 	s := &entity.Soal{
 		CourseID:     req.CourseID,
 		JenisSoal:    entity.JenisSoal(req.JenisSoal),
-		TeksSoal:     req.TeksSoal,
+		TeksSoal:     p.Sanitize(req.TeksSoal),
 		GambarURL:    req.GambarURL,
 		Poin:         req.Poin,
-		KunciJawaban: req.KunciJawaban,
+	}
+	
+	if req.KunciJawaban != nil {
+		sanitized := p.Sanitize(*req.KunciJawaban)
+		s.KunciJawaban = &sanitized
 	}
 	if req.Difficulty != nil {
 		d := entity.Difficulty(*req.Difficulty)
@@ -52,11 +61,19 @@ func (uc *SoalUsecase) Update(id int, req dto.SoalRequest) (*entity.Soal, error)
 	if err != nil {
 		return nil, ErrNotFound
 	}
+	p := createSanitizer()
+	
 	s.JenisSoal = entity.JenisSoal(req.JenisSoal)
-	s.TeksSoal = req.TeksSoal
+	s.TeksSoal = p.Sanitize(req.TeksSoal)
 	s.GambarURL = req.GambarURL
 	s.Poin = req.Poin
-	s.KunciJawaban = req.KunciJawaban
+	
+	if req.KunciJawaban != nil {
+		sanitized := p.Sanitize(*req.KunciJawaban)
+		s.KunciJawaban = &sanitized
+	} else {
+		s.KunciJawaban = nil
+	}
 	s.Difficulty = nil
 	if req.Difficulty != nil {
 		d := entity.Difficulty(*req.Difficulty)
@@ -165,4 +182,19 @@ func pickRandom(pool []entity.Soal, n int, jenis entity.JenisCourse, label strin
 	}
 	rand.Shuffle(len(pool), func(i, j int) { pool[i], pool[j] = pool[j], pool[i] })
 	return pool[:n], nil
+}
+
+// createSanitizer mengatur policy bluemonday agar mengizinkan style dari Tiptap.
+func createSanitizer() *bluemonday.Policy {
+	p := bluemonday.UGCPolicy()
+	
+	// Izinkan class dan data atribut untuk code block, dsb.
+	p.AllowAttrs("class").Globally()
+	p.AllowAttrs("data-type", "data-language", "data-id").Globally()
+	
+	// Izinkan inline styles yang umum dipakai editor Tiptap/Edra
+	p.AllowStyles("text-align").Matching(regexp.MustCompile(`(?i)^(left|right|center|justify)$`)).Globally()
+	p.AllowStyles("color", "background-color").Matching(regexp.MustCompile(`(?i)^(transparent|#[0-9a-fA-F]+|rgba?\([^)]+\)|[a-zA-Z]+)$`)).Globally()
+	
+	return p
 }

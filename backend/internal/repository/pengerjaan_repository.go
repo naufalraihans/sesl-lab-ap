@@ -118,7 +118,7 @@ func (r *pengerjaanRepository) FindExpired() ([]ExpiredPengerjaan, error) {
 		Joins("JOIN course c ON c.id = pc.course_id").
 		Where("pc.status = ?", entity.StatusSedang).
 		Where("pc.waktu_mulai IS NOT NULL").
-		Where("NOW() > DATE_ADD(pc.waktu_mulai, INTERVAL c.durasi_menit MINUTE)").
+		Where("NOW() > pc.waktu_mulai + (c.durasi_menit * interval '1 minute')").
 		Scan(&out).Error
 	return out, err
 }

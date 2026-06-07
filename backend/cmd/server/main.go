@@ -12,6 +12,7 @@ import (
 
 	"lab-ap/config"
 	"lab-ap/database"
+	_ "lab-ap/docs"
 	"lab-ap/internal/delivery/http/handler"
 	"lab-ap/internal/delivery/http/route"
 	"lab-ap/internal/repository"
@@ -21,6 +22,19 @@ import (
 	"lab-ap/pkg/supabase"
 )
 
+// @title           Lab-AP API
+// @version         1.0
+// @description     REST API Documentation for Web Lab-AP v3
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   Developer
+// @contact.email  naufalraihans@example.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api
 func main() {
 	cfg := config.Load()
 
@@ -51,6 +65,7 @@ func main() {
 	jawabanRepo := repository.NewJawabanRepository(db)
 	pengerjaanRepo := repository.NewPengerjaanRepository(db)
 	ampuanRepo := repository.NewAmpuanRepository(db)
+	rekapRepo := repository.NewRekapRepository(db)
 
 	// ---- Usecase ----
 	authUC := usecase.NewAuthUsecase(userRepo, kelasRepo, jm, reg)
@@ -68,6 +83,7 @@ func main() {
 	pedomanUC := usecase.NewPedomanUsecase(pedomanRepo)
 	praktikumUC := usecase.NewPraktikumUsecase(sesiRepo, courseRepo, aktivasiRepo, pengerjaanRepo, userRepo, jadwalRepo)
 	ampuanUC := usecase.NewAmpuanUsecase(ampuanRepo)
+	rekapUC := usecase.NewRekapUsecase(rekapRepo, kelasRepo)
 
 	// ---- Handler ----
 	h := route.Handlers{
@@ -87,6 +103,7 @@ func main() {
 		Praktikum:   handler.NewPraktikumHandler(praktikumUC),
 		Upload:      handler.NewUploadHandler(sb),
 		Ampuan:      handler.NewAmpuanHandler(ampuanUC, userUC),
+		Rekap:       handler.NewRekapHandler(rekapUC),
 	}
 
 	r := route.Setup(cfg, jm, reg, h)

@@ -12,6 +12,7 @@ import (
 type AktivasiRepository interface {
 	// aktivasi_sesi
 	CreateSesi(a *entity.AktivasiSesi) error
+	UpdateSesi(a *entity.AktivasiSesi) error
 	FindSesiByID(id int) (*entity.AktivasiSesi, error)
 	FindSesiByComposite(sesiID, kelasID, shift int) (*entity.AktivasiSesi, error)
 	ListSesi() ([]entity.AktivasiSesi, error)
@@ -40,6 +41,8 @@ func NewAktivasiRepository(db *gorm.DB) AktivasiRepository { return &aktivasiRep
 // ---- aktivasi_sesi ----
 
 func (r *aktivasiRepository) CreateSesi(a *entity.AktivasiSesi) error { return r.db.Create(a).Error }
+
+func (r *aktivasiRepository) UpdateSesi(a *entity.AktivasiSesi) error { return r.db.Save(a).Error }
 
 func (r *aktivasiRepository) FindSesiByID(id int) (*entity.AktivasiSesi, error) {
 	var a entity.AktivasiSesi

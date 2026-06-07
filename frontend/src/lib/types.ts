@@ -130,5 +130,6 @@ export interface RuangCourse {
 	deadline?: string | null;
 	status: string;
 	is_open: boolean;
+	require_token: boolean;
 	soal: SoalTampil[];
 }

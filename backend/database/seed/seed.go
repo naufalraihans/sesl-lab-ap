@@ -104,64 +104,125 @@ func seedJadwal(db *gorm.DB) {
 }
 
 func seedSesiSoal(db *gorm.DB) {
-	var n int64
-	db.Model(&entity.SesiPraktikum{}).Count(&n)
-	if n > 0 {
-		return
-	}
 	now := time.Now()
-	sesi := entity.SesiPraktikum{
-		JudulSesi: "Modul 1 - Pengenalan Dasar Bahasa C",
-		Deskripsi: "Variabel, tipe data, dan operasi dasar.",
-		Urutan:    1,
-		CreatedAt: now, UpdatedAt: now,
+
+	var n int64
+	db.Model(&entity.SesiPraktikum{}).Where("is_ujian_praktik = ?", false).Count(&n)
+	if n == 0 {
+		sesi := entity.SesiPraktikum{
+			JudulSesi: "Modul 1 - Pengenalan Dasar Bahasa C",
+			Deskripsi: "Variabel, tipe data, dan operasi dasar.",
+			Urutan:    1,
+			CreatedAt: now, UpdatedAt: now,
+		}
+		db.Create(&sesi)
+
+		pretest := entity.Course{SesiPraktikumID: sesi.ID, Jenis: entity.CoursePretest, Judul: "Pre-test Modul 1", DurasiMenit: 20}
+		posttest := entity.Course{SesiPraktikumID: sesi.ID, Jenis: entity.CoursePosttest, Judul: "Post-test Modul 1", DurasiMenit: 25}
+		keterampilan := entity.Course{SesiPraktikumID: sesi.ID, Jenis: entity.CourseKeterampilan, Judul: "Keterampilan Modul 1", DurasiMenit: 40}
+		db.Create(&pretest)
+		db.Create(&posttest)
+		db.Create(&keterampilan)
+
+		easy := entity.DiffEasy
+		medium := entity.DiffMedium
+		hard := entity.DiffHard
+
+		pretestSoal := []entity.Soal{
+			{CourseID: pretest.ID, JenisSoal: entity.SoalEssay, Difficulty: &easy, TeksSoal: "Apa itu variabel dalam bahasa C?", Poin: 20},
+			{CourseID: pretest.ID, JenisSoal: entity.SoalEssay, Difficulty: &medium, TeksSoal: "Apa fungsi printf dan scanf?", Poin: 20},
+		}
+
+		posttestSoal := []entity.Soal{
+			{CourseID: posttest.ID, JenisSoal: entity.SoalEssay, Difficulty: &easy, TeksSoal: "Sebutkan langkah kompilasi program C.", Poin: 30},
+			{CourseID: posttest.ID, JenisSoal: entity.SoalCoding, Difficulty: &hard, TeksSoal: "Tulis program C yang menjumlahkan dua bilangan dari input.", Poin: 40},
+		}
+
+		keterampilanSoal := []entity.Soal{
+			{CourseID: keterampilan.ID, JenisSoal: entity.SoalCoding, TeksSoal: "Buat program konversi suhu Celcius ke Fahrenheit.", Poin: 100},
+		}
+
+		all := append([]entity.Soal{}, pretestSoal...)
+		all = append(all, posttestSoal...)
+		all = append(all, keterampilanSoal...)
+		for i := range all {
+			all[i].CreatedAt = now
+		}
+		db.Create(&all)
+		log.Printf("  + sesi 'Modul 1 - Pengenalan Dasar Bahasa C' + %d soal contoh", len(all))
 	}
-	db.Create(&sesi)
 
-	pretest := entity.Course{SesiPraktikumID: sesi.ID, Jenis: entity.CoursePretest, Judul: "Pre-test Modul 1", DurasiMenit: 20}
-	posttest := entity.Course{SesiPraktikumID: sesi.ID, Jenis: entity.CoursePosttest, Judul: "Post-test Modul 1", DurasiMenit: 25}
-	keterampilan := entity.Course{SesiPraktikumID: sesi.ID, Jenis: entity.CourseKeterampilan, Judul: "Keterampilan Modul 1", DurasiMenit: 40}
-	db.Create(&pretest)
-	db.Create(&posttest)
-	db.Create(&keterampilan)
+	// Seed Ujian Praktik
+	var nUjian int64
+	db.Model(&entity.SesiPraktikum{}).Where("is_ujian_praktik = ?", true).Count(&nUjian)
+	if nUjian == 0 {
+		sesiUjian := entity.SesiPraktikum{
+			JudulSesi:      "Ujian Tengah Semester Praktikum",
+			Deskripsi:      "Ujian praktik menguasai Modul 1-3.",
+			Urutan:         99,
+			IsUjianPraktik: true,
+			CreatedAt:      now, UpdatedAt: now,
+		}
+		db.Create(&sesiUjian)
 
-	easy := entity.DiffEasy
-	medium := entity.DiffMedium
-	hard := entity.DiffHard
+		courseUjian := entity.Course{SesiPraktikumID: sesiUjian.ID, Jenis: entity.CourseUjianPraktik, Judul: "Soal Ujian Praktik", DurasiMenit: 60}
+		db.Create(&courseUjian)
 
-	// Pool pretest: butuh minimal 1 easy, 2 medium, 2 hard. Sediakan lebih agar acak bervariasi.
-	pretestSoal := []entity.Soal{
-		{CourseID: pretest.ID, JenisSoal: entity.SoalEssay, Difficulty: &easy, TeksSoal: "Apa itu variabel dalam bahasa C?", Poin: 20},
-		{CourseID: pretest.ID, JenisSoal: entity.SoalEssay, Difficulty: &easy, TeksSoal: "Sebutkan tipe data dasar di C.", Poin: 20},
-		{CourseID: pretest.ID, JenisSoal: entity.SoalEssay, Difficulty: &medium, TeksSoal: "Jelaskan perbedaan int dan float.", Poin: 20},
-		{CourseID: pretest.ID, JenisSoal: entity.SoalEssay, Difficulty: &medium, TeksSoal: "Apa fungsi printf dan scanf?", Poin: 20},
-		{CourseID: pretest.ID, JenisSoal: entity.SoalEssay, Difficulty: &medium, TeksSoal: "Jelaskan operator aritmatika di C.", Poin: 20},
-		{CourseID: pretest.ID, JenisSoal: entity.SoalEssay, Difficulty: &hard, TeksSoal: "Jelaskan konsep pointer secara singkat.", Poin: 20},
-		{CourseID: pretest.ID, JenisSoal: entity.SoalEssay, Difficulty: &hard, TeksSoal: "Apa itu type casting dan kapan dipakai?", Poin: 20},
-		{CourseID: pretest.ID, JenisSoal: entity.SoalEssay, Difficulty: &hard, TeksSoal: "Jelaskan perbedaan ++i dan i++.", Poin: 20},
+		kat1 := entity.KatModul1
+		kat2 := entity.KatModul2
+		kat3 := entity.KatModul3
+		kat45 := entity.KatModul45
+		kat6 := entity.KatModul6
+		katF := entity.KatFlowchart
+
+		ujianSoal := []entity.Soal{
+			{CourseID: courseUjian.ID, JenisSoal: entity.SoalEssay, KategoriUjian: &kat1, TeksSoal: "Soal Ujian Praktik - Modul 1", Poin: 15},
+			{CourseID: courseUjian.ID, JenisSoal: entity.SoalEssay, KategoriUjian: &kat2, TeksSoal: "Soal Ujian Praktik - Modul 2", Poin: 15},
+			{CourseID: courseUjian.ID, JenisSoal: entity.SoalEssay, KategoriUjian: &kat3, TeksSoal: "Soal Ujian Praktik - Modul 3", Poin: 15},
+			{CourseID: courseUjian.ID, JenisSoal: entity.SoalCoding, KategoriUjian: &kat45, TeksSoal: "Soal Ujian Praktik - Modul 4 & 5", Poin: 20},
+			{CourseID: courseUjian.ID, JenisSoal: entity.SoalCoding, KategoriUjian: &kat6, TeksSoal: "Soal Ujian Praktik - Modul 6", Poin: 20},
+			{CourseID: courseUjian.ID, JenisSoal: entity.SoalEssay, KategoriUjian: &katF, TeksSoal: "Soal Ujian Praktik - Flowchart", Poin: 15},
+		}
+		for i := range ujianSoal {
+			ujianSoal[i].CreatedAt = now
+		}
+		db.Create(&ujianSoal)
+		log.Printf("  + sesi '%s' (Ujian Praktik)", sesiUjian.JudulSesi)
 	}
 
-	// Pool posttest: 1 easy essay, 1 medium essay, 1 hard coding.
-	posttestSoal := []entity.Soal{
-		{CourseID: posttest.ID, JenisSoal: entity.SoalEssay, Difficulty: &easy, TeksSoal: "Sebutkan langkah kompilasi program C.", Poin: 30},
-		{CourseID: posttest.ID, JenisSoal: entity.SoalEssay, Difficulty: &medium, TeksSoal: "Jelaskan alur eksekusi fungsi main().", Poin: 30},
-		{CourseID: posttest.ID, JenisSoal: entity.SoalCoding, Difficulty: &hard, TeksSoal: "Tulis program C yang menjumlahkan dua bilangan dari input.", Poin: 40},
-		{CourseID: posttest.ID, JenisSoal: entity.SoalCoding, Difficulty: &hard, TeksSoal: "Tulis program C yang mencetak bilangan genap 1..N.", Poin: 40},
-	}
+	// Seed Dummy Nilai for Pivot
+	var nPengerjaan int64
+	db.Model(&entity.PengerjaanCourse{}).Count(&nPengerjaan)
+	if nPengerjaan == 0 {
+		var mhs entity.User
+		if err := db.Where("nim = ?", "2021003").First(&mhs).Error; err == nil {
+			var sesi entity.SesiPraktikum
+			if err := db.Where("judul_sesi = ?", "Modul 1 - Pengenalan Dasar Bahasa C").First(&sesi).Error; err == nil {
+				// Create Aktivasi Sesi
+				aks := entity.AktivasiSesi{
+					SesiPraktikumID: sesi.ID,
+					KelasID:         *mhs.KelasID,
+					Shift:           *mhs.Shift,
+					IsActive:        true,
+				}
+				db.Create(&aks)
 
-	// Pool keterampilan: live coding.
-	keterampilanSoal := []entity.Soal{
-		{CourseID: keterampilan.ID, JenisSoal: entity.SoalCoding, TeksSoal: "Buat program konversi suhu Celcius ke Fahrenheit.", Poin: 100},
-		{CourseID: keterampilan.ID, JenisSoal: entity.SoalCoding, TeksSoal: "Buat program menghitung luas & keliling lingkaran.", Poin: 100},
-	}
+				var courses []entity.Course
+				db.Where("sesi_praktikum_id = ?", sesi.ID).Find(&courses)
 
-	all := append([]entity.Soal{}, pretestSoal...)
-	all = append(all, posttestSoal...)
-	all = append(all, keterampilanSoal...)
-	for i := range all {
-		all[i].CreatedAt = now
+				for _, c := range courses {
+					nilai := float64(80 + c.ID*2) // Dummy score
+					pc := entity.PengerjaanCourse{
+						MahasiswaID:    mhs.ID,
+						AktivasiSesiID: aks.ID,
+						CourseID:       c.ID,
+						Status:         entity.StatusSelesai,
+						TotalNilai:     &nilai,
+					}
+					db.Create(&pc)
+				}
+				log.Printf("  + dummy nilai untuk mhs %s", mhs.NIM)
+			}
+		}
 	}
-	db.Create(&all)
-
-	log.Printf("  + sesi '%s' + %d soal contoh", sesi.JudulSesi, len(all))
 }

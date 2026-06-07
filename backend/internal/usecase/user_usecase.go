@@ -36,6 +36,39 @@ func (uc *UserUsecase) CreateMahasiswa(req dto.UserRequest) (*entity.User, error
 	return u, nil
 }
 
+// BulkUpsertMahasiswa memproses array UserRequest dan melakukan upsert.
+func (uc *UserUsecase) BulkUpsertMahasiswa(req dto.UserBulkRequest) (*dto.BulkResponse, error) {
+	if len(req.Users) == 0 {
+		return &dto.BulkResponse{}, nil
+	}
+
+	var entities []entity.User
+	for _, r := range req.Users {
+		entities = append(entities, entity.User{
+			Role:         entity.RoleUser,
+			NIM:          r.NIM,
+			Nama:         r.Nama,
+			KelasID:      r.KelasID,
+			Shift:        r.Shift,
+			Kelompok:     r.Kelompok,
+			IsRegistered: false, // Default false, tapi OnConflict TIDAK akan menimpa is_registered
+		})
+	}
+
+	err := uc.users.BulkUpsert(entities)
+	if err != nil {
+		return nil, err
+	}
+
+	// GORM's CreateInBatches with OnConflict doesn't easily return exact insert/update counts in MySQL/Postgres
+	// without complex RETURNING clauses. For now, we return TotalProcessed.
+	return &dto.BulkResponse{
+		TotalProcessed: len(entities),
+		TotalInserted:  0, // Can be refined if needed
+		TotalUpdated:   0,
+	}, nil
+}
+
 func (uc *UserUsecase) UpdateMahasiswa(id int, req dto.UserRequest) (*entity.User, error) {
 	u, err := uc.users.FindByID(id)
 	if err != nil {

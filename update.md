@@ -48,7 +48,7 @@ Dokumen ini berisi peta jalan (roadmap) pengembangan fitur-fitur lanjutan yang d
 
 ---
 
-## 4. Bulk Update & Import CSV Mahasiswa
+## [DONE] 4. Bulk Update & Import CSV Mahasiswa
 **Tujuan:** Mempercepat *onboarding* data mahasiswa baru via CSV.
 
 **Rencana Implementasi:**
@@ -68,7 +68,7 @@ Dokumen ini berisi peta jalan (roadmap) pengembangan fitur-fitur lanjutan yang d
 
 ---
 
-## 6. Dokumentasi API (OpenAPI / Swagger)
+## 6. Dokumentasi API (OpenAPI / Swagger) [DONE]
 **Tujuan:** *Single Source of Truth* untuk kontrak API antara Backend (Go) dan Frontend (SvelteKit).
 
 **Rencana Implementasi:**

@@ -16,6 +16,9 @@
 	let submitting = $state(false);
 	let dirty = new Set<number>();
 	let saveTimer: ReturnType<typeof setInterval>;
+	
+	let inputToken = $state('');
+	let starting = $state(false);
 
 	let locked = $derived(!ruang || !ruang.is_open || ruang.status === 'selesai');
 
@@ -24,7 +27,8 @@
 			if (start) {
 				ruang = await api.post<RuangCourse>('/api/praktikum/mulai', {
 					aktivasi_sesi_id: aktivasiSesiId,
-					course_id: courseId
+					course_id: courseId,
+					token: inputToken ? inputToken : null
 				});
 			} else {
 				ruang = await api.get<RuangCourse>(
@@ -89,9 +93,11 @@
 
 	onMount(async () => {
 		await load();
-		// Mulai timer jika belum mulai & masih terbuka.
+		// Mulai otomatis jika tidak butuh token, belum mulai & masih terbuka.
 		if (ruang && ruang.is_open && ruang.status !== 'selesai' && !ruang.waktu_mulai) {
-			await load(true);
+			if (!ruang.require_token) {
+				await load(true);
+			}
 		}
 		// Auto-save berkala tiap 15 detik.
 		saveTimer = setInterval(flush, 15000);
@@ -105,7 +111,29 @@
 {:else if err && !ruang}
 	<p class="rounded-lg bg-state-error-bg p-3 text-state-error">{err}</p>
 {:else if ruang}
-	<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+	{#if !ruang.waktu_mulai && ruang.is_open && ruang.status !== 'selesai' && ruang.require_token}
+		<!-- LOCK SCREEN -->
+		<div class="card max-w-md mx-auto mt-12 text-center p-8 border-t-4 border-t-primary">
+			<h2 class="text-2xl font-bold mb-2">Sesi Ujian Terkunci</h2>
+			<p class="text-ink-caption mb-6">Masukkan PIN Ujian yang diberikan oleh Asisten untuk memulai pengerjaan.</p>
+			
+			<div class="mb-4">
+				<input type="text" class="input text-center text-2xl font-mono tracking-widest uppercase" placeholder="PIN 6 DIGIT" maxlength="6" bind:value={inputToken} />
+			</div>
+			
+			{#if err}<p class="mb-4 text-sm text-state-error">{err}</p>{/if}
+			
+			<button class="btn-primary w-full" disabled={!inputToken || starting} onclick={async () => {
+				starting = true;
+				err = '';
+				await load(true);
+				starting = false;
+			}}>
+				{starting ? 'Memverifikasi...' : 'Mulai Ujian'}
+			</button>
+		</div>
+	{:else}
+		<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
 		<div>
 			<h1 class="text-2xl">{labelJenis(ruang.jenis)}</h1>
 			<p class="text-sm text-ink-caption">Durasi {ruang.durasi_menit} menit · {ruang.soal.length} soal</p>
@@ -134,7 +162,9 @@
 					</h3>
 					<span class="text-sm text-ink-caption">{s.poin} poin · {s.jenis_soal}</span>
 				</div>
-				<p class="whitespace-pre-wrap text-ink-body">{s.teks_soal}</p>
+				<div class="prose prose-sm max-w-none text-ink-body">
+					{@html s.teks_soal}
+				</div>
 				{#if s.gambar_url}
 					<img src={s.gambar_url} alt="Flowchart" class="mt-3 max-w-full rounded-lg border border-gray-200" />
 				{/if}
@@ -170,5 +200,6 @@
 				{submitting ? 'Mengirim…' : 'Submit Jawaban'}
 			</button>
 		</div>
+	{/if}
 	{/if}
 {/if}

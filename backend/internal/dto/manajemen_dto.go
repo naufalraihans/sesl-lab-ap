@@ -11,6 +11,18 @@ type UserRequest struct {
 	Kelompok *string  `json:"kelompok"`
 }
 
+// UserBulkRequest: payload untuk import mahasiswa secara masal via CSV (Frontend JSON).
+type UserBulkRequest struct {
+	Users []UserRequest `json:"users" binding:"required,dive"`
+}
+
+// BulkResponse: hasil dari operasi import/upsert masal.
+type BulkResponse struct {
+	TotalProcessed int `json:"total_processed"`
+	TotalInserted  int `json:"total_inserted"`
+	TotalUpdated   int `json:"total_updated"`
+}
+
 // ResetPasswordRequest: admin reset password mahasiswa (kosongkan & set belum register).
 type ResetPasswordRequest struct {
 	UserID int `json:"user_id" binding:"required"`

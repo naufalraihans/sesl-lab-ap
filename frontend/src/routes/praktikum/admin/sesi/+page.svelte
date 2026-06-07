@@ -3,6 +3,7 @@
 	import { api } from '$lib/api';
 	import { labelJenis } from '$lib/utils';
 	import type { Sesi, Course, Soal, Kelas } from '$lib/types';
+	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 
 	let sesiList = $state<Sesi[]>([]);
 	let kelas = $state<Kelas[]>([]);
@@ -263,7 +264,9 @@
 				</select>
 			{/if}
 			<label class="label mt-2" for="ts">Teks Soal</label>
-			<textarea id="ts" class="input min-h-24" bind:value={soalForm.teks_soal}></textarea>
+			<div class="mt-1">
+				<RichTextEditor bind:value={soalForm.teks_soal} placeholder="Tulis soal di sini..." />
+			</div>
 			{#if soalForm.kategori_ujian === 'flowchart' || soalForm.gambar_url}
 				<label class="label mt-2" for="gu">Gambar Flowchart</label>
 				{#if soalForm.gambar_url}<img src={soalForm.gambar_url} alt="flowchart" class="mb-2 max-h-40 rounded-lg border" />{/if}
@@ -272,7 +275,9 @@
 			<label class="label mt-2" for="sp">Poin</label>
 			<input id="sp" type="number" class="input" bind:value={soalForm.poin} min="0" />
 			<label class="label mt-2" for="kj">Kunci Jawaban (opsional)</label>
-			<textarea id="kj" class="input min-h-16" bind:value={soalForm.kunci_jawaban}></textarea>
+			<div class="mt-1">
+				<RichTextEditor bind:value={soalForm.kunci_jawaban} placeholder="Tulis referensi atau rubrik jawaban..." />
+			</div>
 			<div class="mt-3 flex gap-2">
 				<button class="btn-primary" onclick={saveSoal}>Simpan</button>
 				{#if editSoalId}<button class="btn-outline" onclick={resetSoalForm}>Batal</button>{/if}
@@ -292,7 +297,9 @@
 									{#if s.kategori_ujian}<span class="badge bg-state-info-bg text-state-info">{s.kategori_ujian}</span>{/if}
 									<span class="text-ink-caption">{s.poin} poin</span>
 								</div>
-								<p class="mt-2 whitespace-pre-wrap text-sm text-ink-body">{s.teks_soal}</p>
+								<div class="prose prose-sm mt-2 max-w-none text-ink-body">
+									{@html s.teks_soal}
+								</div>
 								{#if s.gambar_url}<img src={s.gambar_url} alt="flowchart" class="mt-2 max-h-32 rounded-lg border" />{/if}
 							</div>
 							<div class="flex gap-2 whitespace-nowrap text-sm">

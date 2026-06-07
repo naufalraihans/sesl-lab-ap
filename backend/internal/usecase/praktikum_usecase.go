@@ -119,8 +119,11 @@ func (uc *PraktikumUsecase) Dashboard(userID int) (*dto.DashboardUserResponse, e
 		return nil, ErrUnauthorized
 	}
 
-	resp := &dto.DashboardUserResponse{Profil: toUserResponse(user)}
-
+	resp := &dto.DashboardUserResponse{
+		Profil:       toUserResponse(user),
+		SesiAktif:    make([]dto.SesiUserItem, 0),
+		RiwayatNilai: make([]dto.NilaiCourseItem, 0),
+	}
 	if user.KelasID != nil && user.Shift != nil {
 		if j, err := uc.jadwal.FindByKelasShift(*user.KelasID, *user.Shift); err == nil {
 			resp.Jadwal = &dto.JadwalInfo{

@@ -4,6 +4,7 @@ import (
 	"lab-ap/internal/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type UserRepository interface {
@@ -13,6 +14,7 @@ type UserRepository interface {
 	FindByID(id int) (*entity.User, error)
 	FindByNIM(nim string) (*entity.User, error)
 	List(role string, kelasID *int, shift *int) ([]entity.User, error)
+	BulkUpsert(users []entity.User) error
 	ListAsisten() ([]entity.User, error)
 	CountByRole(role entity.RoleType) (int64, error)
 	CountRegistered(registered bool) (int64, error)
@@ -35,6 +37,13 @@ func (r *userRepository) Create(u *entity.User) error { return r.db.Create(u).Er
 func (r *userRepository) Update(u *entity.User) error { return r.db.Save(u).Error }
 func (r *userRepository) Delete(id int) error {
 	return r.db.Delete(&entity.User{}, id).Error
+}
+
+func (r *userRepository) BulkUpsert(users []entity.User) error {
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "nim"}},
+		DoUpdates: clause.AssignmentColumns([]string{"nama", "kelas_id", "shift", "kelompok"}),
+	}).CreateInBatches(users, 100).Error
 }
 
 func (r *userRepository) FindByID(id int) (*entity.User, error) {

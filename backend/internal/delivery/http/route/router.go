@@ -13,6 +13,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // Handlers mengumpulkan seluruh handler untuk diregistrasi.
@@ -33,6 +35,18 @@ type Handlers struct {
 	Praktikum   *handler.PraktikumHandler
 	Upload      *handler.UploadHandler
 	Ampuan      *handler.AmpuanHandler
+	Rekap       *handler.RekapHandler
+}
+
+// HealthCheck GET /api/health
+// @Summary Health Check
+// @Description Mengecek status service backend
+// @Tags Info
+// @Produce json
+// @Success 200 {object} map[string]string
+// @Router /health [get]
+func HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "lab-ap"})
 }
 
 // Setup membangun engine Gin + seluruh route & middleware.
@@ -51,9 +65,9 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 		MaxAge:           12 * time.Hour,
 	}))
 
-	r.GET("/api/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "lab-ap"})
-	})
+	r.GET("/api/health", HealthCheck)
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := r.Group("/api")
 
@@ -110,6 +124,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 		// Users (mahasiswa)
 		admin.GET("/users", h.User.ListMahasiswa)
 		admin.POST("/users", h.User.CreateMahasiswa)
+		admin.POST("/users/bulk", h.User.BulkUpsertMahasiswa)
 		admin.PUT("/users/:id", h.User.UpdateMahasiswa)
 		admin.DELETE("/users/:id", h.User.Delete)
 		admin.POST("/users/:id/reset-password", h.User.ResetPassword)
@@ -163,6 +178,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 		admin.GET("/aktivasi", h.Aktivasi.List)
 		admin.POST("/aktivasi", h.Aktivasi.Aktivasi)
 		admin.GET("/aktivasi/:id", h.Aktivasi.Get)
+		admin.POST("/aktivasi/:id/token", h.Aktivasi.GenerateToken)
 		admin.POST("/aktivasi/:id/susulan", h.Aktivasi.AddSusulan)
 		admin.GET("/aktivasi/:id/susulan", h.Aktivasi.ListSusulan)
 		admin.DELETE("/aktivasi/:id/susulan/:mahasiswaId", h.Aktivasi.RemoveSusulan)
@@ -171,6 +187,9 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 		// Penilaian
 		admin.GET("/penilaian/rekap", h.Penilaian.Rekap)
 		admin.POST("/penilaian", h.Penilaian.SetNilai)
+
+		// Rekap
+		admin.GET("/rekap/kelas/:id_kelas", h.Rekap.GetRekapKelas)
 
 		// Upload (Supabase)
 		admin.POST("/upload", h.Upload.Upload)

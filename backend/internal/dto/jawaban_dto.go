@@ -16,8 +16,9 @@ type SubmitRequest struct {
 
 // MulaiCourseRequest: tandai mulai mengerjakan course (set waktu_mulai sekali).
 type MulaiCourseRequest struct {
-	AktivasiSesiID int `json:"aktivasi_sesi_id" binding:"required"`
-	CourseID       int `json:"course_id" binding:"required"`
+	AktivasiSesiID int     `json:"aktivasi_sesi_id" binding:"required"`
+	CourseID       int     `json:"course_id" binding:"required"`
+	Token          *string `json:"token"`
 }
 
 // SoalTampilResponse: soal yang ditampilkan ke mahasiswa (tanpa kunci jawaban).
@@ -43,5 +44,6 @@ type RuangCourseResponse struct {
 	Deadline       *time.Time           `json:"deadline"`
 	Status         string               `json:"status"`
 	IsOpen         bool                 `json:"is_open"`
+	RequireToken   bool                 `json:"require_token"`
 	Soal           []SoalTampilResponse `json:"soal"`
 }

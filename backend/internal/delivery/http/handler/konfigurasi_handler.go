@@ -20,6 +20,13 @@ func NewKonfigurasiHandler(uc *usecase.KonfigurasiUsecase) *KonfigurasiHandler {
 }
 
 // All GET /api/admin/konfigurasi
+// @Summary Seluruh Konfigurasi
+// @Description Mengambil semua data konfigurasi global
+// @Tags Admin - Konfigurasi
+// @Security bearerAuth
+// @Produce json
+// @Success 200 {object} response.Envelope{data=[]entity.Konfigurasi}
+// @Router /admin/konfigurasi [get]
 func (h *KonfigurasiHandler) All(c *gin.Context) {
 	res, err := h.uc.All()
 	if err != nil {
@@ -30,6 +37,15 @@ func (h *KonfigurasiHandler) All(c *gin.Context) {
 }
 
 // Set POST /api/admin/konfigurasi
+// @Summary Set Konfigurasi
+// @Description Mengubah atau menambah konfigurasi global (Upsert)
+// @Tags Admin - Konfigurasi
+// @Security bearerAuth
+// @Accept json
+// @Produce json
+// @Param request body dto.KonfigurasiRequest true "Payload Konfigurasi"
+// @Success 200 {object} response.Envelope
+// @Router /admin/konfigurasi [post]
 func (h *KonfigurasiHandler) Set(c *gin.Context) {
 	var req dto.KonfigurasiRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -45,13 +61,25 @@ func (h *KonfigurasiHandler) Set(c *gin.Context) {
 
 // ---- Publik (info) ----
 
-// PublicModul GET /api/info/modul -> URL file modul
+// PublicModul GET /api/info/modul
+// @Summary File Modul Publik
+// @Description Mengambil URL publik dari Modul Praktikum
+// @Tags Info
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /info/modul [get]
 func (h *KonfigurasiHandler) PublicModul(c *gin.Context) {
 	url, _ := h.uc.Get(entity.KeyModulFileURL)
 	response.OK(c, http.StatusOK, "Modul praktikum", gin.H{"file_url": url})
 }
 
-// PublicJadwalConfig GET /api/info/jadwal/config -> mode & gdrive url
+// PublicJadwalConfig GET /api/info/jadwal/config
+// @Summary Konfigurasi Jadwal Publik
+// @Description Mengecek apakah jadwal menggunakan sistem internal atau GDrive URL
+// @Tags Info
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /info/jadwal/config [get]
 func (h *KonfigurasiHandler) PublicJadwalConfig(c *gin.Context) {
 	mode, _ := h.uc.Get(entity.KeyJadwalMode)
 	gdrive, _ := h.uc.Get(entity.KeyGDriveJadwalURL)
