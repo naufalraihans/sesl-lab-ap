@@ -17,6 +17,8 @@ help:
 	@echo "  make fe-install   - Install dependency frontend"
 	@echo "  make fe-dev       - Jalankan frontend dev server"
 	@echo "  make fe-build     - Build frontend"
+	@echo "  make test         - Run all tests (backend)"
+	@echo "  make mock         - Generate mocks untuk testing (backend)"
 
 run:
 	cd $(BACKEND_DIR) && go run ./cmd/server
@@ -41,6 +43,12 @@ swag:
 
 tidy:
 	cd $(BACKEND_DIR) && go mod tidy
+
+test:
+	cd $(BACKEND_DIR) && go test -v ./...
+
+mock:
+	cd $(BACKEND_DIR) && go run github.com/vektra/mockery/v2@latest --all --keeptree --dir=internal/repository --output=internal/repository/mocks
 
 fe-install:
 	cd frontend && npm install
