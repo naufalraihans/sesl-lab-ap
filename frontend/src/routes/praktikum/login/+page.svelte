@@ -162,6 +162,7 @@
 				</button>
 			</div>
 		{/if}
+		</div>
 
 		<div class="mt-8 text-center">
 			<a href="/info" class="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-300">

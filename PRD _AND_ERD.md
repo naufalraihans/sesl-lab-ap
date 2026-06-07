@@ -358,11 +358,13 @@ Mekanisme Pengerjaan:
 4. Authentication: JWT
 5. API Documentation: OpenAPI (Swagger dengan swaggo/swag)
 6. Build Tool: Makefile (`make run`, `make migrate-up`, `make migrate-down`, `make seed`)
+7. Caching: In-Memory Caching (`sync.Map`) untuk optimasi endpoint konfigurasi statis.
 
 ### Database
 
+- Database Relasional: PostgreSQL (dengan penerapan Composite Index untuk mencegah Slow SQL pada Auto-Submit Worker).
 - Object Storage (Untuk PDF dan Foto): Supabase Storage.
-- File pedoman laporan, PDF modul, dan foto profil asisten lab akan disimpan di bucket Supabase Storage (misal: bucket public-assets) dan URL publiknya disimpan di dalam database MySQL.
+- File pedoman laporan, PDF modul, dan foto profil asisten lab akan disimpan di bucket Supabase Storage (misal: bucket public-assets) dan URL publiknya disimpan di dalam database PostgreSQL.
 - Catatan: Karena praktikum berbasis soal-jawaban di web (bukan upload file), kebutuhan storage utama adalah untuk file statis (modul PDF, pedoman, foto asisten).
 
 ## ERD :
@@ -595,6 +597,7 @@ Table pengerjaan_course {
 
   Indexes {
     (mahasiswa_id, aktivasi_sesi_id, course_id) [unique, note: 'Satu mahasiswa satu record per course per aktivasi']
+    (status, waktu_mulai) [note: 'Composite Index untuk mempercepat query polling background worker']
   }
 }
 
@@ -699,11 +702,18 @@ Digunakan pada: Card area, Area filter, Statistik dashboard, Form section.
 - **Info State** (Pengumuman, Notifikasi sistem):
   - Teks/Ikon: `#3B82F6` | Background: `#DBEAFE`
 
+#### 13. Penggunaan Ikon (Iconography)
+
+Sistem ini diwajibkan menggunakan ikon berbasis SVG murni (menggunakan pustaka `lucide-svelte`) untuk menjaga konsistensi resolusi tinggi, kebersihan desain, dan kesan antarmuka yang dinamis/premium.
+**ATURAN MUTLAK:** Dilarang keras menggunakan karakter emoji dalam bentuk apa pun pada seluruh komponen UI/UX, penamaan, maupun notifikasi, guna mempertahankan standar estetika yang tinggi dan profesional.
+
 B. Arahan Komponen & Gaya Dasar (Styling)
 
-- Bentuk (Shape): Gunakan komponen dengan sudut sedikit membulat (rounded-lg atau rounded-md pada Tailwind). Hindari desain kotak tajam murni agar gaya modern pendidikan terasa lebih fleksibel dan friendly.
+- Bentuk (Shape): Gunakan komponen dengan sudut sedikit membulat (rounded-lg atau rounded-xl pada Tailwind). Hindari desain kotak tajam murni agar gaya modern pendidikan terasa lebih fleksibel dan bersahabat.
+- Glassmorphism & Animasi: Penggunaan efek kaca (backdrop-blur) pada navigasi dan komponen melayang dengan animasi transisi yang mulus sangat direkomendasikan.
 - Ruang (Whitespace): Berikan jarak (padding/margin) yang lega antar elemen. Jangan menumpuk teks dan tombol terlalu rapat, terutama di halaman detail modul.
 - Responsivitas (Mobile-First): Mahasiswa sering mengakses jadwal dan men-download modul lewat smartphone. Pastikan navbar bisa berubah menjadi hamburger menu, tabel jadwal/nilai bisa di-scroll secara horizontal di layar kecil, dan form pengumpulan tugas tetap nyaman digunakan di HP.
+- Caching Browser: Halaman publik seperti jadwal akan di-cache selama 5 menit menggunakan pengaturan header SvelteKit untuk meminimalisasi beban request server.
 
 ## Struktur Folder
 
@@ -712,7 +722,7 @@ Backend project ini memakai **Clean Architecture** (Go) agar tanggung jawab tiap
 **Aliran dependency (satu arah):**
 
 ```
-delivery (handler) ──> usecase ──> repository (interface) ──> DB (GORM / MySQL)
+delivery (handler) ──> usecase ──> repository (interface) ──> DB (GORM / PostgreSQL)
         │                  │
         └─ dto             └─ entity (domain model, dipakai semua layer)
 ```
@@ -723,7 +733,7 @@ delivery (handler) ──> usecase ──> repository (interface) ──> DB (GO
 | -------------------- | ----------------------------------------------------------------------------------------- | --------------------------------- |
 | **entity**     | Domain model murni (struct + tag GORM). Inti sistem.                                      | Tidak depend ke siapa pun         |
 | **dto**        | Bentuk request & response API (validasi input, shaping output query).                     | entity                            |
-| **repository** | **Satu-satunya** layer yang menyentuh GORM/MySQL. Berisi interface + implementasi.  | entity                            |
+| **repository** | **Satu-satunya** layer yang menyentuh GORM/PostgreSQL. Berisi interface + implementasi.  | entity                            |
 | **usecase**    | Seluruh aturan bisnis (gacha, acak soal, timer, auto-submit, recalc nilai, cek akses).    | interface repository, entity, dto |
 | **delivery**   | Layer HTTP: handler (parse request → panggil usecase → balas dto), middleware, routing. | usecase, dto                      |
 
@@ -827,7 +837,7 @@ Aturan kunci: **usecase tidak tahu HTTP maupun GORM** — dia hanya memanggil _i
 │   │   └── response/response.go         # Format response JSON konsisten (success/error)
 │   │
 │   ├── database/
-│   │   ├── connection.go                # Koneksi GORM ke MySQL
+│   │   ├── connection.go                # Koneksi GORM ke PostgreSQL
 │   │   ├── migration/
 │   │   │   ├── 001_create_users.sql
 │   │   │   ├── 002_create_kelas.sql

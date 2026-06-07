@@ -50,9 +50,10 @@
 	</div>
 	<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
 		{#each quickLinks as q, i}
+			{@const Icon = q.icon}
 			<a href={q.href} class="card hover-card group block animate-fade-in-up" style="animation-delay: {i * 100}ms">
 				<div class="mb-4 inline-flex rounded-xl bg-primary/10 p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-					<svelte:component this={q.icon} size={24} />
+					<Icon size={24} />
 				</div>
 				<h3 class="text-lg font-bold text-ink-heading transition-colors group-hover:text-primary">{q.title}</h3>
 				<p class="mt-1.5 text-sm leading-relaxed text-ink-caption">{q.desc}</p>
