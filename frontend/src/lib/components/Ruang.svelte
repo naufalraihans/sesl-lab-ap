@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { api } from '$lib/api';
-	import { labelJenis } from '$lib/utils';
+	import { labelJenis, renderMath } from '$lib/utils';
 	import CodeEditor from './CodeEditor.svelte';
 	import Countdown from './Countdown.svelte';
 	import type { RuangCourse } from '$lib/types';
@@ -162,7 +162,7 @@
 					</h3>
 					<span class="text-sm text-ink-caption">{s.poin} poin · {s.jenis_soal}</span>
 				</div>
-				<div class="prose prose-sm max-w-none text-ink-body">
+				<div class="prose prose-sm max-w-none text-ink-body" use:renderMath>
 					{@html s.teks_soal}
 				</div>
 				{#if s.gambar_url}

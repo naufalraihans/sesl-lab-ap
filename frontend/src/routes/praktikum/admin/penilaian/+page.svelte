@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
-	import { labelJenis } from '$lib/utils';
+	import { labelJenis, renderMath } from '$lib/utils';
 	import type { Kelas } from '$lib/types';
 
 	interface AktivasiSesi {
@@ -124,7 +124,7 @@
 							</div>
 							<div class="mt-3 rounded-lg border border-gray-100 bg-surface-muted p-3">
 								<p class="mb-1 text-xs font-medium text-ink-caption">Soal:</p>
-								<div class="prose prose-sm max-w-none text-ink-body">
+								<div class="prose prose-sm max-w-none text-ink-body" use:renderMath>
 									{@html r.teks_soal}
 								</div>
 							</div>

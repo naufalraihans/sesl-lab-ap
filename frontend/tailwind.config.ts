@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import typography from '@tailwindcss/typography';
 
 // Palet warna mengikuti UI/UX Guideline pada PRD (Rose/Crimson akademis).
 export default {
@@ -39,5 +40,5 @@ export default {
 			}
 		}
 	},
-	plugins: []
+	plugins: [typography]
 } satisfies Config;

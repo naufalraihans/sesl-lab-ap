@@ -190,7 +190,7 @@ func createSanitizer() *bluemonday.Policy {
 	
 	// Izinkan class dan data atribut untuk code block, dsb.
 	p.AllowAttrs("class").Globally()
-	p.AllowAttrs("data-type", "data-language", "data-id").Globally()
+	p.AllowAttrs("data-type", "data-language", "data-id", "data-latex").Globally()
 	
 	// Izinkan inline styles yang umum dipakai editor Tiptap/Edra
 	p.AllowStyles("text-align").Matching(regexp.MustCompile(`(?i)^(left|right|center|justify)$`)).Globally()

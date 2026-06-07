@@ -1,3 +1,7 @@
+// @ts-expect-error - Tidak ada deklarasi tipe bawaan untuk modul contrib katex
+import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
+import 'katex/dist/katex.min.css';
+
 // Format sisa waktu (detik) menjadi mm:ss.
 export function fmtCountdown(totalSeconds: number): string {
 	if (totalSeconds < 0) totalSeconds = 0;
@@ -38,4 +42,24 @@ export function statusBadgeClass(status: string): string {
 		case 'sedang_dikerjakan': return 'bg-state-warning-bg text-state-warning';
 		default: return 'bg-gray-100 text-ink-caption';
 	}
+}
+
+export function renderMath(node: HTMLElement, content?: any) {
+	function process() {
+		renderMathInElement(node, {
+			delimiters: [
+				{ left: '$$', right: '$$', display: true },
+				{ left: '$', right: '$', display: false }
+			],
+			throwOnError: false
+		});
+	}
+	
+	process();
+	
+	return {
+		update() {
+			process();
+		}
+	};
 }

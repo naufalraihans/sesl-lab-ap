@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { EdraEditor, EdraToolBar, EdraBubbleMenu } from './edra/headless/index.js';
 	import type { Editor } from '@tiptap/core';
 
@@ -19,15 +20,18 @@
 	}
 
 	$effect(() => {
-		if (editor && value !== undefined) {
-			if (isUpdatingInternal) {
-				isUpdatingInternal = false;
-				return;
+		const html = value;
+		untrack(() => {
+			if (editor && html !== undefined) {
+				if (isUpdatingInternal) {
+					isUpdatingInternal = false;
+					return;
+				}
+				if (html !== editor.getHTML()) {
+					editor.commands.setContent(html);
+				}
 			}
-			if (value !== editor.getHTML()) {
-				editor.commands.setContent(value);
-			}
-		}
+		});
 	});
 </script>
 

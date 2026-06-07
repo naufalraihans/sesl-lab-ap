@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
-	import { labelJenis } from '$lib/utils';
+	import { labelJenis, renderMath } from '$lib/utils';
 	import type { Sesi, Course, Soal, Kelas } from '$lib/types';
 	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 
@@ -297,7 +297,7 @@
 									{#if s.kategori_ujian}<span class="badge bg-state-info-bg text-state-info">{s.kategori_ujian}</span>{/if}
 									<span class="text-ink-caption">{s.poin} poin</span>
 								</div>
-								<div class="prose prose-sm mt-2 max-w-none text-ink-body">
+								<div class="prose prose-sm mt-2 max-w-none text-ink-body" use:renderMath>
 									{@html s.teks_soal}
 								</div>
 								{#if s.gambar_url}<img src={s.gambar_url} alt="flowchart" class="mt-2 max-h-32 rounded-lg border" />{/if}
