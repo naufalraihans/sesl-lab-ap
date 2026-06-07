@@ -8,7 +8,9 @@ type SoalTerpilih struct {
 	SoalID         int `gorm:"not null;uniqueIndex:idx_soal_terpilih" json:"soal_id"`
 	Urutan         int `json:"urutan"`
 
-	Soal *Soal `gorm:"foreignKey:SoalID" json:"soal,omitempty"`
+	Soal         *Soal         `gorm:"foreignKey:SoalID" json:"soal,omitempty"`
+	Course       *Course       `gorm:"foreignKey:CourseID" json:"course,omitempty"`
+	AktivasiSesi *AktivasiSesi `gorm:"foreignKey:AktivasiSesiID" json:"aktivasi_sesi,omitempty"`
 }
 
 func (SoalTerpilih) TableName() string { return "soal_terpilih" }

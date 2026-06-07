@@ -24,6 +24,12 @@ type JawabanRepository interface {
 	SumNilai(mahasiswaID, aktivasiSesiID, courseID int) (float64, error)
 	// ListRekap: rekap jawaban untuk satu aktivasi+course (semua mahasiswa).
 	ListRekap(aktivasiSesiID, courseID int) ([]entity.JawabanMahasiswa, error)
+	// GetAllJawabanFlat: rekap global untuk halaman admin
+	GetAllJawabanFlat(kelasID, sesiID int, search, jenis string) ([]entity.JawabanMahasiswa, error)
+	// BulkResetNilai: reset nilai ke null untuk daftar jawaban_id
+	BulkResetNilai(jawabanIDs []int) error
+	// BulkDelete: hapus jawaban berdasarkan daftar jawaban_id
+	BulkDelete(jawabanIDs []int) error
 }
 
 type jawabanRepository struct{ db *gorm.DB }
@@ -140,4 +146,54 @@ func (r *jawabanRepository) ListRekap(aktivasiSesiID, courseID int) ([]entity.Ja
 		Where("soal_terpilih_id IN ?", ids).
 		Order("mahasiswa_id asc").Find(&js).Error
 	return js, err
+}
+
+func (r *jawabanRepository) GetAllJawabanFlat(kelasID, sesiID int, search, jenis string) ([]entity.JawabanMahasiswa, error) {
+	var js []entity.JawabanMahasiswa
+
+	query := r.db.Preload("Mahasiswa").Preload("Mahasiswa.Kelas").
+		Preload("SoalTerpilih").
+		Preload("SoalTerpilih.Soal").
+		Preload("SoalTerpilih.Course").
+		Preload("SoalTerpilih.AktivasiSesi").
+		Preload("SoalTerpilih.AktivasiSesi.Sesi")
+
+	// Joins untuk memfilter
+	query = query.Joins("JOIN users ON users.id = jawaban_mahasiswa.mahasiswa_id").
+		Joins("JOIN soal_terpilih ON soal_terpilih.id = jawaban_mahasiswa.soal_terpilih_id").
+		Joins("JOIN course ON course.id = soal_terpilih.course_id").
+		Joins("JOIN aktivasi_sesi ON aktivasi_sesi.id = soal_terpilih.aktivasi_sesi_id")
+
+	if kelasID > 0 {
+		query = query.Where("users.kelas_id = ?", kelasID)
+	}
+	if sesiID > 0 {
+		query = query.Where("aktivasi_sesi.sesi_praktikum_id = ?", sesiID)
+	}
+	if jenis != "" && jenis != "all" {
+		query = query.Where("course.jenis = ?", jenis)
+	}
+	if search != "" {
+		searchLike := "%" + search + "%"
+		query = query.Where("(users.nama ILIKE ? OR users.nim ILIKE ?)", searchLike, searchLike)
+	}
+
+	err := query.Order("jawaban_mahasiswa.waktu_submit DESC").Find(&js).Error
+	return js, err
+}
+
+func (r *jawabanRepository) BulkResetNilai(jawabanIDs []int) error {
+	if len(jawabanIDs) == 0 {
+		return nil
+	}
+	return r.db.Model(&entity.JawabanMahasiswa{}).
+		Where("id IN ?", jawabanIDs).
+		Updates(map[string]interface{}{"nilai": nil, "feedback": nil}).Error
+}
+
+func (r *jawabanRepository) BulkDelete(jawabanIDs []int) error {
+	if len(jawabanIDs) == 0 {
+		return nil
+	}
+	return r.db.Where("id IN ?", jawabanIDs).Delete(&entity.JawabanMahasiswa{}).Error
 }

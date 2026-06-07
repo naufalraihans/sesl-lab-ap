@@ -25,6 +25,7 @@ func main() {
 	seedMahasiswa(db)
 	seedJadwal(db)
 	seedSesiSoal(db)
+	seedAIGradingSim(db)
 
 	log.Println("✓ Seed selesai.")
 }
@@ -271,4 +272,137 @@ func seedSesiSoal(db *gorm.DB) {
 		}
 		log.Println("  + dummy nilai untuk mhs 2021001 & 2021003 di Modul 1 dan 2")
 	}
+}
+
+// seedAIGradingSim membuat data dummy khusus untuk menguji fitur AI Grading.
+func seedAIGradingSim(db *gorm.DB) {
+	now := time.Now()
+	var n int64
+	db.Model(&entity.SesiPraktikum{}).Where("judul_sesi = ?", "Simulasi AI Grading").Count(&n)
+	if n > 0 {
+		return
+	}
+
+	// 1. Buat Sesi Praktikum
+	sesi := entity.SesiPraktikum{
+		JudulSesi: "Simulasi AI Grading",
+		Deskripsi: "Sesi khusus untuk menguji kemampuan AI dalam menilai jawaban mahasiswa.",
+		Urutan:    90,
+		CreatedAt: now, UpdatedAt: now,
+	}
+	db.Create(&sesi)
+
+	// 2. Buat Course
+	course := entity.Course{
+		SesiPraktikumID: sesi.ID,
+		Jenis:           entity.CourseKeterampilan,
+		Judul:           "Keterampilan C - Basic to Advanced",
+		DurasiMenit:     120,
+	}
+	db.Create(&course)
+
+	// 3. Buat Soal beserta Kunci Jawaban
+	kunci1 := "int main() {\n  printf(\"Hello World\");\n  return 0;\n}"
+	kunci2 := "Fungsi if digunakan untuk mengeksekusi blok kode jika kondisi bernilai benar (true). Jika salah, ia dapat dilempar ke else."
+	kunci3 := "O(n^2)"
+
+	easy, medium, hard := entity.DiffEasy, entity.DiffMedium, entity.DiffHard
+	soalList := []entity.Soal{
+		{CourseID: course.ID, JenisSoal: entity.SoalCoding, Difficulty: &easy, TeksSoal: "Buatlah program C sederhana yang mencetak tulisan 'Hello World'.", Poin: 30, KunciJawaban: &kunci1, CreatedAt: now},
+		{CourseID: course.ID, JenisSoal: entity.SoalEssay, Difficulty: &medium, TeksSoal: "Jelaskan fungsi dari struktur percabangan 'if-else' secara singkat.", Poin: 40, KunciJawaban: &kunci2, CreatedAt: now},
+		{CourseID: course.ID, JenisSoal: entity.SoalEssay, Difficulty: &hard, TeksSoal: "Berapa Time Complexity dari algoritma Bubble Sort pada kasus terburuk (Worst Case)?", Poin: 30, KunciJawaban: &kunci3, CreatedAt: now},
+	}
+	db.Create(&soalList)
+
+	// 4. Buat Aktivasi untuk Kelas TTL A Shift 1
+	var kelasA entity.Kelas
+	db.Where("nama_kelas = ?", "TTL A").First(&kelasA)
+
+	aktivasi := entity.AktivasiSesi{
+		SesiPraktikumID: sesi.ID,
+		KelasID:         kelasA.ID,
+		Shift:           1,
+		IsActive:        true,
+	}
+	db.Create(&aktivasi)
+
+	// 4.5 Buat Aktivasi Course
+	aktivasiCourse := entity.AktivasiCourse{
+		AktivasiSesiID: aktivasi.ID,
+		CourseID:       course.ID,
+		IsOpen:         true,
+	}
+	db.Create(&aktivasiCourse)
+
+	// 5. Assign SoalTerpilih untuk Course ini
+	var terpilih []entity.SoalTerpilih
+	for _, s := range soalList {
+		terpilih = append(terpilih, entity.SoalTerpilih{
+			AktivasiSesiID: aktivasi.ID,
+			CourseID:       course.ID,
+			SoalID:         s.ID,
+		})
+	}
+	db.Create(&terpilih)
+
+	// 6. Buat Jawaban Mahasiswa (Belum dinilai / Nilai = null)
+	var mhs []entity.User
+	db.Where("kelas_id = ? AND shift = ?", kelasA.ID, 1).Find(&mhs)
+
+	// Skenario: 
+	// Mhs 1: Benar semua
+	// Mhs 2: Salah semua
+	// Mhs 3: Setengah benar
+	jawabanDummy := map[string][]string{
+		"2021001": { // Benar semua
+			"int main() {\n  printf(\"Hello World\");\n  return 0;\n}",
+			"If-else digunakan untuk percabangan. Jika if benar, jalan. Jika salah, masuk else.",
+			"Worst casenya O(n^2)",
+		},
+		"2021002": { // Salah semua / ngaco
+			"aku gak tahu kak",
+			"if adalah perulangan yang dilakukan terus menerus",
+			"O(1)",
+		},
+		"2021003": { // Setengah benar
+			"printf(\"Hello World\");", // kurang int main
+			"dipakai untuk mengecek kondisi kode",
+			"Mungkin O(n log n)", // salah
+		},
+	}
+
+	var pengerjaanList []entity.PengerjaanCourse
+	var jawabanList []entity.JawabanMahasiswa
+
+	for _, m := range mhs {
+		// Pengerjaan Course record
+		pengerjaanList = append(pengerjaanList, entity.PengerjaanCourse{
+			MahasiswaID:    m.ID,
+			AktivasiSesiID: aktivasi.ID,
+			CourseID:       course.ID,
+			Status:         entity.StatusSelesai,
+		})
+
+		jDummy := jawabanDummy[m.NIM]
+		if len(jDummy) == 0 {
+			// fallback
+			jDummy = []string{"Jawaban asal saja", "Tidak tau", "Hmm"}
+		}
+
+		for i, t := range terpilih {
+			jawabanList = append(jawabanList, entity.JawabanMahasiswa{
+				MahasiswaID:    m.ID,
+				SoalTerpilihID: t.ID,
+				JawabanTeks:    jDummy[i],
+				IsSubmitted:    true,
+				WaktuSubmit:    &now,
+				// Nilai dibiarkan nil agar bisa dites oleh AI
+			})
+		}
+	}
+
+	db.Create(&pengerjaanList)
+	db.Create(&jawabanList)
+
+	log.Printf("  + simulasi AI Grading: Sesi khusus dengan %d jawaban mahasiswa siap dinilai", len(jawabanList))
 }

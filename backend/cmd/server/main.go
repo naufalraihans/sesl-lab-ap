@@ -106,8 +106,9 @@ func main() {
 		Praktikum:   handler.NewPraktikumHandler(praktikumUC),
 		Upload:      handler.NewUploadHandler(sb),
 		Ampuan:      handler.NewAmpuanHandler(ampuanUC, userUC),
-		Rekap:       handler.NewRekapHandler(rekapUC),
-		AIGrading:   handler.NewAIGradingHandler(aiGradingUC),
+		Rekap:        handler.NewRekapHandler(rekapUC),
+		AIGrading:    handler.NewAIGradingHandler(aiGradingUC),
+		RekapJawaban: handler.NewRekapJawabanHandler(penilaianUC),
 	}
 
 	r := route.Setup(cfg, jm, reg, h)

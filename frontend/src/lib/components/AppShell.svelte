@@ -23,7 +23,9 @@
 		{ href: '/praktikum/admin/modul', label: 'Modul', icon: '📕' },
 		{ href: '/praktikum/admin/sesi', label: 'Sesi & Soal', icon: '🧩' },
 		{ href: '/praktikum/admin/aktivasi', label: 'Aktivasi Sesi', icon: '⚡' },
-		{ href: '/praktikum/admin/penilaian', label: 'Penilaian', icon: '✅' }
+		{ href: '/praktikum/admin/penilaian', label: 'Penilaian', icon: '✅' },
+		{ href: '/praktikum/admin/rekap-jawaban', label: 'Rekap Jawaban', icon: '📋' },
+		{ href: '/praktikum/admin/rekap-nilai', label: 'Rekap Nilai', icon: '🏆' }
 	];
 
 	let links = $derived($user?.role === 'admin' ? adminLinks : userLinks);

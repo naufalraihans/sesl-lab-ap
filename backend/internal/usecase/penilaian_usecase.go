@@ -92,3 +92,144 @@ func (uc *PenilaianUsecase) Rekap(aktivasiSesiID, courseID int) (*dto.RekapRespo
 	}
 	return resp, nil
 }
+
+// GetRekapJawabanGlobal mengembalikan rekap jawaban secara flat untuk dashboard
+func (uc *PenilaianUsecase) GetRekapJawabanGlobal(kelasID, sesiID int, search, jenis string) (*dto.RekapJawabanResponse, error) {
+	jawabanList, err := uc.jawaban.GetAllJawabanFlat(kelasID, sesiID, search, jenis)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &dto.RekapJawabanResponse{
+		Items: make([]dto.RekapJawabanItem, 0, len(jawabanList)),
+		Total: int64(len(jawabanList)),
+	}
+
+	for _, j := range jawabanList {
+		item := dto.RekapJawabanItem{
+			JawabanID:   j.ID,
+			NIM:         j.Mahasiswa.NIM,
+			JawabanTeks: j.JawabanTeks,
+			IsSubmitted: j.IsSubmitted,
+			WaktuSubmit: j.WaktuSubmit,
+			Nilai:       j.Nilai,
+			Feedback:    j.Feedback,
+		}
+
+		if j.Mahasiswa != nil {
+			item.NamaMahasiswa = j.Mahasiswa.Nama
+			if j.Mahasiswa.Kelas != nil {
+				item.KelasID = j.Mahasiswa.Kelas.ID
+				item.NamaKelas = j.Mahasiswa.Kelas.NamaKelas
+			}
+		}
+
+		if j.SoalTerpilih != nil {
+			if j.SoalTerpilih.Soal != nil {
+				item.JenisSoal = string(j.SoalTerpilih.Soal.JenisSoal)
+				item.TeksSoal = j.SoalTerpilih.Soal.TeksSoal
+				item.PoinMaksimal = j.SoalTerpilih.Soal.Poin
+			}
+			if j.SoalTerpilih.Course != nil {
+				item.CourseID = j.SoalTerpilih.Course.ID
+				item.JudulCourse = j.SoalTerpilih.Course.Judul
+				item.JenisCourse = string(j.SoalTerpilih.Course.Jenis)
+			}
+			if j.SoalTerpilih.AktivasiSesi != nil && j.SoalTerpilih.AktivasiSesi.Sesi != nil {
+				item.SesiPraktikumID = j.SoalTerpilih.AktivasiSesi.Sesi.ID
+				item.JudulSesi = j.SoalTerpilih.AktivasiSesi.Sesi.JudulSesi
+			}
+		}
+		resp.Items = append(resp.Items, item)
+	}
+
+	return resp, nil
+}
+
+func (uc *PenilaianUsecase) syncPengerjaanCourseForJawaban(jawabanIDs []int) {
+	if len(jawabanIDs) == 0 {
+		return
+	}
+	
+	// Cari semua jawaban_id untuk mengetahui mahasiswa mana yang berubah
+	var jList []entity.JawabanMahasiswa
+	for _, jID := range jawabanIDs {
+		if j, err := uc.jawaban.FindByID(jID); err == nil && j != nil && j.SoalTerpilih != nil {
+			jList = append(jList, *j)
+		}
+	}
+
+	// Buat map unik untuk (MahasiswaID + AktivasiSesiID + CourseID)
+	type pKey struct {
+		MhsID, AktSesiID, CourseID int
+	}
+	affected := map[pKey]bool{}
+
+	for _, j := range jList {
+		k := pKey{MhsID: j.MahasiswaID, AktSesiID: j.SoalTerpilih.AktivasiSesiID, CourseID: j.SoalTerpilih.CourseID}
+		affected[k] = true
+	}
+
+	// Untuk tiap kombinasi unik, kalkulasi ulang total_nilai
+	for k := range affected {
+		total, err := uc.jawaban.SumNilai(k.MhsID, k.AktSesiID, k.CourseID)
+		if err == nil {
+			if p, err := uc.pengerjaan.FindOrCreate(k.MhsID, k.AktSesiID, k.CourseID); err == nil {
+				p.TotalNilai = &total
+				uc.pengerjaan.Update(p)
+			}
+		}
+	}
+}
+
+// BulkResetNilai mereset nilai dan feedback menjadi null
+func (uc *PenilaianUsecase) BulkResetNilai(jawabanIDs []int) error {
+	err := uc.jawaban.BulkResetNilai(jawabanIDs)
+	if err != nil {
+		return err
+	}
+	
+	// Sinkronisasi nilai ke pengerjaan_course
+	uc.syncPengerjaanCourseForJawaban(jawabanIDs)
+	return nil
+}
+
+// BulkDeleteJawaban menghapus jawaban secara permanen
+func (uc *PenilaianUsecase) BulkDeleteJawaban(jawabanIDs []int) error {
+	// Ambil data dulu sblm dihapus buat sync
+	var jList []entity.JawabanMahasiswa
+	for _, jID := range jawabanIDs {
+		if j, err := uc.jawaban.FindByID(jID); err == nil && j != nil {
+			jList = append(jList, *j)
+		}
+	}
+
+	err := uc.jawaban.BulkDelete(jawabanIDs)
+	if err != nil {
+		return err
+	}
+
+	// Ekstrak ID yg berhasil dihapus
+	type pKey struct {
+		MhsID, AktSesiID, CourseID int
+	}
+	affected := map[pKey]bool{}
+	for _, j := range jList {
+		if j.SoalTerpilih != nil {
+			affected[pKey{MhsID: j.MahasiswaID, AktSesiID: j.SoalTerpilih.AktivasiSesiID, CourseID: j.SoalTerpilih.CourseID}] = true
+		}
+	}
+
+	// Sync
+	for k := range affected {
+		total, err := uc.jawaban.SumNilai(k.MhsID, k.AktSesiID, k.CourseID)
+		if err == nil {
+			if p, err := uc.pengerjaan.FindOrCreate(k.MhsID, k.AktSesiID, k.CourseID); err == nil {
+				p.TotalNilai = &total
+				uc.pengerjaan.Update(p)
+			}
+		}
+	}
+	return nil
+}
+

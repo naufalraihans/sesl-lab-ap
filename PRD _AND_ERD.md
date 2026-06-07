@@ -164,6 +164,11 @@ NOTE : pastikan melarang SQL Injection pada bagian ini, serta menggunakan passwo
 
 Admin (= Asisten Lab) memiliki hak akses penuh untuk melakukan operasi CRUD pada data sistem.
 
+**Catatan Keamanan (Security):**
+
+- Seluruh endpoint sensitif yang baru dibuat (AI Grading, Import CSV, Rekap) dilindungi oleh middleware keamanan (Role-Based Access Control) di backend. Hanya User dengan otorisasi Admin yang berhak mengeksekusi endpoint tersebut untuk mencegah eksploitasi.
+- Mengimplementasikan Soft Deletes pada tabel-tabel krusial untuk mencegah kehilangan data permanen akibat ketidaksengajaan.
+
 #### 0. Dashboard Admin
 
 Fitur: Menampilkan ringkasan statistik dan monitoring sistem:
@@ -177,7 +182,7 @@ Fitur: Menampilkan ringkasan statistik dan monitoring sistem:
 
 #### 1. Manajemen data User (Users)
 
-Fitur: Tambah, edit, hapus, dan lihat data mahasiswa (Nama, NIM, Kelas, Shift, Password). NIM digunakan sebagai username. Admin juga dapat melakukan reset password dan membuka/menutup akses register per kelas.
+Fitur: Tambah, edit, hapus, dan lihat data mahasiswa (Nama, NIM, Kelas, Shift, Password). NIM digunakan sebagai username. Admin juga dapat melakukan reset password dan membuka/menutup akses register per kelas. Admin dapat mempercepat proses penambahan data mahasiswa baru melalui fitur Bulk Update & Import CSV Mahasiswa. Sistem dilengkapi penanganan error terpusat yang menampilkan daftar peringatan baris yang bermasalah pada file CSV.
 
 #### 2. Manajemen Data Asisten Lab
 
@@ -222,14 +227,14 @@ Setiap sesi praktikum (modul) memiliki **2 jenis course**:
 
 Course **Ujian Praktik** memiliki pool soal yang dikelompokkan per **kategori ujian**. Saat ujian diaktifkan, sistem mengacak **1 soal dari setiap kategori** sehingga total 6 soal:
 
-| Kategori        | Jumlah Soal Tampil | Jenis Soal                  | Keterangan                                                                  |
-| --------------- | ------------------ | --------------------------- | -------------------------------------------------------------------------- |
-| Modul 1         | 1 soal             | Live Coding (Monaco Editor) | -                                                                          |
-| Modul 2         | 1 soal             | Live Coding (Monaco Editor) | -                                                                          |
-| Modul 3         | 1 soal             | Live Coding (Monaco Editor) | -                                                                          |
-| Modul 4 dan 5   | 1 soal             | Live Coding (Monaco Editor) | -                                                                          |
-| Modul 6         | 1 soal             | Live Coding (Monaco Editor) | -                                                                          |
-| Flowchart       | 1 soal             | Live Coding (Monaco Editor) | Soal menampilkan **gambar flowchart** untuk diterjemahkan ke dalam kode    |
+| Kategori      | Jumlah Soal Tampil | Jenis Soal                  | Keterangan                                                                   |
+| ------------- | ------------------ | --------------------------- | ---------------------------------------------------------------------------- |
+| Modul 1       | 1 soal             | Live Coding (Monaco Editor) | -                                                                            |
+| Modul 2       | 1 soal             | Live Coding (Monaco Editor) | -                                                                            |
+| Modul 3       | 1 soal             | Live Coding (Monaco Editor) | -                                                                            |
+| Modul 4 dan 5 | 1 soal             | Live Coding (Monaco Editor) | -                                                                            |
+| Modul 6       | 1 soal             | Live Coding (Monaco Editor) | -                                                                            |
+| Flowchart     | 1 soal             | Live Coding (Monaco Editor) | Soal menampilkan**gambar flowchart** untuk diterjemahkan ke dalam kode |
 
 ##### Mekanisme Pool & Pengacakan Soal:
 
@@ -246,7 +251,7 @@ Course **Ujian Praktik** memiliki pool soal yang dikelompokkan per **kategori uj
 
 ##### Aktivasi Sesi:
 
-- Admin **manual mengaktifkan** sesi untuk **kelas + shift** tertentu (1 baris `aktivasi_sesi` per kombinasi sesi + kelas + shift).
+- Admin **manual mengaktifkan** sesi untuk **kelas + shift** tertentu (1 baris `aktivasi_sesi` per kombinasi sesi + kelas + shift). Admin wajib mengenerate Token/PIN Acak untuk aktivasi tersebut guna memastikan kehadiran fisik mahasiswa.
 - **Akses terisolasi per kelas + shift**: aktivasi untuk "TTL A shift 1" hanya bisa diakses mahasiswa TTL A shift 1. Mahasiswa TTL A shift 2 **tidak bisa** mengaksesnya, walau kelasnya sama. Tiap kombinasi punya aktivasi sendiri.
 - **Gacha pre-test/post-test bersifat eksplisit**: saat aktivasi, admin menentukan (gacha/spin) apakah pakai pre-test atau post-test, lalu sistem membuat baris `aktivasi_course` untuk course terpilih saja (+ keterampilan). Course yang tidak terpilih tidak akan punya baris dan tidak dapat diakses.
 - Admin **membuka/menutup** tiap course **secara independen per aktivasi** lewat `aktivasi_course.is_open`. Karena open/close ada di level aktivasi (bukan global di `course`), membuka pre-test untuk "TTL A shift 1" **tidak** ikut membuka pre-test untuk shift/kelas lain. Urutan buka ditentukan admin (`urutan`).
@@ -268,15 +273,26 @@ Course **Ujian Praktik** memiliki pool soal yang dikelompokkan per **kategori uj
 
 Untuk setiap course, Admin dapat:
 
-- Membuat, mengedit, dan menghapus **soal** ke dalam pool (teks soal, jenis: essay / coding, difficulty: easy / medium / hard). Khusus course **Ujian Praktik**, setiap soal juga diberi **kategori ujian** (Modul 1 / Modul 2 / Modul 3 / Modul 4 dan 5 / Modul 6 / Flowchart), dan untuk kategori Flowchart admin mengunggah **gambar flowchart**.
+- Membuat, mengedit, dan menghapus **soal** ke dalam pool (teks soal, jenis: essay / coding, difficulty: easy / medium / hard). Admin menggunakan WYSIWYG Rich Text Editor (Edra) untuk pembuatan soal yang mendukung penyisipan tabel, format teks, dan rumus matematika (KaTeX). Admin dianjurkan mengisi kolom `kunci_jawaban` sebagai acuan bagi AI Grading. Khusus course **Ujian Praktik**, setiap soal juga diberi **kategori ujian** (Modul 1 / Modul 2 / Modul 3 / Modul 4 dan 5 / Modul 6 / Flowchart), dan untuk kategori Flowchart admin mengunggah **gambar flowchart**.
 - Mengatur **waktu pengerjaan** (durasi timer) per course.
 - Membuka/menutup course secara independen **per aktivasi** (per kelas + shift) lewat `aktivasi_course.is_open`.
 - Mendaftarkan **mahasiswa susulan** ke sebuah aktivasi (`peserta_susulan`) agar bisa menumpang mengerjakan di kelas/shift lain.
 - Melihat dan merekap **jawaban mahasiswa** per course, terkelompokkan berdasarkan sesi, kelas, dan shift.
 
-#### 6. Penilaian Mahasiswa
+#### 6. Penilaian Mahasiswa & Rekapitulasi
 
-Fitur: Admin dapat memberikan nilai dan feedback pada jawaban mahasiswa per course (pre-test/post-test, keterampilan, ujian praktik). Penilaian dilakukan secara manual oleh Admin untuk semua jenis soal (essay dan coding).
+Fitur: Admin dapat memberikan nilai dan feedback pada jawaban mahasiswa per course (pre-test/post-test, keterampilan, ujian praktik). Penilaian dilakukan secara manual oleh Admin untuk semua jenis soal (essay dan coding), atau menggunakan fitur AI Grading.
+
+**Integrasi AI Grading (Penilaian Otomatis):**
+
+- Admin dapat menggunakan tombol "Bulk AI Grade" untuk menilai puluhan hingga ratusan soal essay menggunakan bantuan Large Language Models (LLM) dengan membandingkan teks soal, kunci jawaban, dan jawaban mahasiswa.
+- Proses grading menggunakan sistem Background Queue (antrean pekerja latar belakang) untuk mencegah HTTP Timeout. Tampilan antarmuka akan menerapkan sistem polling untuk mengecek status antrean secara real-time.
+
+**Dashboard Rekap Jawaban & Pivot Nilai Akhir:**
+
+- Admin dapat melihat pandangan menyeluruh (bird's-eye view) performa kelas melalui halaman Rekap Jawaban Global dan Rekap Nilai (Pivot).
+- Terdapat kolom pencarian reaktif (NIM/Nama), tabel data dinamis, dan tombol "Export to Excel/CSV".
+- Terdapat fitur Bulk Actions pada Rekap Jawaban untuk mereset nilai atau menghapus jawaban secara masal.
 
 **Aturan skor (poin & nilai):**
 
@@ -299,7 +315,7 @@ Fitur: Menampilkan jadwal spesifik praktikum mahasiswa bersangkutan.
 
 #### 3. Akses Sesi Praktikum
 
-Fitur: Menampilkan daftar sesi praktikum. Sesi yang diaktifkan Admin untuk kelas dan shift user akan terbuka dan bisa diakses. Di dalam setiap sesi, mahasiswa melihat course yang tersedia beserta statusnya (belum dikerjakan, sedang dikerjakan, selesai).
+Fitur: Menampilkan daftar sesi praktikum. Sesi yang diaktifkan Admin untuk kelas dan shift user akan terbuka dan bisa diakses. Mahasiswa wajib memasukkan Token/PIN Ujian yang dibagikan di dalam ruangan lab untuk dapat memulai sesi, guna memastikan kehadiran fisik. Di dalam setiap sesi, mahasiswa melihat course yang tersedia beserta statusnya (belum dikerjakan, sedang dikerjakan, selesai).
 
 Note: Mahasiswa hanya bisa melihat dan mengakses sesi yang diaktifkan untuk **kelas + shift** mereka. Pengecualian: mahasiswa yang didaftarkan **susulan** oleh admin (`peserta_susulan`) dapat mengakses aktivasi kelas/shift lain yang ditunjuk.
 
@@ -337,10 +353,10 @@ Mekanisme Pengerjaan:
 ### Backend
 
 1. Bahasa: Go
-2. ORM: GORM
-3. Database: MySQL
+2. ORM: GORM (dengan implementasi Soft Delete)
+3. Database: PostgreSQL
 4. Authentication: JWT
-5. API Documentation: OpenAPI (Swagger)
+5. API Documentation: OpenAPI (Swagger dengan swaggo/swag)
 6. Build Tool: Makefile (`make run`, `make migrate-up`, `make migrate-down`, `make seed`)
 
 ### Database
@@ -495,6 +511,7 @@ Table aktivasi_sesi {
   sesi_praktikum_id int
   kelas_id int
   shift int [note: '1 atau 2']
+  token varchar [note: 'PIN/Token akses ujian untuk memastikan kehadiran fisik']
   is_active boolean [default: true]
   activated_at datetime
 
@@ -702,15 +719,15 @@ delivery (handler) ──> usecase ──> repository (interface) ──> DB (GO
 
 **Peran tiap layer:**
 
-| Layer          | Tanggung jawab                                                                                  | Boleh tahu                          |
-| -------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------- |
-| **entity**     | Domain model murni (struct + tag GORM). Inti sistem.                                             | Tidak depend ke siapa pun           |
-| **dto**        | Bentuk request & response API (validasi input, shaping output query).                           | entity                              |
-| **repository** | **Satu-satunya** layer yang menyentuh GORM/MySQL. Berisi interface + implementasi.               | entity                              |
-| **usecase**    | Seluruh aturan bisnis (gacha, acak soal, timer, auto-submit, recalc nilai, cek akses).          | interface repository, entity, dto   |
-| **delivery**   | Layer HTTP: handler (parse request → panggil usecase → balas dto), middleware, routing.         | usecase, dto                        |
+| Layer                | Tanggung jawab                                                                            | Boleh tahu                        |
+| -------------------- | ----------------------------------------------------------------------------------------- | --------------------------------- |
+| **entity**     | Domain model murni (struct + tag GORM). Inti sistem.                                      | Tidak depend ke siapa pun         |
+| **dto**        | Bentuk request & response API (validasi input, shaping output query).                     | entity                            |
+| **repository** | **Satu-satunya** layer yang menyentuh GORM/MySQL. Berisi interface + implementasi.  | entity                            |
+| **usecase**    | Seluruh aturan bisnis (gacha, acak soal, timer, auto-submit, recalc nilai, cek akses).    | interface repository, entity, dto |
+| **delivery**   | Layer HTTP: handler (parse request → panggil usecase → balas dto), middleware, routing. | usecase, dto                      |
 
-Aturan kunci: **usecase tidak tahu HTTP maupun GORM** — dia hanya memanggil *interface* repository, sehingga bisa di-unit-test dengan mock. **Hanya repository yang menyentuh database.**
+Aturan kunci: **usecase tidak tahu HTTP maupun GORM** — dia hanya memanggil _interface_ repository, sehingga bisa di-unit-test dengan mock. **Hanya repository yang menyentuh database.**
 
 ```
 /project_lab_ap

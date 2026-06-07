@@ -34,9 +34,10 @@ type Handlers struct {
 	Pedoman     *handler.PedomanHandler
 	Praktikum   *handler.PraktikumHandler
 	Upload      *handler.UploadHandler
-	Ampuan      *handler.AmpuanHandler
-	Rekap       *handler.RekapHandler
-	AIGrading   *handler.AIGradingHandler
+	Ampuan       *handler.AmpuanHandler
+	Rekap        *handler.RekapHandler
+	AIGrading    *handler.AIGradingHandler
+	RekapJawaban *handler.RekapJawabanHandler
 }
 
 // HealthCheck GET /api/health
@@ -189,6 +190,10 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 		admin.GET("/penilaian/rekap", h.Penilaian.Rekap)
 		admin.POST("/penilaian", h.Penilaian.SetNilai)
 		admin.POST("/penilaian/ai-grade/bulk", h.AIGrading.BulkGrade)
+		
+		// Rekap Jawaban Global & Bulk Actions
+		admin.GET("/rekap-jawaban", h.RekapJawaban.GetRekapJawabanGlobal)
+		admin.POST("/penilaian/bulk-action", h.RekapJawaban.BulkAction)
 
 		// Background Jobs
 		admin.GET("/jobs/:id", h.AIGrading.GetJobStatus)

@@ -15,6 +15,7 @@ type JawabanMahasiswa struct {
 	UpdatedAt      time.Time  `json:"updated_at"`
 
 	SoalTerpilih *SoalTerpilih `gorm:"foreignKey:SoalTerpilihID" json:"soal_terpilih,omitempty"`
+	Mahasiswa    *User         `gorm:"foreignKey:MahasiswaID" json:"mahasiswa,omitempty"`
 }
 
 func (JawabanMahasiswa) TableName() string { return "jawaban_mahasiswa" }

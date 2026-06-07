@@ -12,6 +12,7 @@ help:
 	@echo "  make migrate-up   - Jalankan semua migrasi (.up.sql)"
 	@echo "  make migrate-down - Rollback satu langkah migrasi (.down.sql)"
 	@echo "  make seed         - Isi data awal (admin, kelas, jadwal, soal contoh)"
+	@echo "  make swag         - Generate OpenAPI documentation (swag init)"
 	@echo "  make tidy         - go mod tidy"
 	@echo "  make fe-install   - Install dependency frontend"
 	@echo "  make fe-dev       - Jalankan frontend dev server"
@@ -34,6 +35,9 @@ migrate-drop:
 
 seed:
 	cd $(BACKEND_DIR) && go run ./database/seed
+
+swag:
+	cd $(BACKEND_DIR) && go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/server/main.go
 
 tidy:
 	cd $(BACKEND_DIR) && go mod tidy
