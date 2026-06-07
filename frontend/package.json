@@ -47,6 +47,7 @@
     "edra": "^2.0.24",
     "katex": "^0.17.0",
     "lowlight": "^3.3.0",
+    "lucide-svelte": "^1.0.1",
     "papaparse": "^5.5.3",
     "svelte-tiptap": "^3.0.1",
     "tippy.js": "^6.3.7",
