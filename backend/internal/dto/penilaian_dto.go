@@ -28,3 +28,18 @@ type RekapResponse struct {
 	CourseID       int         `json:"course_id"`
 	Items          []RekapItem `json:"items"`
 }
+
+// AIGradingBulkRequest: request untuk memulai AI grading untuk sebuah course di sesi tertentu.
+type AIGradingBulkRequest struct {
+	AktivasiSesiID int `json:"aktivasi_sesi_id" binding:"required"`
+	CourseID       int `json:"course_id" binding:"required"`
+}
+
+// AIGradingJobResponse: response status job dari background worker.
+type AIGradingJobResponse struct {
+	JobID     string `json:"job_id"`
+	Status    string `json:"status"` // queued, processing, completed, failed
+	Total     int    `json:"total"`
+	Processed int    `json:"processed"`
+	Message   string `json:"message"`
+}

@@ -25,6 +25,12 @@
 	let rekap = $state<RekapItem[]>([]);
 	let loading = $state(false);
 
+	let aiJobId = $state<string | null>(null);
+	let aiJobStatus = $state<string>('');
+	let aiProcessed = $state(0);
+	let aiTotal = $state(0);
+	let pollInterval: ReturnType<typeof setInterval>;
+
 	let nilaiEdits = $state<Record<number, { nilai: number; feedback: string }>>({});
 
 	async function loadAktivasi() {
@@ -72,6 +78,56 @@
 			if (selectedCourseId) await loadRekap(selectedCourseId);
 		} catch (e) { err = (e as Error).message; }
 	}
+
+	async function startAIGrading() {
+		if (!selectedAktivasi || !selectedCourseId) return;
+		if (!confirm('Apakah Anda yakin ingin memulai penilaian AI untuk jawaban yang belum dinilai? Proses ini membutuhkan waktu beberapa saat.')) return;
+		err = ''; msg = '';
+		try {
+			const res = await api.post<{ job_id: string; status: string; total: number; processed: number }>(
+				'/api/admin/penilaian/ai-grade/bulk',
+				{ aktivasi_sesi_id: selectedAktivasi.id, course_id: selectedCourseId }
+			);
+			if (res && res.job_id) {
+				aiJobId = res.job_id;
+				aiJobStatus = res.status;
+				aiProcessed = res.processed;
+				aiTotal = res.total;
+				pollAIGrading();
+			}
+		} catch (e) { err = (e as Error).message; }
+	}
+
+	function pollAIGrading() {
+		if (pollInterval) clearInterval(pollInterval);
+		pollInterval = setInterval(async () => {
+			if (!aiJobId) {
+				clearInterval(pollInterval);
+				return;
+			}
+			try {
+				const res = await api.get<{ job_id: string; status: string; total: number; processed: number; message: string }>(
+					`/api/admin/jobs/${aiJobId}`
+				);
+				if (res) {
+					aiJobStatus = res.status;
+					aiProcessed = res.processed;
+					aiTotal = res.total;
+					
+					if (res.status === 'completed' || res.status === 'failed') {
+						clearInterval(pollInterval);
+						msg = res.message;
+						aiJobId = null; // Sembunyikan progress
+						if (selectedCourseId) await loadRekap(selectedCourseId); // Refresh hasil
+					}
+				}
+			} catch (e) {
+				err = (e as Error).message;
+				clearInterval(pollInterval);
+				aiJobId = null;
+			}
+		}, 2000);
+	}
 </script>
 
 <h1 class="mb-4 text-2xl">Penilaian Mahasiswa</h1>
@@ -111,6 +167,27 @@
 			{:else if selectedCourseId && rekap.length === 0}
 				<p class="text-ink-caption">Belum ada jawaban yang ter-submit.</p>
 			{:else if rekap.length > 0}
+				{#if aiJobId}
+					<div class="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
+						<h3 class="mb-2 font-medium text-primary">AI Grading sedang berjalan...</h3>
+						<div class="mb-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+							<div class="h-full bg-primary transition-all duration-500" style="width: {aiTotal > 0 ? (aiProcessed / aiTotal) * 100 : 0}%"></div>
+						</div>
+						<p class="text-sm text-ink-body">Status: {aiJobStatus} | Diproses: {aiProcessed} / {aiTotal} jawaban</p>
+					</div>
+				{:else}
+					<div class="mb-4 flex items-center justify-between rounded-lg border border-gray-200 bg-surface-muted p-4">
+						<div>
+							<h3 class="font-medium text-ink-body">Otomatisasi Penilaian</h3>
+							<p class="text-sm text-ink-caption">Gunakan AI untuk menilai otomatis jawaban yang belum memiliki nilai.</p>
+						</div>
+						<button class="btn-primary" onclick={startAIGrading}>
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m2 16 3-3 3 3"></path><path d="m2 16 3 3 3-3"></path><path d="M14 6h-4a4 4 0 0 0-4 4v10"></path><path d="M18 10a4 4 0 0 1 4 4v6"></path><path d="m22 20-3 3-3-3"></path></svg>
+							Mulai AI Grading
+						</button>
+					</div>
+				{/if}
+
 				<div class="space-y-4">
 					{#each rekap as r}
 						<div class="card">

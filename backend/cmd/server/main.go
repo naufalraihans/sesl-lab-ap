@@ -18,6 +18,7 @@ import (
 	"lab-ap/internal/repository"
 	"lab-ap/internal/usecase"
 	"lab-ap/pkg/jwt"
+	"lab-ap/pkg/ollama"
 	"lab-ap/pkg/online"
 	"lab-ap/pkg/supabase"
 )
@@ -50,6 +51,7 @@ func main() {
 
 	jm := jwt.NewManager(cfg.JWTSecret, cfg.JWTExpireHours)
 	sb := supabase.New(cfg.SupabaseURL, cfg.SupabaseServiceKey, cfg.SupabaseBucket)
+	oc := ollama.NewClient(cfg)
 
 	// ---- Repository ----
 	userRepo := repository.NewUserRepository(db)
@@ -84,6 +86,7 @@ func main() {
 	praktikumUC := usecase.NewPraktikumUsecase(sesiRepo, courseRepo, aktivasiRepo, pengerjaanRepo, userRepo, jadwalRepo)
 	ampuanUC := usecase.NewAmpuanUsecase(ampuanRepo)
 	rekapUC := usecase.NewRekapUsecase(rekapRepo, kelasRepo)
+	aiGradingUC := usecase.NewAIGradingUsecase(jawabanRepo, penilaianUC, oc)
 
 	// ---- Handler ----
 	h := route.Handlers{
@@ -104,6 +107,7 @@ func main() {
 		Upload:      handler.NewUploadHandler(sb),
 		Ampuan:      handler.NewAmpuanHandler(ampuanUC, userUC),
 		Rekap:       handler.NewRekapHandler(rekapUC),
+		AIGrading:   handler.NewAIGradingHandler(aiGradingUC),
 	}
 
 	r := route.Setup(cfg, jm, reg, h)

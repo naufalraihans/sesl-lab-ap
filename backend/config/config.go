@@ -33,6 +33,10 @@ type Config struct {
 	SupabaseURL        string
 	SupabaseServiceKey string
 	SupabaseBucket     string
+
+	OllamaURL    string
+	OllamaModel  string
+	OllamaAPIKey string
 }
 
 // Load membaca .env (jika ada) lalu environment OS.
@@ -58,6 +62,9 @@ func Load() *Config {
 		SupabaseURL:        getEnv("SUPABASE_URL", ""),
 		SupabaseServiceKey: getEnv("SUPABASE_SERVICE_KEY", ""),
 		SupabaseBucket:     getEnv("SUPABASE_BUCKET", "public-assets"),
+		OllamaURL:          getEnv("OLLAMA_URL", "http://localhost:11434"),
+		OllamaModel:        getEnv("OLLAMA_MODEL", "llama3"),
+		OllamaAPIKey:       getEnv("OLLAMA_API_KEY", ""),
 	}
 	return cfg
 }

@@ -14,7 +14,7 @@ Dokumen ini berisi peta jalan (roadmap) pengembangan fitur-fitur lanjutan yang d
 
 ---
 
-## 1. Integrasi AI Grading (Penilaian Otomatis) & Background Queue
+## [DONE] 1. Integrasi AI Grading (Penilaian Otomatis) & Background Queue
 **Tujuan:** Meringankan beban asisten laboratorium dalam menilai puluhan/ratusan soal menggunakan bantuan Large Language Models (LLM).
 
 **Rencana Implementasi (Backend - Go):**
@@ -30,7 +30,7 @@ Dokumen ini berisi peta jalan (roadmap) pengembangan fitur-fitur lanjutan yang d
 
 ---
 
-## 2. Dashboard Rekap Jawaban, Pencarian, & Pivot Nilai Akhir
+## [DONE] 2. Dashboard Rekap Jawaban, Pencarian, & Pivot Nilai Akhir
 **Tujuan:** Memberikan pandangan menyeluruh (bird's-eye view) performa kelas.
 
 **Rencana Implementasi:**
@@ -39,7 +39,7 @@ Dokumen ini berisi peta jalan (roadmap) pengembangan fitur-fitur lanjutan yang d
 
 ---
 
-## 3. Sistem Token Ujian (PIN Akses)
+## [DONE] 3. Sistem Token Ujian (PIN Akses)
 **Tujuan:** Memastikan kehadiran fisik mahasiswa dengan mewajibkan input Token/PIN yang dibagikan di dalam ruangan lab.
 
 **Rencana Implementasi:**
@@ -58,7 +58,7 @@ Dokumen ini berisi peta jalan (roadmap) pengembangan fitur-fitur lanjutan yang d
 
 ---
 
-## 5. WYSIWYG Rich Text Editor (Edra) untuk Pembuatan Soal
+## [DONE] 5. WYSIWYG Rich Text Editor (Edra) untuk Pembuatan Soal
 **Tujuan:** Menerapkan editor ala *Notion* (*What You See Is What You Get*) untuk pembuatan soal yang mendukung tabel, format teks, dan rumus matematika (KaTeX).
 
 **Rencana Implementasi:**
@@ -179,7 +179,7 @@ frontend/
 
 ---
 
-## 9. Catatan Penting Version Control (.gitignore)
+## [DONE] 9. Catatan Penting Version Control (.gitignore)
 Untuk menjaga kebersihan *repository* Git (agar developer lain tidak pusing melihat *diff* yang aneh-aneh), aturan berikut wajib ditambahkan ke dalam `.gitignore` di masing-masing direktori:
 
 *   **Backend (`backend/.gitignore`)**:
