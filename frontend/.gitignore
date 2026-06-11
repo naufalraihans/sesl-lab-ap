@@ -18,6 +18,11 @@ dist/
 # Vercel adapter output
 .vercel/
 
+# Playwright (laporan & hasil test — generated, jangan masuk repo)
+playwright-report/
+test-results/
+playwright/.cache/
+
 # Environment files
 .env
 .env.local
