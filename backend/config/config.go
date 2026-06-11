@@ -49,7 +49,7 @@ func Load() *Config {
 	_ = godotenv.Load("backend/.env")
 
 	cfg := &Config{
-		AppPort:            getEnv("APP_PORT", "8080"),
+		AppPort:            getEnv("PORT", getEnv("APP_PORT", "8080")),
 		AppEnv:             getEnv("APP_ENV", "development"),
 		CORSOrigins:        splitCSV(getEnv("CORS_ORIGINS", "http://localhost:5173")),
 		DBHost:             getEnv("DB_HOST", "127.0.0.1"),

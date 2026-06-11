@@ -17,8 +17,8 @@
 # Environment file
 .env
 
-# Swagger docs auto-generated
-docs/
+# Swagger docs auto-generated (DI-COMMIT karena di-import kode `_ "lab-ap/docs"`;
+# kalau diignore, build serverless Vercel gagal resolve package ini)
 
 # Temporary uploads for CSV
 /tmp/uploads/

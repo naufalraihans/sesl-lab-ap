@@ -1,5 +1,9 @@
 # Go workspace
 .env
+
+# Catatan kredensial (DB password, service key, dll) — JANGAN ikut repo
+data.txt
+*.secret
 .idea/
 .vscode/
 .DS_Store
