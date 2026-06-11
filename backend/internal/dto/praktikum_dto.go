@@ -48,3 +48,17 @@ type NilaiCourseItem struct {
 	Status     string   `json:"status"`
 	TotalNilai *float64 `json:"total_nilai"`
 }
+
+// RunRequest: jalankan kode (C/Python) lewat sandbox eksternal.
+type RunRequest struct {
+	Language string `json:"language" binding:"required,oneof=c python"`
+	Source   string `json:"source" binding:"required"`
+	Stdin    string `json:"stdin"`
+}
+
+// RunResponse: hasil eksekusi kode.
+type RunResponse struct {
+	Stdout string `json:"stdout"`
+	Stderr string `json:"stderr"`
+	Error  string `json:"error"`
+}

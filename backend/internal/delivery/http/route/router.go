@@ -38,6 +38,7 @@ type Handlers struct {
 	AIGrading    *handler.AIGradingHandler
 	RekapJawaban *handler.RekapJawabanHandler
 	Cron         *handler.CronHandler
+	Run          *handler.RunHandler
 }
 
 // HealthCheck GET /api/health
@@ -120,6 +121,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 		prak.POST("/mulai", h.Jawaban.Mulai)
 		prak.POST("/autosave", h.Jawaban.AutoSave)
 		prak.POST("/submit", h.Jawaban.Submit)
+		prak.POST("/run", h.Run.Execute)
 	}
 
 	// ---- Admin (role admin) ----

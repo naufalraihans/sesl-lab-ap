@@ -40,6 +40,10 @@ type Config struct {
 	OllamaURL    string
 	OllamaModel  string
 	OllamaAPIKey string
+
+	// Glot.io (Run Code)
+	GlotURL   string
+	GlotToken string
 }
 
 // Load membaca .env (jika ada) lalu environment OS.
@@ -69,6 +73,8 @@ func Load() *Config {
 		OllamaURL:          getEnv("OLLAMA_URL", "http://localhost:11434"),
 		OllamaModel:        getEnv("OLLAMA_MODEL", "llama3"),
 		OllamaAPIKey:       getEnv("OLLAMA_API_KEY", ""),
+		GlotURL:            getEnv("GLOT_URL", "https://glot.io/api/run"),
+		GlotToken:          getEnv("GLOT_TOKEN", ""),
 	}
 	return cfg
 }

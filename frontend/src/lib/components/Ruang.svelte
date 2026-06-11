@@ -176,6 +176,7 @@
 							bind:value={answers[s.soal_terpilih_id]}
 							readonly={locked}
 							language="c"
+							runnable={true}
 							oninput={() => markDirty(s.soal_terpilih_id)}
 						/>
 					{:else}
