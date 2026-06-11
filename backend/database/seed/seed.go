@@ -50,7 +50,7 @@ func seedAdmin(db *gorm.DB) {
 	if n > 0 {
 		return
 	}
-	h, _ := hash.Password("admin123")
+	h, _ := hash.Password("31415926535897932384626433832")
 	hp := "081234567890"
 	medsos := "https://linkedin.com/in/asisten-lab"
 	admin := entity.User{
@@ -63,7 +63,7 @@ func seedAdmin(db *gorm.DB) {
 		MedsosLink:   &medsos,
 	}
 	db.Create(&admin)
-	log.Println("  + admin (nim: admin / pass: admin123)")
+	log.Println("  + admin (nim: admin / pass: 31415926535897932384626433832)")
 }
 
 func seedMahasiswa(db *gorm.DB) {
