@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis } from '$lib/utils';
-	import { Users, UserCheck, GraduationCap, Wifi } from 'lucide-svelte';
+	import { Users, UserCheck, GraduationCap } from 'lucide-svelte';
 
 	interface Stat {
-		online_sekarang: number;
 		total_mahasiswa: number;
 		total_asisten: number;
 		sudah_register: number;
@@ -18,47 +17,23 @@
 	}
 
 	let stat = $state<Stat | null>(null);
-	let online = $state(0);
 	let err = $state('');
-	let poll: ReturnType<typeof setInterval>;
 
 	async function loadStat() {
 		try { stat = await api.get<Stat>('/api/admin/dashboard'); }
 		catch (e) { err = (e as Error).message; }
 	}
-	async function loadOnline() {
-		try {
-			const res = await api.get<{ total: number }>('/api/admin/dashboard/online');
-			online = res.total;
-		} catch { /* ignore */ }
-	}
 
-	onMount(async () => {
-		await loadStat();
-		await loadOnline();
-		poll = setInterval(loadOnline, 10000);
-	});
-	onDestroy(() => clearInterval(poll));
+	onMount(loadStat);
 </script>
 
 <h1 class="mb-1 text-2xl font-bold text-ink-heading">Dashboard Admin</h1>
-<p class="mb-5 text-sm text-ink-caption">Ringkasan aktivitas praktikum secara real-time.</p>
+<p class="mb-5 text-sm text-ink-caption">Ringkasan aktivitas praktikum.</p>
 
 {#if err}<p class="rounded-lg bg-state-error-bg p-3 text-state-error">{err}</p>{/if}
 
 {#if stat}
-	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-		<div class="card flex items-start justify-between">
-			<div>
-				<p class="text-sm text-ink-caption">Online Sekarang</p>
-				<p class="mt-1 text-3xl font-bold text-state-success">{online}</p>
-				<p class="text-xs text-ink-caption">real-time (registry server)</p>
-			</div>
-			<span class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-state-success-bg text-state-success">
-				<Wifi size={20} />
-				<span class="absolute right-1 top-1 h-2 w-2 animate-ping rounded-full bg-state-success"></span>
-			</span>
-		</div>
+	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 		<div class="card flex items-start justify-between">
 			<div>
 				<p class="text-sm text-ink-caption">Total Mahasiswa</p>

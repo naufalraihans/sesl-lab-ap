@@ -2,7 +2,6 @@ package usecase_test
 
 import (
 	"testing"
-	"time"
 
 	"lab-ap/internal/dto"
 	"lab-ap/internal/entity"
@@ -10,7 +9,6 @@ import (
 	"lab-ap/internal/usecase"
 	"lab-ap/pkg/hash"
 	"lab-ap/pkg/jwt"
-	"lab-ap/pkg/online"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -20,9 +18,8 @@ func setupAuthUsecase(t *testing.T) (*usecase.AuthUsecase, *mocks.UserRepository
 	mockUserRepo := mocks.NewUserRepository(t)
 	mockKelasRepo := mocks.NewKelasRepository(t)
 	jwtManager := jwt.NewManager("secret", 24)
-	onlineRegistry := online.NewRegistry(5 * time.Minute)
 
-	uc := usecase.NewAuthUsecase(mockUserRepo, mockKelasRepo, jwtManager, onlineRegistry)
+	uc := usecase.NewAuthUsecase(mockUserRepo, mockKelasRepo, jwtManager)
 	return uc, mockUserRepo, mockKelasRepo
 }
 

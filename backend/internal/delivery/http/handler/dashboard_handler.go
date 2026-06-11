@@ -34,15 +34,3 @@ func (h *DashboardHandler) Statistik(c *gin.Context) {
 	}
 	response.OK(c, http.StatusOK, "Statistik dashboard", res)
 }
-
-// Online GET /api/admin/dashboard/online
-// @Summary Status User Online
-// @Description Mengambil jumlah user online real-time dari in-memory registry
-// @Tags Admin - Dashboard
-// @Security bearerAuth
-// @Produce json
-// @Success 200 {object} response.Envelope{data=dto.OnlineCountResponse}
-// @Router /admin/dashboard/online [get]
-func (h *DashboardHandler) Online(c *gin.Context) {
-	response.OK(c, http.StatusOK, "Jumlah online", h.uc.OnlineCount())
-}

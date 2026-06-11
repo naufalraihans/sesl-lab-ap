@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"lab-ap/pkg/jwt"
-	"lab-ap/pkg/online"
 	"lab-ap/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -17,9 +16,8 @@ const (
 	CtxRole   = "role"
 )
 
-// Auth memverifikasi JWT, menyetel identitas di context, dan menyegarkan registry online
-// (memanfaatkan backend stateful: setiap request terautentikasi memperbarui status online).
-func Auth(jm *jwt.Manager, reg *online.Registry) gin.HandlerFunc {
+// Auth memverifikasi JWT dan menyetel identitas user di context.
+func Auth(jm *jwt.Manager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
 		if header == "" || !strings.HasPrefix(header, "Bearer ") {
@@ -36,9 +34,6 @@ func Auth(jm *jwt.Manager, reg *online.Registry) gin.HandlerFunc {
 		c.Set(CtxUserID, claims.UserID)
 		c.Set(CtxNIM, claims.NIM)
 		c.Set(CtxRole, claims.Role)
-
-		// Segarkan status online.
-		reg.Touch(claims.UserID, claims.Role)
 
 		c.Next()
 	}

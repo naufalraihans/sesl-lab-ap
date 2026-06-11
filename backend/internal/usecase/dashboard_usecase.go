@@ -4,27 +4,16 @@ import (
 	"lab-ap/internal/dto"
 	"lab-ap/internal/entity"
 	"lab-ap/internal/repository"
-	"lab-ap/pkg/online"
 )
 
 type DashboardUsecase struct {
 	users      repository.UserRepository
 	aktivasi   repository.AktivasiRepository
 	pengerjaan repository.PengerjaanRepository
-	online     *online.Registry
 }
 
-func NewDashboardUsecase(u repository.UserRepository, a repository.AktivasiRepository, p repository.PengerjaanRepository, o *online.Registry) *DashboardUsecase {
-	return &DashboardUsecase{users: u, aktivasi: a, pengerjaan: p, online: o}
-}
-
-// OnlineCount mengembalikan jumlah user online real-time (dari registry in-memory).
-func (uc *DashboardUsecase) OnlineCount() dto.OnlineCountResponse {
-	return dto.OnlineCountResponse{
-		Total: uc.online.Count(""),
-		Admin: uc.online.Count(string(entity.RoleAdmin)),
-		User:  uc.online.Count(string(entity.RoleUser)),
-	}
+func NewDashboardUsecase(u repository.UserRepository, a repository.AktivasiRepository, p repository.PengerjaanRepository) *DashboardUsecase {
+	return &DashboardUsecase{users: u, aktivasi: a, pengerjaan: p}
 }
 
 // Statistik menyusun ringkasan dashboard admin.
@@ -51,7 +40,6 @@ func (uc *DashboardUsecase) Statistik() (*dto.StatistikResponse, error) {
 	}
 
 	resp := &dto.StatistikResponse{
-		OnlineSekarang: uc.online.Count(""),
 		TotalMahasiswa: totalMhs,
 		TotalAsisten:   totalAsisten,
 		SudahRegister:  sudah,

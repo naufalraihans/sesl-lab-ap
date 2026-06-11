@@ -9,7 +9,6 @@ import (
 	"lab-ap/internal/delivery/http/middleware"
 	"lab-ap/internal/entity"
 	"lab-ap/pkg/jwt"
-	"lab-ap/pkg/online"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -38,6 +37,7 @@ type Handlers struct {
 	Rekap        *handler.RekapHandler
 	AIGrading    *handler.AIGradingHandler
 	RekapJawaban *handler.RekapJawabanHandler
+	Cron         *handler.CronHandler
 }
 
 // HealthCheck GET /api/health
@@ -52,7 +52,7 @@ func HealthCheck(c *gin.Context) {
 }
 
 // Setup membangun engine Gin + seluruh route & middleware.
-func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers) *gin.Engine {
+func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 	if cfg.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -73,6 +73,9 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := r.Group("/api")
+
+	// ---- Cron (dipicu cron eksternal, dijaga X-Cron-Secret) ----
+	api.POST("/cron/auto-submit", h.Cron.AutoSubmit)
 
 	// ---- Auth (publik) ----
 	// Rate-limit untuk meredam brute-force: maks 20 percobaan/menit per IP.
@@ -95,7 +98,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 		info.GET("/kelas/:id/mahasiswa", h.Ampuan.PublicKelasMahasiswa)
 	}
 
-	authmw := middleware.Auth(jm, reg)
+	authmw := middleware.Auth(jm)
 
 	// ---- Terautentikasi (semua role) ----
 	authed := api.Group("")
@@ -124,7 +127,6 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 	admin.Use(authmw, middleware.RequireRole(string(entity.RoleAdmin)))
 	{
 		admin.GET("/dashboard", h.Dashboard.Statistik)
-		admin.GET("/dashboard/online", h.Dashboard.Online)
 
 		// Users (mahasiswa)
 		admin.GET("/users", h.User.ListMahasiswa)
@@ -192,14 +194,13 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 		// Penilaian
 		admin.GET("/penilaian/rekap", h.Penilaian.Rekap)
 		admin.POST("/penilaian", h.Penilaian.SetNilai)
-		admin.POST("/penilaian/ai-grade/bulk", h.AIGrading.BulkGrade)
-		
+		// AI grading SINKRON 1-per-1 (frontend yang loop).
+		admin.GET("/penilaian/ai-grade/targets", h.AIGrading.ListTargets)
+		admin.POST("/penilaian/ai-grade/one", h.AIGrading.GradeOne)
+
 		// Rekap Jawaban Global & Bulk Actions
 		admin.GET("/rekap-jawaban", h.RekapJawaban.GetRekapJawabanGlobal)
 		admin.POST("/penilaian/bulk-action", h.RekapJawaban.BulkAction)
-
-		// Background Jobs
-		admin.GET("/jobs/:id", h.AIGrading.GetJobStatus)
 
 		// Rekap
 		admin.GET("/rekap/kelas/:id_kelas", h.Rekap.GetRekapKelas)

@@ -9,20 +9,18 @@ import (
 	"lab-ap/internal/repository"
 	"lab-ap/pkg/hash"
 	"lab-ap/pkg/jwt"
-	"lab-ap/pkg/online"
 
 	"gorm.io/gorm"
 )
 
 type AuthUsecase struct {
-	users  repository.UserRepository
-	kelas  repository.KelasRepository
-	jwt    *jwt.Manager
-	online *online.Registry
+	users repository.UserRepository
+	kelas repository.KelasRepository
+	jwt   *jwt.Manager
 }
 
-func NewAuthUsecase(u repository.UserRepository, k repository.KelasRepository, j *jwt.Manager, o *online.Registry) *AuthUsecase {
-	return &AuthUsecase{users: u, kelas: k, jwt: j, online: o}
+func NewAuthUsecase(u repository.UserRepository, k repository.KelasRepository, j *jwt.Manager) *AuthUsecase {
+	return &AuthUsecase{users: u, kelas: k, jwt: j}
 }
 
 // CekNIM menentukan alur first-time login (login / register / ditolak).
@@ -113,9 +111,10 @@ func (uc *AuthUsecase) Register(req dto.RegisterRequest) (*dto.AuthResponse, err
 	return uc.issue(u)
 }
 
-// Logout menghapus entri online.
+// Logout: JWT bersifat stateless, jadi tidak ada state server yang perlu dihapus.
+// Klien cukup membuang token. Disediakan agar endpoint logout tetap ada.
 func (uc *AuthUsecase) Logout(userID int) {
-	uc.online.Remove(userID)
+	_ = userID
 }
 
 // issue membuat token + mencatat login & online.
@@ -134,6 +133,5 @@ func (uc *AuthUsecase) issue(u *entity.User) (*dto.AuthResponse, error) {
 			u = full
 		}
 	}
-	uc.online.Touch(u.ID, string(u.Role))
 	return &dto.AuthResponse{Token: token, User: toUserResponse(u)}, nil
 }

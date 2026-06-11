@@ -24,7 +24,9 @@ func NewClient(cfg *config.Config) *Client {
 	return &Client{
 		cfg: cfg,
 		httpClient: &http.Client{
-			Timeout: 60 * time.Second, // Timeout yang memadai untuk proses AI (Open Question 1 terjawab)
+			// 50s: di bawah batas maxDuration Vercel Hobby (60s) agar fungsi sempat
+			// membalas error rapi sebelum dimatikan paksa (hindari 504 mentah).
+			Timeout: 50 * time.Second,
 		},
 	}
 }

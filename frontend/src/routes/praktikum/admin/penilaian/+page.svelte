@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis, renderMath } from '$lib/utils';
 	import type { Kelas } from '$lib/types';
@@ -25,11 +25,12 @@
 	let rekap = $state<RekapItem[]>([]);
 	let loading = $state(false);
 
-	let aiJobId = $state<string | null>(null);
-	let aiJobStatus = $state<string>('');
+	// AI grading sinkron 1-per-1: frontend yang me-loop.
+	let aiRunning = $state(false);
 	let aiProcessed = $state(0);
 	let aiTotal = $state(0);
-	let pollInterval: ReturnType<typeof setInterval>;
+	let aiFailed = $state(0);
+	let aiStopRequested = false;
 
 	let nilaiEdits = $state<Record<number, { nilai: number; feedback: string }>>({});
 
@@ -38,7 +39,6 @@
 		catch (e) { err = (e as Error).message; }
 	}
 	onMount(loadAktivasi);
-	onDestroy(() => { if (pollInterval) clearInterval(pollInterval); });
 
 	async function selectAktivasi(a: AktivasiSesi) {
 		selectedAktivasi = a; selectedCourseId = null; rekap = [];
@@ -82,53 +82,40 @@
 
 	async function startAIGrading() {
 		if (!selectedAktivasi || !selectedCourseId) return;
-		if (!confirm('Apakah Anda yakin ingin memulai penilaian AI untuk jawaban yang belum dinilai? Proses ini membutuhkan waktu beberapa saat.')) return;
+		if (!confirm('Mulai penilaian AI untuk jawaban yang belum dinilai? Proses berjalan satu per satu (bisa dihentikan).')) return;
 		err = ''; msg = '';
+		aiProcessed = 0; aiFailed = 0; aiStopRequested = false;
 		try {
-			const res = await api.post<{ job_id: string; status: string; total: number; processed: number }>(
-				'/api/admin/penilaian/ai-grade/bulk',
-				{ aktivasi_sesi_id: selectedAktivasi.id, course_id: selectedCourseId }
+			const res = await api.get<{ jawaban_ids: number[]; total: number }>(
+				`/api/admin/penilaian/ai-grade/targets?aktivasi_sesi_id=${selectedAktivasi.id}&course_id=${selectedCourseId}`
 			);
-			if (res && res.job_id) {
-				aiJobId = res.job_id;
-				aiJobStatus = res.status;
-				aiProcessed = res.processed;
-				aiTotal = res.total;
-				pollAIGrading();
+			const ids = res?.jawaban_ids ?? [];
+			aiTotal = ids.length;
+			if (aiTotal === 0) { msg = 'Tidak ada jawaban baru yang perlu dinilai.'; return; }
+
+			aiRunning = true;
+			for (const id of ids) {
+				if (aiStopRequested) break;
+				try {
+					await api.post('/api/admin/penilaian/ai-grade/one', { jawaban_id: id });
+				} catch {
+					aiFailed++; // 1 jawaban gagal/timeout → lanjut yang lain
+				}
+				aiProcessed++;
 			}
-		} catch (e) { err = (e as Error).message; }
+		} catch (e) {
+			err = (e as Error).message;
+		} finally {
+			aiRunning = false;
+			const sukses = aiProcessed - aiFailed;
+			msg = `AI grading selesai: ${sukses} berhasil`
+				+ (aiFailed ? `, ${aiFailed} gagal (klik lagi untuk mengulang yang gagal)` : '')
+				+ (aiStopRequested ? ' — dihentikan' : '') + '.';
+			if (selectedCourseId) await loadRekap(selectedCourseId);
+		}
 	}
 
-	function pollAIGrading() {
-		if (pollInterval) clearInterval(pollInterval);
-		pollInterval = setInterval(async () => {
-			if (!aiJobId) {
-				clearInterval(pollInterval);
-				return;
-			}
-			try {
-				const res = await api.get<{ job_id: string; status: string; total: number; processed: number; message: string }>(
-					`/api/admin/jobs/${aiJobId}`
-				);
-				if (res) {
-					aiJobStatus = res.status;
-					aiProcessed = res.processed;
-					aiTotal = res.total;
-					
-					if (res.status === 'completed' || res.status === 'failed') {
-						clearInterval(pollInterval);
-						msg = res.message;
-						aiJobId = null; // Sembunyikan progress
-						if (selectedCourseId) await loadRekap(selectedCourseId); // Refresh hasil
-					}
-				}
-			} catch (e) {
-				err = (e as Error).message;
-				clearInterval(pollInterval);
-				aiJobId = null;
-			}
-		}, 2000);
-	}
+	function stopAIGrading() { aiStopRequested = true; }
 </script>
 
 <h1 class="mb-4 text-2xl">Penilaian Mahasiswa</h1>
@@ -168,19 +155,24 @@
 			{:else if selectedCourseId && rekap.length === 0}
 				<p class="text-ink-caption">Belum ada jawaban yang ter-submit.</p>
 			{:else if rekap.length > 0}
-				{#if aiJobId}
+				{#if aiRunning}
 					<div class="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
-						<h3 class="mb-2 font-medium text-primary">AI Grading sedang berjalan...</h3>
-						<div class="mb-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
-							<div class="h-full bg-primary transition-all duration-500" style="width: {aiTotal > 0 ? (aiProcessed / aiTotal) * 100 : 0}%"></div>
+						<div class="mb-2 flex items-center justify-between">
+							<h3 class="font-medium text-primary">AI Grading sedang berjalan…</h3>
+							<button class="btn-outline border-state-error px-3 py-1 text-xs text-state-error hover:bg-state-error hover:text-white" onclick={stopAIGrading}>Hentikan</button>
 						</div>
-						<p class="text-sm text-ink-body">Status: {aiJobStatus} | Diproses: {aiProcessed} / {aiTotal} jawaban</p>
+						<div class="mb-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+							<div class="h-full bg-primary transition-all duration-300" style="width: {aiTotal > 0 ? (aiProcessed / aiTotal) * 100 : 0}%"></div>
+						</div>
+						<p class="text-sm text-ink-body">
+							Diproses: {aiProcessed} / {aiTotal}{aiFailed ? ` · gagal: ${aiFailed}` : ''}
+						</p>
 					</div>
 				{:else}
 					<div class="mb-4 flex items-center justify-between rounded-lg border border-gray-200 bg-surface-muted p-4">
 						<div>
-							<h3 class="font-medium text-ink-body">Otomatisasi Penilaian</h3>
-							<p class="text-sm text-ink-caption">Gunakan AI untuk menilai otomatis jawaban yang belum memiliki nilai.</p>
+							<h3 class="font-medium text-ink-body">Otomatisasi Penilaian (AI)</h3>
+							<p class="text-sm text-ink-caption">Menilai jawaban yang belum bernilai, satu per satu. Bisa dihentikan kapan saja; jawaban yang gagal bisa diulang dengan menekan tombol lagi.</p>
 						</div>
 						<button class="btn-primary" onclick={startAIGrading}>
 							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m2 16 3-3 3 3"></path><path d="m2 16 3 3 3-3"></path><path d="M14 6h-4a4 4 0 0 0-4 4v10"></path><path d="M18 10a4 4 0 0 1 4 4v6"></path><path d="m22 20-3 3-3-3"></path></svg>
