@@ -5,7 +5,7 @@
 		value = $bindable(''),
 		language = 'c',
 		readonly = false,
-		height = '320px',
+		height = '420px',
 		oninput
 	}: { value?: string; language?: string; readonly?: boolean; height?: string; oninput?: () => void } = $props();
 

@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { api } from '$lib/api';
 	import { labelJenis, labelStatus, statusBadgeClass } from '$lib/utils';
+	import { Lock, CalendarClock } from 'lucide-svelte';
 	import type { SesiUserItem } from '$lib/types';
 
 	let sesiId = $derived(Number($page.params.sesiId));
@@ -34,7 +35,16 @@
 {:else if err}
 	<p class="mt-4 rounded-lg bg-state-error-bg p-3 text-state-error">{err}</p>
 {:else if !sesi || !sesi.aktif}
-	<p class="mt-4 rounded-lg bg-state-warning-bg p-3 text-state-warning">Sesi ini belum diaktifkan untuk Anda.</p>
+	<div class="mt-6 flex flex-col items-center rounded-2xl border border-dashed border-gray-300 bg-surface-soft p-10 text-center">
+		<div class="mb-3 grid h-14 w-14 place-items-center rounded-full bg-state-warning-bg text-state-warning">
+			<CalendarClock size={28} />
+		</div>
+		<h2 class="text-lg font-bold text-ink-heading">Sesi belum dibuka</h2>
+		<p class="mt-1 max-w-sm text-sm text-ink-caption">
+			Sesi ini belum diaktifkan oleh asisten untuk kelas/shift Anda. Silakan cek lagi nanti.
+		</p>
+		<a href="/praktikum/sesi" class="btn-outline mt-5">Kembali ke daftar sesi</a>
+	</div>
 {:else}
 	<h1 class="mb-1 mt-3 text-2xl">{sesi.judul}</h1>
 	<p class="mb-5 text-ink-caption">{sesi.deskripsi}</p>
@@ -59,7 +69,7 @@
 							class="btn-outline"
 						>Lihat</a>
 					{:else}
-						<span class="badge bg-gray-100 text-ink-caption">🔒 Terkunci</span>
+						<span class="badge inline-flex items-center gap-1 bg-gray-100 text-ink-caption"><Lock size={12} /> Terkunci</span>
 					{/if}
 				</div>
 			</div>

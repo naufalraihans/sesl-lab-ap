@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
+	import { Lock } from 'lucide-svelte';
 	import type { SesiUserItem } from '$lib/types';
 
 	let sesi = $state<SesiUserItem[]>([]);
@@ -33,7 +34,7 @@
 					{#if s.aktif}
 						<span class="badge bg-state-success-bg text-state-success">Aktif</span>
 					{:else}
-						<span class="badge bg-gray-100 text-ink-caption">🔒 Terkunci</span>
+						<span class="badge inline-flex items-center gap-1 bg-gray-100 text-ink-caption"><Lock size={12} /> Terkunci</span>
 					{/if}
 				</div>
 				<p class="mt-1 flex-1 text-sm text-ink-caption">{s.deskripsi}</p>

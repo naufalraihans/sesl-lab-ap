@@ -4,6 +4,7 @@
 	import { labelJenis, renderMath } from '$lib/utils';
 	import CodeEditor from './CodeEditor.svelte';
 	import Countdown from './Countdown.svelte';
+	import { Save } from 'lucide-svelte';
 	import type { RuangCourse } from '$lib/types';
 
 	let { aktivasiSesiId, courseId }: { aktivasiSesiId: number; courseId: number } = $props();
@@ -188,7 +189,7 @@
 						></textarea>
 					{/if}
 					{#if s.jenis_soal === 'coding' && !locked}
-						<button class="btn-outline mt-2 py-1.5 text-xs" onclick={() => saveOne(s.soal_terpilih_id)}>💾 Simpan soal ini</button>
+						<button class="btn-outline mt-2 py-1.5 text-xs" onclick={() => saveOne(s.soal_terpilih_id)}><Save size={14} /> Simpan soal ini</button>
 					{/if}
 				</div>
 			</div>

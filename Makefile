@@ -3,7 +3,7 @@
 
 BACKEND_DIR := backend
 
-.PHONY: run build migrate-up migrate-down seed tidy fe-install fe-dev fe-build help
+.PHONY: run build migrate-up migrate-down migrate-drop seed swag tidy test mock fe-install fe-dev fe-build help
 
 help:
 	@echo "Target tersedia:"

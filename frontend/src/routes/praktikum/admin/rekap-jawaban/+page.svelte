@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis, renderMath } from '$lib/utils';
+	import { RotateCcw, Trash2, X } from 'lucide-svelte';
 	import type { Kelas } from '$lib/types';
 
 	interface Sesi {
@@ -239,11 +240,11 @@
 	<div class="mb-4 flex flex-wrap items-center gap-4 rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm animate-fade-in">
 		<div class="font-medium text-primary"><strong>{selectedIds.size}</strong> jawaban dipilih</div>
 		<div class="ml-auto flex gap-2">
-			<button class="btn-outline border-state-warning text-state-warning hover:bg-state-warning hover:text-white" onclick={() => doBulkAction('reset_nilai')}>
-				🔄 Reset Nilai
+			<button class="btn-outline inline-flex items-center gap-1 border-state-warning text-state-warning hover:bg-state-warning hover:text-white" onclick={() => doBulkAction('reset_nilai')}>
+				<RotateCcw size={14} /> Reset Nilai
 			</button>
-			<button class="btn-outline border-state-error text-state-error hover:bg-state-error hover:text-white" onclick={() => doBulkAction('delete')}>
-				🗑️ Hapus
+			<button class="btn-outline inline-flex items-center gap-1 border-state-error text-state-error hover:bg-state-error hover:text-white" onclick={() => doBulkAction('delete')}>
+				<Trash2 size={14} /> Hapus
 			</button>
 			<button class="btn-outline" onclick={() => (selectedIds = new Set())}>Batal</button>
 		</div>
@@ -345,7 +346,7 @@
 		<div class="relative flex w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl max-h-[90vh]">
 			<div class="flex items-center justify-between border-b px-6 py-4">
 				<h3 class="text-lg font-bold text-ink-body">Detail Jawaban - {detailData.nama_mahasiswa}</h3>
-				<button class="text-ink-caption hover:text-ink-body" onclick={() => showDetailModal = false}>✕</button>
+				<button class="text-ink-caption hover:text-ink-body" onclick={() => showDetailModal = false}><X size={20} /></button>
 			</div>
 			
 			<div class="overflow-y-auto p-6">

@@ -10,8 +10,8 @@ describe('Countdown Component', () => {
 		const futureDate = new Date(Date.now() + 120000).toISOString(); // 2 minutes from now
 		render(Countdown, { deadline: futureDate });
 
-		// It should display something like ⏱ 02:00
-		const span = screen.getByText(/⏱/);
+		// It should display the countdown time, e.g. "02:00"
+		const span = screen.getByText(/\d{2}:\d{2}/);
 		expect(span).toBeInTheDocument();
 	});
 

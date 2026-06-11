@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
+	import { FileText } from 'lucide-svelte';
 	import type { Jadwal, User, AmpuanKelompok, Kelas } from '$lib/types';
 
 	let jadwal = $state<Jadwal[]>([]);
@@ -71,7 +72,7 @@
 {:else if err}
 	<p class="rounded-lg bg-state-error-bg p-3 text-state-error">{err}</p>
 {:else if config.mode === 'gdrive' && config.gdrive_url}
-	<a href={config.gdrive_url} target="_blank" rel="noopener" class="btn-primary">📄 Buka Jadwal (Google Drive)</a>
+	<a href={config.gdrive_url} target="_blank" rel="noopener" class="btn-primary"><FileText size={16} /> Buka Jadwal (Google Drive)</a>
 {:else if jadwal.length === 0}
 	<p class="text-ink-caption">Belum ada jadwal yang dipublikasikan.</p>
 {:else}

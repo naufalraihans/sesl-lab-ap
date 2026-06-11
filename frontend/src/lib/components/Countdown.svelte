@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { Timer } from 'lucide-svelte';
 	import { fmtCountdown, secondsUntil } from '$lib/utils';
 
 	let { deadline, onExpire }: { deadline?: string | null; onExpire?: () => void } = $props();
@@ -24,7 +25,7 @@
 </script>
 
 <span
-	class="badge font-mono text-base {warn ? 'bg-state-error-bg text-state-error' : 'bg-state-info-bg text-state-info'}"
+	class="badge inline-flex items-center gap-1 font-mono text-base {warn ? 'bg-state-error-bg text-state-error' : 'bg-state-info-bg text-state-info'}"
 >
-	⏱ {fmtCountdown(remaining)}
+	<Timer size={16} /> {fmtCountdown(remaining)}
 </span>

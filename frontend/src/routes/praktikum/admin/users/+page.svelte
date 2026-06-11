@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import Papa from 'papaparse';
 	import { api } from '$lib/api';
+	import { KeyRound, Trash2 } from 'lucide-svelte';
 	import type { Kelas, User } from '$lib/types';
 
 	let users = $state<User[]>([]);
@@ -17,6 +18,10 @@
 	let importErrors = $state<string[]>([]);
 	let isImporting = $state(false);
 
+	// Bulk select
+	let selectedIds = $state<Set<number>>(new Set());
+	let bulkBusy = $state(false);
+
 	async function load() {
 		try {
 			users = (await api.get<User[]>('/api/admin/users')) ?? [];
@@ -24,6 +29,35 @@
 		} catch (e) { err = (e as Error).message; }
 	}
 	onMount(load);
+
+	function toggleSelect(id: number) {
+		const s = new Set(selectedIds);
+		s.has(id) ? s.delete(id) : s.add(id);
+		selectedIds = s;
+	}
+	function toggleSelectAll() {
+		selectedIds = selectedIds.size === users.length ? new Set() : new Set(users.map((u) => u.id));
+	}
+
+	async function bulkAction(action: 'delete' | 'reset_pw') {
+		if (selectedIds.size === 0) return;
+		const label = action === 'delete' ? 'Hapus' : 'Reset password';
+		const extra = action === 'reset_pw' ? ' Mereka harus register ulang.' : '';
+		if (!confirm(`${label} ${selectedIds.size} mahasiswa terpilih?${extra}`)) return;
+		bulkBusy = true; err = ''; msg = '';
+		let ok = 0, fail = 0;
+		for (const id of selectedIds) {
+			try {
+				if (action === 'delete') await api.del(`/api/admin/users/${id}`);
+				else await api.post(`/api/admin/users/${id}/reset-password`);
+				ok++;
+			} catch { fail++; }
+		}
+		bulkBusy = false;
+		selectedIds = new Set();
+		msg = `${label} selesai: ${ok} berhasil${fail ? `, ${fail} gagal` : ''}.`;
+		await load();
+	}
 
 	function resetForm() {
 		editId = null;
@@ -206,12 +240,37 @@
 	</div>
 
 	<div class="lg:col-span-2">
+		{#if selectedIds.size > 0}
+			<div class="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3 shadow-sm">
+				<span class="text-sm font-medium text-primary"><strong>{selectedIds.size}</strong> dipilih</span>
+				<div class="ml-auto flex flex-wrap gap-2">
+					<button class="btn-outline inline-flex items-center gap-1 border-state-warning py-1.5 text-state-warning hover:bg-state-warning hover:text-white" disabled={bulkBusy} onclick={() => bulkAction('reset_pw')}>
+						<KeyRound size={14} /> Reset PW
+					</button>
+					<button class="btn-outline inline-flex items-center gap-1 border-state-error py-1.5 text-state-error hover:bg-state-error hover:text-white" disabled={bulkBusy} onclick={() => bulkAction('delete')}>
+						<Trash2 size={14} /> Hapus
+					</button>
+					<button class="btn-outline py-1.5" disabled={bulkBusy} onclick={() => (selectedIds = new Set())}>Batal</button>
+				</div>
+			</div>
+		{/if}
 		<div class="table-wrap">
 			<table class="tbl">
-				<thead><tr><th>NIM</th><th>Nama</th><th>Kelas</th><th>Shift</th><th>Kelompok</th><th>Status</th><th>Aksi</th></tr></thead>
+				<thead><tr>
+					<th class="w-10 text-center">
+						<input type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary"
+							checked={users.length > 0 && selectedIds.size === users.length}
+							onchange={toggleSelectAll} aria-label="Pilih semua" />
+					</th>
+					<th>NIM</th><th>Nama</th><th>Kelas</th><th>Shift</th><th>Kelompok</th><th>Status</th><th>Aksi</th>
+				</tr></thead>
 				<tbody>
 					{#each users as u}
-						<tr>
+						<tr class={selectedIds.has(u.id) ? 'bg-primary/5' : ''}>
+							<td class="text-center">
+								<input type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary"
+									checked={selectedIds.has(u.id)} onchange={() => toggleSelect(u.id)} aria-label={`Pilih ${u.nim}`} />
+							</td>
 							<td>{u.nim}</td>
 							<td>{u.nama}</td>
 							<td>{u.nama_kelas ?? u.kelas?.nama_kelas ?? '-'}</td>

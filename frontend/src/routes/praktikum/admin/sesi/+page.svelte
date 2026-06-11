@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis, renderMath } from '$lib/utils';
+	import { X } from 'lucide-svelte';
 	import type { Sesi, Course, Soal, Kelas } from '$lib/types';
 	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 
@@ -289,12 +290,12 @@
 		role="presentation"
 		onclick={(e) => { if (e.target === e.currentTarget) closeSoalModal(); }}
 	>
-		<div class="my-8 w-full max-w-2xl rounded-2xl bg-white shadow-2xl" role="dialog" aria-modal="true">
+		<div class="my-8 w-full max-w-4xl rounded-2xl bg-white shadow-2xl" role="dialog" aria-modal="true">
 			<div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
 				<h3 class="text-lg font-bold text-ink-heading">{editSoalId ? 'Edit' : 'Tambah'} Soal</h3>
-				<button class="text-ink-caption hover:text-ink-heading" aria-label="Tutup" onclick={closeSoalModal}>✕</button>
+				<button class="text-ink-caption hover:text-ink-heading" aria-label="Tutup" onclick={closeSoalModal}><X size={20} /></button>
 			</div>
-			<div class="max-h-[70vh] overflow-y-auto px-6 py-4">
+			<div class="max-h-[85vh] overflow-y-auto px-6 py-4">
 				<label class="label" for="sj2">Jenis Soal</label>
 				<select id="sj2" class="input" bind:value={soalForm.jenis_soal}>
 					<option value="essay">Essay</option>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
+	import { Check } from 'lucide-svelte';
 
 	interface Pedoman { id: number; nama_dokumen: string; file_url: string; }
 
@@ -63,7 +64,7 @@
 		<label class="label mt-2" for="fu">File</label>
 		<input id="fu" type="file" onchange={uploadFile} />
 		{#if form.file_url}
-			<p class="mt-1 text-xs text-state-success">✓ File: <a href={form.file_url} target="_blank" rel="noopener">{form.file_url.split('/').pop()}</a></p>
+			<p class="mt-1 inline-flex items-center gap-1 text-xs text-state-success"><Check size={14} /> File: <a href={form.file_url} target="_blank" rel="noopener">{form.file_url.split('/').pop()}</a></p>
 		{/if}
 		<div class="mt-3 flex gap-2">
 			<button class="btn-primary" onclick={save}>Simpan</button>

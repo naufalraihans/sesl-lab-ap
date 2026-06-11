@@ -46,7 +46,7 @@
 		<EdraBubbleMenu {editor} />
 	{/if}
 	
-	<div class="p-4 min-h-[150px] prose prose-sm max-w-none">
+	<div class="p-4 min-h-[300px] prose prose-base max-w-none">
 		<EdraEditor
 			bind:editor
 			content={value}
@@ -57,7 +57,7 @@
 
 <style>
 	:global(.edra-editor .ProseMirror) {
-		min-height: 150px;
+		min-height: 300px;
 		outline: none;
 	}
 	:global(.edra-editor .ProseMirror p.is-editor-empty:first-child::before) {

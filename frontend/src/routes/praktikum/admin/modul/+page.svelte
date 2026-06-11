@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
+	import { FileText } from 'lucide-svelte';
 
 	let fileUrl = $state('');
 	let err = $state(''); let msg = $state('');
@@ -40,7 +41,7 @@
 	<h2 class="mb-3 text-lg">File Modul Saat Ini</h2>
 	{#if fileUrl}
 		<div class="mb-4 flex items-center gap-3 rounded-lg border border-state-success-bg bg-state-success-bg/40 p-3">
-			<span class="text-state-success">📄</span>
+			<span class="text-state-success"><FileText size={18} /></span>
 			<a href={fileUrl} target="_blank" rel="noopener" class="flex-1 text-sm text-primary hover:underline">{fileUrl.split('/').pop()}</a>
 			<a href={fileUrl} target="_blank" rel="noopener" class="btn-outline py-1.5 text-xs">Download</a>
 		</div>

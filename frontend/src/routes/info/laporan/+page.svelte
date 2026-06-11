@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
+	import { Download } from 'lucide-svelte';
 
 	interface Pedoman { id: number; nama_dokumen: string; file_url: string; }
 	let items = $state<Pedoman[]>([]);
@@ -31,7 +32,7 @@
 		{#each items as it}
 			<div class="card flex items-center justify-between">
 				<span class="font-medium">{it.nama_dokumen}</span>
-				<a href={it.file_url} target="_blank" rel="noopener" class="btn-primary">⬇ Download</a>
+				<a href={it.file_url} target="_blank" rel="noopener" class="btn-primary"><Download size={16} /> Download</a>
 			</div>
 		{/each}
 	</div>

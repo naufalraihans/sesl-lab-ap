@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
+	import { Download } from 'lucide-svelte';
 
 	let fileUrl = $state('');
 	let loading = $state(true);
@@ -22,7 +23,7 @@
 {:else if fileUrl}
 	<div class="card max-w-md">
 		<p class="mb-3 text-ink-body">Modul praktikum tersedia dalam format PDF.</p>
-		<a href={fileUrl} target="_blank" rel="noopener" class="btn-primary">⬇ Download Modul (PDF)</a>
+		<a href={fileUrl} target="_blank" rel="noopener" class="btn-primary"><Download size={16} /> Download Modul (PDF)</a>
 	</div>
 {:else}
 	<p class="text-ink-caption">Modul belum diunggah oleh admin.</p>

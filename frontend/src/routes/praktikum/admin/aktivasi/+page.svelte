@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis } from '$lib/utils';
+	import { KeyRound } from 'lucide-svelte';
 	import type { Sesi, Kelas, User } from '$lib/types';
 
 	interface AktivasiSesi {
@@ -167,7 +168,7 @@
 				</div>
 			{/if}
 			<button class="btn-primary" onclick={() => generateToken(selected!)}>
-				🔑 {selected.token ? 'Reset PIN' : 'Generate PIN'}
+				<KeyRound size={16} /> {selected.token ? 'Reset PIN' : 'Generate PIN'}
 			</button>
 		</div>
 	</div>
