@@ -12,10 +12,11 @@ type PenilaianUsecase struct {
 	jawaban    repository.JawabanRepository
 	pengerjaan repository.PengerjaanRepository
 	users      repository.UserRepository
+	tx         *repository.PenilaianTxRepo
 }
 
-func NewPenilaianUsecase(j repository.JawabanRepository, p repository.PengerjaanRepository, u repository.UserRepository) *PenilaianUsecase {
-	return &PenilaianUsecase{jawaban: j, pengerjaan: p, users: u}
+func NewPenilaianUsecase(j repository.JawabanRepository, p repository.PengerjaanRepository, u repository.UserRepository, tx *repository.PenilaianTxRepo) *PenilaianUsecase {
+	return &PenilaianUsecase{jawaban: j, pengerjaan: p, users: u, tx: tx}
 }
 
 // SetNilai memberi nilai (0..poin) + feedback pada satu jawaban, lalu recalc total_nilai course.
@@ -35,23 +36,14 @@ func (uc *PenilaianUsecase) SetNilai(req dto.NilaiRequest) (*entity.JawabanMahas
 	nilai := req.Nilai
 	j.Nilai = &nilai
 	j.Feedback = req.Feedback
-	if err := uc.jawaban.Update(j); err != nil {
-		return nil, err
-	}
 
-	// Recalc total_nilai pada pengerjaan_course.
-	aktivasiSesiID := j.SoalTerpilih.AktivasiSesiID
-	courseID := j.SoalTerpilih.CourseID
-	total, err := uc.jawaban.SumNilai(j.MahasiswaID, aktivasiSesiID, courseID)
-	if err != nil {
-		return nil, err
+	// Simpan nilai + recalc total_nilai pengerjaan_course secara ATOMIK (1 transaksi).
+	key := repository.PengerjaanKey{
+		MahasiswaID:    j.MahasiswaID,
+		AktivasiSesiID: j.SoalTerpilih.AktivasiSesiID,
+		CourseID:       j.SoalTerpilih.CourseID,
 	}
-	p, err := uc.pengerjaan.FindOrCreate(j.MahasiswaID, aktivasiSesiID, courseID)
-	if err != nil {
-		return nil, err
-	}
-	p.TotalNilai = &total
-	if err := uc.pengerjaan.Update(p); err != nil {
+	if err := uc.tx.SetNilaiAndRecalc(j.ID, nilai, req.Feedback, key); err != nil {
 		return nil, err
 	}
 	return j, nil
@@ -146,90 +138,15 @@ func (uc *PenilaianUsecase) GetRekapJawabanGlobal(kelasID, sesiID int, search, j
 	return resp, nil
 }
 
-func (uc *PenilaianUsecase) syncPengerjaanCourseForJawaban(jawabanIDs []int) {
-	if len(jawabanIDs) == 0 {
-		return
-	}
-	
-	// Cari semua jawaban_id untuk mengetahui mahasiswa mana yang berubah
-	var jList []entity.JawabanMahasiswa
-	for _, jID := range jawabanIDs {
-		if j, err := uc.jawaban.FindByID(jID); err == nil && j != nil && j.SoalTerpilih != nil {
-			jList = append(jList, *j)
-		}
-	}
-
-	// Buat map unik untuk (MahasiswaID + AktivasiSesiID + CourseID)
-	type pKey struct {
-		MhsID, AktSesiID, CourseID int
-	}
-	affected := map[pKey]bool{}
-
-	for _, j := range jList {
-		k := pKey{MhsID: j.MahasiswaID, AktSesiID: j.SoalTerpilih.AktivasiSesiID, CourseID: j.SoalTerpilih.CourseID}
-		affected[k] = true
-	}
-
-	// Untuk tiap kombinasi unik, kalkulasi ulang total_nilai
-	for k := range affected {
-		total, err := uc.jawaban.SumNilai(k.MhsID, k.AktSesiID, k.CourseID)
-		if err == nil {
-			if p, err := uc.pengerjaan.FindOrCreate(k.MhsID, k.AktSesiID, k.CourseID); err == nil {
-				p.TotalNilai = &total
-				uc.pengerjaan.Update(p)
-			}
-		}
-	}
-}
-
-// BulkResetNilai mereset nilai dan feedback menjadi null
+// BulkResetNilai mereset nilai & feedback menjadi null, lalu recalc total_nilai
+// pengerjaan_course terdampak — seluruhnya ATOMIK dalam satu transaksi.
 func (uc *PenilaianUsecase) BulkResetNilai(jawabanIDs []int) error {
-	err := uc.jawaban.BulkResetNilai(jawabanIDs)
-	if err != nil {
-		return err
-	}
-	
-	// Sinkronisasi nilai ke pengerjaan_course
-	uc.syncPengerjaanCourseForJawaban(jawabanIDs)
-	return nil
+	return uc.tx.BulkResetAndRecalc(jawabanIDs)
 }
 
-// BulkDeleteJawaban menghapus jawaban secara permanen
+// BulkDeleteJawaban menghapus jawaban permanen, lalu recalc total_nilai
+// pengerjaan_course terdampak — seluruhnya ATOMIK dalam satu transaksi.
 func (uc *PenilaianUsecase) BulkDeleteJawaban(jawabanIDs []int) error {
-	// Ambil data dulu sblm dihapus buat sync
-	var jList []entity.JawabanMahasiswa
-	for _, jID := range jawabanIDs {
-		if j, err := uc.jawaban.FindByID(jID); err == nil && j != nil {
-			jList = append(jList, *j)
-		}
-	}
-
-	err := uc.jawaban.BulkDelete(jawabanIDs)
-	if err != nil {
-		return err
-	}
-
-	// Ekstrak ID yg berhasil dihapus
-	type pKey struct {
-		MhsID, AktSesiID, CourseID int
-	}
-	affected := map[pKey]bool{}
-	for _, j := range jList {
-		if j.SoalTerpilih != nil {
-			affected[pKey{MhsID: j.MahasiswaID, AktSesiID: j.SoalTerpilih.AktivasiSesiID, CourseID: j.SoalTerpilih.CourseID}] = true
-		}
-	}
-
-	// Sync
-	for k := range affected {
-		total, err := uc.jawaban.SumNilai(k.MhsID, k.AktSesiID, k.CourseID)
-		if err == nil {
-			if p, err := uc.pengerjaan.FindOrCreate(k.MhsID, k.AktSesiID, k.CourseID); err == nil {
-				p.TotalNilai = &total
-				uc.pengerjaan.Update(p)
-			}
-		}
-	}
-	return nil
+	return uc.tx.BulkDeleteAndRecalc(jawabanIDs)
 }
 

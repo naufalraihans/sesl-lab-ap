@@ -57,6 +57,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
+	r.MaxMultipartMemory = 10 << 20 // 10 MiB: batasi buffer multipart di memori
 	r.Use(gin.Logger(), gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
@@ -74,7 +75,9 @@ func Setup(cfg *config.Config, jm *jwt.Manager, reg *online.Registry, h Handlers
 	api := r.Group("/api")
 
 	// ---- Auth (publik) ----
+	// Rate-limit untuk meredam brute-force: maks 20 percobaan/menit per IP.
 	auth := api.Group("/auth")
+	auth.Use(middleware.RateLimit(20, time.Minute))
 	{
 		auth.POST("/cek-nim", h.Auth.CekNIM)
 		auth.POST("/login", h.Auth.Login)

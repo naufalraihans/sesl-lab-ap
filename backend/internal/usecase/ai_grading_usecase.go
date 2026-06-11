@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"lab-ap/internal/dto"
 	"lab-ap/internal/repository"
@@ -12,13 +13,56 @@ import (
 	"github.com/google/uuid"
 )
 
+// jobRetention adalah lama job disimpan di memori setelah selesai/gagal
+// sebelum dibersihkan otomatis (mencegah kebocoran memori map jobs).
+const jobRetention = 10 * time.Minute
+
 // JobData menampung state job saat ini.
+// Akses field dilindungi mu karena ditulis worker goroutine & dibaca handler HTTP.
 type JobData struct {
+	mu        sync.Mutex
 	ID        string `json:"id"`
 	Status    string `json:"status"` // "queued", "processing", "completed", "failed"
 	Total     int    `json:"total"`
 	Processed int    `json:"processed"`
 	Message   string `json:"message"`
+}
+
+// set memperbarui status & message secara aman.
+func (j *JobData) set(status, message string) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	if status != "" {
+		j.Status = status
+	}
+	j.Message = message
+}
+
+// setTotal menyetel total target secara aman.
+func (j *JobData) setTotal(total int) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	j.Total = total
+}
+
+// incProcessed menambah counter progress secara aman.
+func (j *JobData) incProcessed() {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	j.Processed++
+}
+
+// snapshot membaca seluruh field secara aman untuk response.
+func (j *JobData) snapshot() dto.AIGradingJobResponse {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	return dto.AIGradingJobResponse{
+		JobID:     j.ID,
+		Status:    j.Status,
+		Total:     j.Total,
+		Processed: j.Processed,
+		Message:   j.Message,
+	}
 }
 
 type AIGradingUsecase interface {
@@ -67,13 +111,8 @@ func (uc *aiGradingUsecase) QueueJob(req dto.AIGradingBulkRequest) (*dto.AIGradi
 	// Masukkan ke antrean
 	uc.jobQueue <- jobID
 
-	return &dto.AIGradingJobResponse{
-		JobID:     jobData.ID,
-		Status:    jobData.Status,
-		Total:     jobData.Total,
-		Processed: jobData.Processed,
-		Message:   jobData.Message,
-	}, nil
+	snap := jobData.snapshot()
+	return &snap, nil
 }
 
 func (uc *aiGradingUsecase) GetJobStatus(jobID string) (*dto.AIGradingJobResponse, error) {
@@ -81,14 +120,17 @@ func (uc *aiGradingUsecase) GetJobStatus(jobID string) (*dto.AIGradingJobRespons
 	if !ok {
 		return nil, ErrNotFound
 	}
-	jobData := val.(*JobData)
-	return &dto.AIGradingJobResponse{
-		JobID:     jobData.ID,
-		Status:    jobData.Status,
-		Total:     jobData.Total,
-		Processed: jobData.Processed,
-		Message:   jobData.Message,
-	}, nil
+	snap := val.(*JobData).snapshot()
+	return &snap, nil
+}
+
+// scheduleCleanup menghapus job dari memori setelah masa retensi
+// agar map jobs tidak tumbuh tanpa batas.
+func (uc *aiGradingUsecase) scheduleCleanup(jobID string) {
+	uc.requests.Delete(jobID)
+	time.AfterFunc(jobRetention, func() {
+		uc.jobs.Delete(jobID)
+	})
 }
 
 func (uc *aiGradingUsecase) workerLoop() {
@@ -106,20 +148,19 @@ func (uc *aiGradingUsecase) processJob(jobID string) {
 
 	reqVal, ok := uc.requests.Load(jobID)
 	if !ok {
-		jobData.Status = "failed"
-		jobData.Message = "Request data hilang"
+		jobData.set("failed", "Request data hilang")
+		uc.scheduleCleanup(jobID)
 		return
 	}
 	req := reqVal.(dto.AIGradingBulkRequest)
 
-	jobData.Status = "processing"
-	jobData.Message = "Mengambil data jawaban..."
+	jobData.set("processing", "Mengambil data jawaban...")
 
 	// Dapatkan semua jawaban untuk course ini
 	allJawaban, err := uc.jawabanRepo.ListRekap(req.AktivasiSesiID, req.CourseID)
 	if err != nil {
-		jobData.Status = "failed"
-		jobData.Message = fmt.Sprintf("Gagal fetch data: %v", err)
+		jobData.set("failed", fmt.Sprintf("Gagal fetch data: %v", err))
+		uc.scheduleCleanup(jobID)
 		return
 	}
 
@@ -137,12 +178,12 @@ func (uc *aiGradingUsecase) processJob(jobID string) {
 		}
 	}
 
-	jobData.Total = len(targets)
-	jobData.Message = fmt.Sprintf("Menilai %d jawaban dengan AI...", len(targets))
+	jobData.setTotal(len(targets))
+	jobData.set("", fmt.Sprintf("Menilai %d jawaban dengan AI...", len(targets)))
 
 	if len(targets) == 0 {
-		jobData.Status = "completed"
-		jobData.Message = "Selesai. Tidak ada jawaban baru yang perlu dinilai."
+		jobData.set("completed", "Selesai. Tidak ada jawaban baru yang perlu dinilai.")
+		uc.scheduleCleanup(jobID)
 		return
 	}
 
@@ -169,12 +210,10 @@ func (uc *aiGradingUsecase) processJob(jobID string) {
 			})
 		}
 
-		jobData.Processed++
-		// Sengaja tidak update Map terlalu agresif jika ingin menghindari blocking, namun karena kita simpan pointer, nilainya berubah otomatis
+		jobData.incProcessed()
 	}
 
-	jobData.Status = "completed"
-	jobData.Message = "Selesai menilai semua jawaban."
-	// Hapus request memory setelah selesai
-	uc.requests.Delete(jobID)
+	jobData.set("completed", "Selesai menilai semua jawaban.")
+	// Hapus request & jadwalkan pembersihan job dari memori.
+	uc.scheduleCleanup(jobID)
 }

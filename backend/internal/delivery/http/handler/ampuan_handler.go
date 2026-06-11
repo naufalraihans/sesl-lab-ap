@@ -105,8 +105,21 @@ func (h *AmpuanHandler) PublicKelasMahasiswa(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+
+	// Endpoint publik: kirim hanya field aman (tanpa PII mahasiswa).
+	safe := make([]dto.PublicMahasiswaItem, 0, len(mhs))
+	for _, m := range mhs {
+		safe = append(safe, dto.PublicMahasiswaItem{
+			ID:       m.ID,
+			NIM:      m.NIM,
+			Nama:     m.Nama,
+			Shift:    m.Shift,
+			Kelompok: m.Kelompok,
+		})
+	}
+
 	response.OK(c, http.StatusOK, "Mahasiswa & ampuan kelas", gin.H{
-		"mahasiswa": mhs,
+		"mahasiswa": safe,
 		"ampuan":    ampuan,
 	})
 }

@@ -5,8 +5,9 @@
 		value = $bindable(''),
 		language = 'c',
 		readonly = false,
-		height = '320px'
-	}: { value?: string; language?: string; readonly?: boolean; height?: string } = $props();
+		height = '320px',
+		oninput
+	}: { value?: string; language?: string; readonly?: boolean; height?: string; oninput?: () => void } = $props();
 
 	let el: HTMLDivElement;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,6 +31,7 @@
 		});
 		editor.onDidChangeModelContent(() => {
 			value = editor.getValue();
+			oninput?.();
 		});
 	});
 

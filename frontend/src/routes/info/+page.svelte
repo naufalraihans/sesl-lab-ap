@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Calendar, Users, FileText, Book, ArrowRight, Bell, Code, Sparkles } from 'lucide-svelte';
+	import { Calendar, Users, FileText, Book, ArrowRight, Bell, Code } from 'lucide-svelte';
 
 	const quickLinks = [
 		{ href: '/info/jadwal', title: 'Jadwal Praktikum', desc: 'Lihat jadwal per kelas & shift.', icon: Calendar },
@@ -17,10 +17,6 @@
 	
 	<div class="relative z-10 flex flex-col md:flex-row items-center gap-8">
 		<div class="flex-1">
-			<div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-md border border-white/10 mb-6">
-				<Sparkles size={14} class="text-yellow-400" />
-				<span>Web Lab-AP v3.0</span>
-			</div>
 			<h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
 				Laboratorium Algoritma <br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-hover to-red-400">&amp; Pemrograman</span>
 			</h1>

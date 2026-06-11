@@ -1,8 +1,8 @@
 package usecase
 
 import (
+	"crypto/rand"
 	"errors"
-	"math/rand"
 	"time"
 
 	"lab-ap/internal/dto"
@@ -20,6 +20,7 @@ type AktivasiUsecase struct {
 	jawaban    repository.JawabanRepository
 	pengerjaan repository.PengerjaanRepository
 	soalUC     *SoalUsecase
+	tx         *repository.AktivasiTxRepo
 }
 
 func NewAktivasiUsecase(
@@ -30,12 +31,15 @@ func NewAktivasiUsecase(
 	j repository.JawabanRepository,
 	p repository.PengerjaanRepository,
 	soalUC *SoalUsecase,
+	tx *repository.AktivasiTxRepo,
 ) *AktivasiUsecase {
-	return &AktivasiUsecase{aktivasi: a, sesi: s, course: c, kelas: k, jawaban: j, pengerjaan: p, soalUC: soalUC}
+	return &AktivasiUsecase{aktivasi: a, sesi: s, course: c, kelas: k, jawaban: j, pengerjaan: p, soalUC: soalUC, tx: tx}
 }
 
-func (uc *AktivasiUsecase) List() ([]entity.AktivasiSesi, error)       { return uc.aktivasi.ListSesi() }
-func (uc *AktivasiUsecase) ListActive() ([]entity.AktivasiSesi, error) { return uc.aktivasi.ListActiveSesi() }
+func (uc *AktivasiUsecase) List() ([]entity.AktivasiSesi, error) { return uc.aktivasi.ListSesi() }
+func (uc *AktivasiUsecase) ListActive() ([]entity.AktivasiSesi, error) {
+	return uc.aktivasi.ListActiveSesi()
+}
 
 func (uc *AktivasiUsecase) Get(id int) (*entity.AktivasiSesi, error) {
 	a, err := uc.aktivasi.FindSesiByID(id)
@@ -48,9 +52,13 @@ func (uc *AktivasiUsecase) Get(id int) (*entity.AktivasiSesi, error) {
 func generateRandomPIN() string {
 	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, 6)
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	// crypto/rand: token akses ujian tidak boleh mudah ditebak.
+	if _, err := rand.Read(b); err != nil {
+		// Sumber acak OS gagal (sangat jarang); kembalikan PIN deterministik aman-gagal.
+		return "ABC123"
+	}
 	for i := range b {
-		b[i] = charset[r.Intn(len(charset))]
+		b[i] = charset[int(b[i])%len(charset)]
 	}
 	return string(b)
 }
@@ -118,7 +126,31 @@ func (uc *AktivasiUsecase) Aktivasi(req dto.AktivasiRequest) (*entity.AktivasiSe
 		}
 	}
 
-	// Buat aktivasi_sesi.
+	// Precompute: acak soal & susun seluruh baris SEBELUM menulis apa pun.
+	// Jika pool soal kurang, error muncul di sini tanpa menyisakan state setengah jadi.
+	aktivasiCourses := make([]entity.AktivasiCourse, 0, len(dipakai))
+	var terpilih []entity.SoalTerpilih
+	for i, c := range dipakai {
+		course := c
+		aktivasiCourses = append(aktivasiCourses, entity.AktivasiCourse{
+			CourseID: course.ID,
+			IsOpen:   false,
+			Urutan:   urutanCourse(course.Jenis, i),
+		})
+		picks, err := uc.soalUC.PilihSoalUntukCourse(&course)
+		if err != nil {
+			return nil, err
+		}
+		for j, s := range picks {
+			terpilih = append(terpilih, entity.SoalTerpilih{
+				CourseID: course.ID,
+				SoalID:   s.ID,
+				Urutan:   j + 1,
+			})
+		}
+	}
+
+	// Tulis aktivasi_sesi + aktivasi_course + soal_terpilih secara ATOMIK.
 	aks := &entity.AktivasiSesi{
 		SesiPraktikumID: req.SesiPraktikumID,
 		KelasID:         req.KelasID,
@@ -126,25 +158,8 @@ func (uc *AktivasiUsecase) Aktivasi(req dto.AktivasiRequest) (*entity.AktivasiSe
 		IsActive:        true,
 		ActivatedAt:     time.Now(),
 	}
-	if err := uc.aktivasi.CreateSesi(aks); err != nil {
+	if err := uc.tx.CreateActivation(aks, aktivasiCourses, terpilih); err != nil {
 		return nil, err
-	}
-
-	// Buat aktivasi_course (tertutup awalnya) + acak soal untuk tiap course.
-	for i, c := range dipakai {
-		course := c
-		ac := &entity.AktivasiCourse{
-			AktivasiSesiID: aks.ID,
-			CourseID:       course.ID,
-			IsOpen:         false,
-			Urutan:         urutanCourse(course.Jenis, i),
-		}
-		if err := uc.aktivasi.CreateCourse(ac); err != nil {
-			return nil, err
-		}
-		if err := uc.soalUC.AcakUntukAktivasiCourse(aks.ID, &course); err != nil {
-			return nil, err
-		}
 	}
 
 	return uc.aktivasi.FindSesiByID(aks.ID)

@@ -75,7 +75,7 @@
 		loading = true;
 		errorMsg = '';
 		rekap = null;
-		selectedIds.clear();
+		selectedIds = new Set();
 
 		const params = new URLSearchParams();
 		if (selectedKelas > 0) params.append('kelas_id', selectedKelas.toString());
@@ -219,7 +219,8 @@
 			<option value="">Semua Jenis</option>
 			<option value="pretest">Pre-test</option>
 			<option value="posttest">Post-test</option>
-			<option value="jurnal">Jurnal</option>
+			<option value="keterampilan">Keterampilan</option>
+			<option value="ujian_praktik">Ujian Praktik</option>
 		</select>
 	</div>
 	<div class="flex-1 min-w-[200px]">
@@ -244,7 +245,7 @@
 			<button class="btn-outline border-state-error text-state-error hover:bg-state-error hover:text-white" onclick={() => doBulkAction('delete')}>
 				🗑️ Hapus
 			</button>
-			<button class="btn-outline" onclick={() => selectedIds.clear()}>Batal</button>
+			<button class="btn-outline" onclick={() => (selectedIds = new Set())}>Batal</button>
 		</div>
 	</div>
 {/if}

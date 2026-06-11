@@ -25,6 +25,7 @@
 		poin: 20, kunci_jawaban: '' as string
 	});
 	let editSoalId = $state<number | null>(null);
+	let showSoalModal = $state(false);
 
 	async function loadSesi() {
 		try { sesiList = (await api.get<Sesi[]>('/api/admin/sesi')) ?? []; }
@@ -94,6 +95,14 @@
 		editSoalId = null;
 		soalForm = { course_id: selectedCourse?.id ?? 0, jenis_soal: 'essay', difficulty: '', kategori_ujian: '', teks_soal: '', gambar_url: '', poin: 20, kunci_jawaban: '' };
 	}
+	function openNewSoal() {
+		resetSoalForm();
+		showSoalModal = true;
+	}
+	function closeSoalModal() {
+		showSoalModal = false;
+		resetSoalForm();
+	}
 	function editSoal(s: Soal) {
 		editSoalId = s.id;
 		soalForm = {
@@ -102,6 +111,7 @@
 			teks_soal: s.teks_soal, gambar_url: s.gambar_url ?? '',
 			poin: s.poin, kunci_jawaban: s.kunci_jawaban ?? ''
 		};
+		showSoalModal = true;
 	}
 
 	async function uploadGambar(ev: Event) {
@@ -126,7 +136,7 @@
 		try {
 			if (editSoalId) await api.put(`/api/admin/soal/${editSoalId}`, body);
 			else await api.post('/api/admin/soal', body);
-			msg = 'Soal tersimpan.'; resetSoalForm(); if (selectedCourse) await selectCourse(selectedCourse);
+			msg = 'Soal tersimpan.'; showSoalModal = false; resetSoalForm(); if (selectedCourse) await selectCourse(selectedCourse);
 		} catch (e) { err = (e as Error).message; }
 	}
 	async function delSoal(id: number) {
@@ -234,81 +244,100 @@
 
 {#if selectedCourse}
 	<hr class="my-6 border-gray-200" />
-	<h2 class="mb-3 text-xl">Pool Soal — {labelJenis(selectedCourse.jenis)} ({soalList.length} soal)</h2>
+	<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+		<h2 class="text-xl">Pool Soal — {labelJenis(selectedCourse.jenis)} ({soalList.length} soal)</h2>
+		<button class="btn-primary" onclick={openNewSoal}>+ Tambah Soal</button>
+	</div>
 
-	<div class="grid gap-4 lg:grid-cols-3">
-		<div class="card">
-			<h3 class="mb-3 text-lg">{editSoalId ? 'Edit' : 'Tambah'} Soal</h3>
-			<label class="label" for="sj2">Jenis Soal</label>
-			<select id="sj2" class="input" bind:value={soalForm.jenis_soal}>
-				<option value="essay">Essay</option>
-				<option value="coding">Coding</option>
-			</select>
-			<label class="label mt-2" for="sd2">Difficulty</label>
-			<select id="sd2" class="input" bind:value={soalForm.difficulty}>
-				<option value="">— Tidak ada —</option>
-				<option value="easy">Easy</option>
-				<option value="medium">Medium</option>
-				<option value="hard">Hard</option>
-			</select>
-			{#if selectedCourse.jenis === 'ujian_praktik'}
-				<label class="label mt-2" for="ku">Kategori Ujian</label>
-				<select id="ku" class="input" bind:value={soalForm.kategori_ujian}>
-					<option value="">— Pilih —</option>
-					<option value="modul_1">Modul 1</option>
-					<option value="modul_2">Modul 2</option>
-					<option value="modul_3">Modul 3</option>
-					<option value="modul_4_5">Modul 4 dan 5</option>
-					<option value="modul_6">Modul 6</option>
-					<option value="flowchart">Flowchart</option>
-				</select>
-			{/if}
-			<label class="label mt-2" for="ts">Teks Soal</label>
-			<div class="mt-1">
-				<RichTextEditor bind:value={soalForm.teks_soal} placeholder="Tulis soal di sini..." />
-			</div>
-			{#if soalForm.kategori_ujian === 'flowchart' || soalForm.gambar_url}
-				<label class="label mt-2" for="gu">Gambar Flowchart</label>
-				{#if soalForm.gambar_url}<img src={soalForm.gambar_url} alt="flowchart" class="mb-2 max-h-40 rounded-lg border" />{/if}
-				<input id="gu" type="file" accept="image/*" onchange={uploadGambar} />
-			{/if}
-			<label class="label mt-2" for="sp">Poin</label>
-			<input id="sp" type="number" class="input" bind:value={soalForm.poin} min="0" />
-			<label class="label mt-2" for="kj">Kunci Jawaban (opsional)</label>
-			<div class="mt-1">
-				<RichTextEditor bind:value={soalForm.kunci_jawaban} placeholder="Tulis referensi atau rubrik jawaban..." />
-			</div>
-			<div class="mt-3 flex gap-2">
-				<button class="btn-primary" onclick={saveSoal}>Simpan</button>
-				{#if editSoalId}<button class="btn-outline" onclick={resetSoalForm}>Batal</button>{/if}
-			</div>
+	{#if soalList.length === 0}
+		<div class="card text-center text-ink-caption">
+			Belum ada soal. Klik <span class="font-semibold text-primary">Tambah Soal</span> untuk membuat soal pertama.
 		</div>
-
-		<div class="lg:col-span-2">
-			<div class="space-y-3">
-				{#each soalList as s, i}
-					<div class="card">
-						<div class="flex items-start justify-between gap-3">
-							<div class="flex-1">
-								<div class="flex flex-wrap items-center gap-2 text-sm">
-									<span class="badge bg-surface-soft text-ink-heading">#{i + 1}</span>
-									<span class="badge bg-surface-soft text-ink-body">{s.jenis_soal}</span>
-									{#if s.difficulty}<span class="badge bg-surface-soft text-ink-caption">{s.difficulty}</span>{/if}
-									{#if s.kategori_ujian}<span class="badge bg-state-info-bg text-state-info">{s.kategori_ujian}</span>{/if}
-									<span class="text-ink-caption">{s.poin} poin</span>
-								</div>
-								<div class="prose prose-sm mt-2 max-w-none text-ink-body" use:renderMath>
-									{@html s.teks_soal}
-								</div>
-								{#if s.gambar_url}<img src={s.gambar_url} alt="flowchart" class="mt-2 max-h-32 rounded-lg border" />{/if}
+	{:else}
+		<div class="space-y-3">
+			{#each soalList as s, i}
+				<div class="card">
+					<div class="flex items-start justify-between gap-3">
+						<div class="flex-1">
+							<div class="flex flex-wrap items-center gap-2 text-sm">
+								<span class="badge bg-surface-soft text-ink-heading">#{i + 1}</span>
+								<span class="badge bg-surface-soft text-ink-body">{s.jenis_soal}</span>
+								{#if s.difficulty}<span class="badge bg-surface-soft text-ink-caption">{s.difficulty}</span>{/if}
+								{#if s.kategori_ujian}<span class="badge bg-state-info-bg text-state-info">{s.kategori_ujian}</span>{/if}
+								<span class="text-ink-caption">{s.poin} poin</span>
 							</div>
-							<div class="flex gap-2 whitespace-nowrap text-sm">
-								<button class="text-primary hover:underline" onclick={() => editSoal(s)}>Edit</button>
-								<button class="text-state-error hover:underline" onclick={() => delSoal(s.id)}>Hapus</button>
+							<div class="prose prose-sm mt-2 max-w-none text-ink-body" use:renderMath>
+								{@html s.teks_soal}
 							</div>
+							{#if s.gambar_url}<img src={s.gambar_url} alt="flowchart" class="mt-2 max-h-32 rounded-lg border" />{/if}
+						</div>
+						<div class="flex gap-2 whitespace-nowrap text-sm">
+							<button class="text-primary hover:underline" onclick={() => editSoal(s)}>Edit</button>
+							<button class="text-state-error hover:underline" onclick={() => delSoal(s.id)}>Hapus</button>
 						</div>
 					</div>
-				{/each}
+				</div>
+			{/each}
+		</div>
+	{/if}
+{/if}
+
+<!-- Modal Tambah/Edit Soal -->
+{#if showSoalModal && selectedCourse}
+	<div
+		class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+		role="presentation"
+		onclick={(e) => { if (e.target === e.currentTarget) closeSoalModal(); }}
+	>
+		<div class="my-8 w-full max-w-2xl rounded-2xl bg-white shadow-2xl" role="dialog" aria-modal="true">
+			<div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+				<h3 class="text-lg font-bold text-ink-heading">{editSoalId ? 'Edit' : 'Tambah'} Soal</h3>
+				<button class="text-ink-caption hover:text-ink-heading" aria-label="Tutup" onclick={closeSoalModal}>✕</button>
+			</div>
+			<div class="max-h-[70vh] overflow-y-auto px-6 py-4">
+				<label class="label" for="sj2">Jenis Soal</label>
+				<select id="sj2" class="input" bind:value={soalForm.jenis_soal}>
+					<option value="essay">Essay</option>
+					<option value="coding">Coding</option>
+				</select>
+				<label class="label mt-2" for="sd2">Difficulty</label>
+				<select id="sd2" class="input" bind:value={soalForm.difficulty}>
+					<option value="">— Tidak ada —</option>
+					<option value="easy">Easy</option>
+					<option value="medium">Medium</option>
+					<option value="hard">Hard</option>
+				</select>
+				{#if selectedCourse.jenis === 'ujian_praktik'}
+					<label class="label mt-2" for="ku">Kategori Ujian</label>
+					<select id="ku" class="input" bind:value={soalForm.kategori_ujian}>
+						<option value="">— Pilih —</option>
+						<option value="modul_1">Modul 1</option>
+						<option value="modul_2">Modul 2</option>
+						<option value="modul_3">Modul 3</option>
+						<option value="modul_4_5">Modul 4 dan 5</option>
+						<option value="modul_6">Modul 6</option>
+						<option value="flowchart">Flowchart</option>
+					</select>
+				{/if}
+				<label class="label mt-2" for="ts">Teks Soal</label>
+				<div class="mt-1">
+					<RichTextEditor bind:value={soalForm.teks_soal} placeholder="Tulis soal di sini..." />
+				</div>
+				{#if soalForm.kategori_ujian === 'flowchart' || soalForm.gambar_url}
+					<label class="label mt-2" for="gu">Gambar Flowchart</label>
+					{#if soalForm.gambar_url}<img src={soalForm.gambar_url} alt="flowchart" class="mb-2 max-h-40 rounded-lg border" />{/if}
+					<input id="gu" type="file" accept="image/*" onchange={uploadGambar} />
+				{/if}
+				<label class="label mt-2" for="sp">Poin</label>
+				<input id="sp" type="number" class="input" bind:value={soalForm.poin} min="0" />
+				<label class="label mt-2" for="kj">Kunci Jawaban (opsional)</label>
+				<div class="mt-1">
+					<RichTextEditor bind:value={soalForm.kunci_jawaban} placeholder="Tulis referensi atau rubrik jawaban..." />
+				</div>
+			</div>
+			<div class="flex justify-end gap-2 border-t border-gray-200 px-6 py-4">
+				<button class="btn-outline" onclick={closeSoalModal}>Batal</button>
+				<button class="btn-primary" onclick={saveSoal}>Simpan</button>
 			</div>
 		</div>
 	</div>

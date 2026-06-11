@@ -31,13 +31,13 @@ func (uc *SoalUsecase) Create(req dto.SoalRequest) (*entity.Soal, error) {
 	p := createSanitizer()
 
 	s := &entity.Soal{
-		CourseID:     req.CourseID,
-		JenisSoal:    entity.JenisSoal(req.JenisSoal),
-		TeksSoal:     p.Sanitize(req.TeksSoal),
-		GambarURL:    req.GambarURL,
-		Poin:         req.Poin,
+		CourseID:  req.CourseID,
+		JenisSoal: entity.JenisSoal(req.JenisSoal),
+		TeksSoal:  p.Sanitize(req.TeksSoal),
+		GambarURL: req.GambarURL,
+		Poin:      req.Poin,
 	}
-	
+
 	if req.KunciJawaban != nil {
 		sanitized := p.Sanitize(*req.KunciJawaban)
 		s.KunciJawaban = &sanitized
@@ -62,12 +62,12 @@ func (uc *SoalUsecase) Update(id int, req dto.SoalRequest) (*entity.Soal, error)
 		return nil, ErrNotFound
 	}
 	p := createSanitizer()
-	
+
 	s.JenisSoal = entity.JenisSoal(req.JenisSoal)
 	s.TeksSoal = p.Sanitize(req.TeksSoal)
 	s.GambarURL = req.GambarURL
 	s.Poin = req.Poin
-	
+
 	if req.KunciJawaban != nil {
 		sanitized := p.Sanitize(*req.KunciJawaban)
 		s.KunciJawaban = &sanitized
@@ -90,7 +90,7 @@ func (uc *SoalUsecase) Update(id int, req dto.SoalRequest) (*entity.Soal, error)
 	return s, nil
 }
 
-func (uc *SoalUsecase) Delete(id int) error    { return uc.soal.Delete(id) }
+func (uc *SoalUsecase) Delete(id int) error { return uc.soal.Delete(id) }
 func (uc *SoalUsecase) ListByCourse(courseID int) ([]entity.Soal, error) {
 	return uc.soal.ListByCourse(courseID)
 }
@@ -111,17 +111,10 @@ func distribusiDifficulty(jenis entity.JenisCourse) map[entity.Difficulty]int {
 	}
 }
 
-// AcakUntukAktivasiCourse mengacak soal dari pool sesuai jenis course dan
-// menyimpan hasilnya ke soal_terpilih (idempoten: dilewati jika sudah ada).
-func (uc *SoalUsecase) AcakUntukAktivasiCourse(aktivasiSesiID int, course *entity.Course) error {
-	exists, err := uc.terpilih.ExistsForAktivasiCourse(aktivasiSesiID, course.ID)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil // sudah diacak sebelumnya
-	}
-
+// PilihSoalUntukCourse mengacak soal dari pool sesuai jenis course dan
+// mengembalikan hasilnya TANPA menulis ke DB. Memungkinkan caller memvalidasi
+// ketersediaan pool lebih dulu, lalu menulis seluruh aktivasi secara atomik.
+func (uc *SoalUsecase) PilihSoalUntukCourse(course *entity.Course) ([]entity.Soal, error) {
 	var dipilih []entity.Soal
 
 	switch course.Jenis {
@@ -130,48 +123,39 @@ func (uc *SoalUsecase) AcakUntukAktivasiCourse(aktivasiSesiID int, course *entit
 		for diff, n := range dist {
 			pool, err := uc.soal.PoolByDifficulty(course.ID, diff)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			picked, err := pickRandom(pool, n, course.Jenis, string(diff))
 			if err != nil {
-				return err
+				return nil, err
 			}
 			dipilih = append(dipilih, picked...)
 		}
 	case entity.CourseKeterampilan:
 		pool, err := uc.soal.PoolAll(course.ID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		picked, err := pickRandom(pool, 1, course.Jenis, "keterampilan")
 		if err != nil {
-			return err
+			return nil, err
 		}
 		dipilih = append(dipilih, picked...)
 	case entity.CourseUjianPraktik:
 		for _, kat := range entity.SemuaKategoriUjian {
 			pool, err := uc.soal.PoolByKategori(course.ID, kat)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			picked, err := pickRandom(pool, 1, course.Jenis, string(kat))
 			if err != nil {
-				return err
+				return nil, err
 			}
 			dipilih = append(dipilih, picked...)
 		}
 	}
 
-	items := make([]entity.SoalTerpilih, 0, len(dipilih))
-	for i, s := range dipilih {
-		items = append(items, entity.SoalTerpilih{
-			AktivasiSesiID: aktivasiSesiID,
-			CourseID:       course.ID,
-			SoalID:         s.ID,
-			Urutan:         i + 1,
-		})
-	}
-	return uc.terpilih.BulkCreate(items)
+	return dipilih, nil
 }
 
 // pickRandom memilih n soal acak dari pool; error jika pool kurang.
@@ -187,14 +171,14 @@ func pickRandom(pool []entity.Soal, n int, jenis entity.JenisCourse, label strin
 // createSanitizer mengatur policy bluemonday agar mengizinkan style dari Tiptap.
 func createSanitizer() *bluemonday.Policy {
 	p := bluemonday.UGCPolicy()
-	
+
 	// Izinkan class dan data atribut untuk code block, dsb.
 	p.AllowAttrs("class").Globally()
 	p.AllowAttrs("data-type", "data-language", "data-id", "data-latex").Globally()
-	
+
 	// Izinkan inline styles yang umum dipakai editor Tiptap/Edra
 	p.AllowStyles("text-align").Matching(regexp.MustCompile(`(?i)^(left|right|center|justify)$`)).Globally()
 	p.AllowStyles("color", "background-color").Matching(regexp.MustCompile(`(?i)^(transparent|#[0-9a-fA-F]+|rgba?\([^)]+\)|[a-zA-Z]+)$`)).Globally()
-	
+
 	return p
 }

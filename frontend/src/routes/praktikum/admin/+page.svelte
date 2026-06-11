@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis } from '$lib/utils';
+	import { Users, UserCheck, GraduationCap, Wifi } from 'lucide-svelte';
 
 	interface Stat {
 		online_sekarang: number;
@@ -40,33 +41,55 @@
 	onDestroy(() => clearInterval(poll));
 </script>
 
-<h1 class="mb-4 text-2xl">Dashboard Admin</h1>
+<h1 class="mb-1 text-2xl font-bold text-ink-heading">Dashboard Admin</h1>
+<p class="mb-5 text-sm text-ink-caption">Ringkasan aktivitas praktikum secara real-time.</p>
 
 {#if err}<p class="rounded-lg bg-state-error-bg p-3 text-state-error">{err}</p>{/if}
 
 {#if stat}
 	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-		<div class="card">
-			<p class="text-sm text-ink-caption">🟢 Online Sekarang</p>
-			<p class="mt-1 text-3xl font-bold text-state-success">{online}</p>
-			<p class="text-xs text-ink-caption">real-time (registry server)</p>
+		<div class="card flex items-start justify-between">
+			<div>
+				<p class="text-sm text-ink-caption">Online Sekarang</p>
+				<p class="mt-1 text-3xl font-bold text-state-success">{online}</p>
+				<p class="text-xs text-ink-caption">real-time (registry server)</p>
+			</div>
+			<span class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-state-success-bg text-state-success">
+				<Wifi size={20} />
+				<span class="absolute right-1 top-1 h-2 w-2 animate-ping rounded-full bg-state-success"></span>
+			</span>
 		</div>
-		<div class="card">
-			<p class="text-sm text-ink-caption">Total Mahasiswa</p>
-			<p class="mt-1 text-3xl font-bold text-primary">{stat.total_mahasiswa}</p>
+		<div class="card flex items-start justify-between">
+			<div>
+				<p class="text-sm text-ink-caption">Total Mahasiswa</p>
+				<p class="mt-1 text-3xl font-bold text-primary">{stat.total_mahasiswa}</p>
+			</div>
+			<span class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+				<Users size={20} />
+			</span>
 		</div>
-		<div class="card">
-			<p class="text-sm text-ink-caption">Sudah Register</p>
-			<p class="mt-1 text-3xl font-bold text-state-info">{stat.sudah_register}</p>
-			<p class="text-xs text-ink-caption">Belum: {stat.belum_register}</p>
+		<div class="card flex items-start justify-between">
+			<div>
+				<p class="text-sm text-ink-caption">Sudah Register</p>
+				<p class="mt-1 text-3xl font-bold text-state-info">{stat.sudah_register}</p>
+				<p class="text-xs text-ink-caption">Belum: {stat.belum_register}</p>
+			</div>
+			<span class="flex h-10 w-10 items-center justify-center rounded-xl bg-state-info-bg text-state-info">
+				<UserCheck size={20} />
+			</span>
 		</div>
-		<div class="card">
-			<p class="text-sm text-ink-caption">Total Asisten</p>
-			<p class="mt-1 text-3xl font-bold text-ink-heading">{stat.total_asisten}</p>
+		<div class="card flex items-start justify-between">
+			<div>
+				<p class="text-sm text-ink-caption">Total Asisten</p>
+				<p class="mt-1 text-3xl font-bold text-ink-heading">{stat.total_asisten}</p>
+			</div>
+			<span class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-soft text-ink-heading">
+				<GraduationCap size={20} />
+			</span>
 		</div>
 	</div>
 
-	<h2 class="mb-3 mt-6 text-xl">Mahasiswa per Kelas &amp; Shift</h2>
+	<h2 class="mb-3 mt-8 text-xl font-bold text-ink-heading">Mahasiswa per Kelas &amp; Shift</h2>
 	<div class="table-wrap max-w-xl">
 		<table class="tbl">
 			<thead><tr><th>Kelas</th><th>Shift</th><th>Jumlah</th></tr></thead>
@@ -78,7 +101,7 @@
 		</table>
 	</div>
 
-	<h2 class="mb-3 mt-6 text-xl">Sesi Aktif &amp; Progress</h2>
+	<h2 class="mb-3 mt-8 text-xl font-bold text-ink-heading">Sesi Aktif &amp; Progress</h2>
 	{#if stat.sesi_aktif.length === 0}
 		<p class="text-ink-caption">Tidak ada sesi aktif.</p>
 	{:else}

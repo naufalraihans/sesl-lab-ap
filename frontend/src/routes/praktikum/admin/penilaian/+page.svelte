@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis, renderMath } from '$lib/utils';
 	import type { Kelas } from '$lib/types';
@@ -38,6 +38,7 @@
 		catch (e) { err = (e as Error).message; }
 	}
 	onMount(loadAktivasi);
+	onDestroy(() => { if (pollInterval) clearInterval(pollInterval); });
 
 	async function selectAktivasi(a: AktivasiSesi) {
 		selectedAktivasi = a; selectedCourseId = null; rekap = [];

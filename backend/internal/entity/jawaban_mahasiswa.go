@@ -7,7 +7,7 @@ type JawabanMahasiswa struct {
 	ID             int        `gorm:"primaryKey;autoIncrement" json:"id"`
 	MahasiswaID    int        `gorm:"not null;uniqueIndex:idx_jawaban_unik" json:"mahasiswa_id"`
 	SoalTerpilihID int        `gorm:"not null;uniqueIndex:idx_jawaban_unik" json:"soal_terpilih_id"`
-	JawabanTeks    string     `gorm:"type:longtext" json:"jawaban_teks"`
+	JawabanTeks    string     `gorm:"type:text" json:"jawaban_teks"`
 	IsSubmitted    bool       `gorm:"default:false" json:"is_submitted"`
 	Nilai          *float64   `json:"nilai"`
 	Feedback       *string    `gorm:"type:text" json:"feedback"`

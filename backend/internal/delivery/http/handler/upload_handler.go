@@ -14,6 +14,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// maxUploadSize membatasi ukuran file unggahan (10 MB) untuk mencegah
+// pemakaian memori berlebih (io.ReadAll memuat seluruh file ke RAM).
+const maxUploadSize = 10 << 20 // 10 MiB
+
 type UploadHandler struct {
 	sb *supabase.Client
 }
@@ -41,6 +45,10 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "File wajib diunggah (field 'file')", err.Error())
 		return
 	}
+	if fileHeader.Size > maxUploadSize {
+		response.Fail(c, http.StatusRequestEntityTooLarge, "Ukuran file melebihi batas 10 MB", nil)
+		return
+	}
 	folder := strings.Trim(c.PostForm("folder"), "/")
 	if folder == "" {
 		folder = "uploads"
@@ -52,9 +60,14 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 		return
 	}
 	defer f.Close()
-	content, err := io.ReadAll(f)
+	// Batasi pembacaan secara defensif walau Size sudah dicek (header bisa berbohong).
+	content, err := io.ReadAll(io.LimitReader(f, maxUploadSize+1))
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "Gagal membaca file", err.Error())
+		return
+	}
+	if len(content) > maxUploadSize {
+		response.Fail(c, http.StatusRequestEntityTooLarge, "Ukuran file melebihi batas 10 MB", nil)
 		return
 	}
 

@@ -68,6 +68,8 @@ func main() {
 	pengerjaanRepo := repository.NewPengerjaanRepository(db)
 	ampuanRepo := repository.NewAmpuanRepository(db)
 	rekapRepo := repository.NewRekapRepository(db)
+	penilaianTxRepo := repository.NewPenilaianTxRepo(db)
+	aktivasiTxRepo := repository.NewAktivasiTxRepo(db)
 
 	// ---- Usecase ----
 	authUC := usecase.NewAuthUsecase(userRepo, kelasRepo, jm, reg)
@@ -75,9 +77,9 @@ func main() {
 	dashboardUC := usecase.NewDashboardUsecase(userRepo, aktivasiRepo, pengerjaanRepo, reg)
 	sesiUC := usecase.NewSesiUsecase(sesiRepo, courseRepo)
 	soalUC := usecase.NewSoalUsecase(soalRepo, courseRepo, terpilihRepo)
-	aktivasiUC := usecase.NewAktivasiUsecase(aktivasiRepo, sesiRepo, courseRepo, kelasRepo, jawabanRepo, pengerjaanRepo, soalUC)
+	aktivasiUC := usecase.NewAktivasiUsecase(aktivasiRepo, sesiRepo, courseRepo, kelasRepo, jawabanRepo, pengerjaanRepo, soalUC, aktivasiTxRepo)
 	jawabanUC := usecase.NewJawabanUsecase(aktivasiRepo, terpilihRepo, jawabanRepo, pengerjaanRepo, userRepo, courseRepo)
-	penilaianUC := usecase.NewPenilaianUsecase(jawabanRepo, pengerjaanRepo, userRepo)
+	penilaianUC := usecase.NewPenilaianUsecase(jawabanRepo, pengerjaanRepo, userRepo, penilaianTxRepo)
 	konfUC := usecase.NewKonfigurasiUsecase(konfRepo)
 	userUC := usecase.NewUserUsecase(userRepo, kelasRepo)
 	kelasUC := usecase.NewKelasUsecase(kelasRepo)
@@ -90,22 +92,22 @@ func main() {
 
 	// ---- Handler ----
 	h := route.Handlers{
-		Auth:        handler.NewAuthHandler(authUC, profileUC),
-		Dashboard:   handler.NewDashboardHandler(dashboardUC),
-		Sesi:        handler.NewSesiHandler(sesiUC),
-		Aktivasi:    handler.NewAktivasiHandler(aktivasiUC),
-		Soal:        handler.NewSoalHandler(soalUC),
-		Jawaban:     handler.NewJawabanHandler(jawabanUC),
-		Penilaian:   handler.NewPenilaianHandler(penilaianUC),
-		Konfigurasi: handler.NewKonfigurasiHandler(konfUC),
-		Profile:     handler.NewProfileHandler(profileUC),
-		Jadwal:      handler.NewJadwalHandler(jadwalUC),
-		User:        handler.NewUserHandler(userUC),
-		Kelas:       handler.NewKelasHandler(kelasUC),
-		Pedoman:     handler.NewPedomanHandler(pedomanUC),
-		Praktikum:   handler.NewPraktikumHandler(praktikumUC),
-		Upload:      handler.NewUploadHandler(sb),
-		Ampuan:      handler.NewAmpuanHandler(ampuanUC, userUC),
+		Auth:         handler.NewAuthHandler(authUC, profileUC),
+		Dashboard:    handler.NewDashboardHandler(dashboardUC),
+		Sesi:         handler.NewSesiHandler(sesiUC),
+		Aktivasi:     handler.NewAktivasiHandler(aktivasiUC),
+		Soal:         handler.NewSoalHandler(soalUC),
+		Jawaban:      handler.NewJawabanHandler(jawabanUC),
+		Penilaian:    handler.NewPenilaianHandler(penilaianUC),
+		Konfigurasi:  handler.NewKonfigurasiHandler(konfUC),
+		Profile:      handler.NewProfileHandler(profileUC),
+		Jadwal:       handler.NewJadwalHandler(jadwalUC),
+		User:         handler.NewUserHandler(userUC),
+		Kelas:        handler.NewKelasHandler(kelasUC),
+		Pedoman:      handler.NewPedomanHandler(pedomanUC),
+		Praktikum:    handler.NewPraktikumHandler(praktikumUC),
+		Upload:       handler.NewUploadHandler(sb),
+		Ampuan:       handler.NewAmpuanHandler(ampuanUC, userUC),
 		Rekap:        handler.NewRekapHandler(rekapUC),
 		AIGrading:    handler.NewAIGradingHandler(aiGradingUC),
 		RekapJawaban: handler.NewRekapJawabanHandler(penilaianUC),

@@ -10,3 +10,6 @@
 *.dylib
 *.test
 *.out
+
+# Dokumen internal (PRD, ERD, catatan update, panduan deploy) — tidak ikut push repo
+updateAndPRDERD/
