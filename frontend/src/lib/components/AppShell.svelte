@@ -51,7 +51,7 @@
 	<!-- Sidebar -->
 	<aside class="fixed inset-y-0 left-0 z-30 w-64 -translate-x-full bg-sidebar/95 backdrop-blur-xl border-r border-white/10 text-white transition-all duration-300 md:static md:translate-x-0 {open ? 'translate-x-0' : ''} shadow-2xl md:shadow-none">
 		<div class="flex items-center gap-3 px-6 py-5">
-			<span class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 shadow-inner font-bold text-lg border border-white/20">L</span>
+			<span class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 shadow-inner border border-white/20"><img src="/logoLab.webp" alt="Logo Lab AP" class="h-7 w-7 object-contain" /></span>
 			<span class="font-bold tracking-wide text-lg text-white/90">Lab AP</span>
 		</div>
 		<nav class="px-4 py-2 flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-5rem)]">

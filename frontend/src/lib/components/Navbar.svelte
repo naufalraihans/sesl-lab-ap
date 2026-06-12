@@ -19,7 +19,7 @@
 <nav class="bg-navbar text-white">
 	<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
 		<a href="/info" class="flex items-center gap-2 text-white hover:text-white">
-			<span class="grid h-8 w-8 place-items-center rounded-lg bg-primary font-bold">L</span>
+			<img src="/logoLab.webp" alt="Logo Lab AP" class="h-9 w-9 object-contain" />
 			<span class="font-semibold">Lab Algoritma &amp; Pemrograman</span>
 		</a>
 

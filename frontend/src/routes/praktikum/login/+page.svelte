@@ -92,7 +92,7 @@
 		<div class="glass-dark rounded-3xl p-10 text-white shadow-2xl">
 			<div class="mb-8 text-center">
 				<div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/30">
-					<span class="text-2xl font-bold tracking-wider text-white">L</span>
+					<img src="/logoLab.webp" alt="Logo Lab AP" class="h-9 w-9 object-contain" />
 				</div>
 				<h1 class="text-2xl font-bold tracking-tight text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)]">Login Praktikum</h1>
 				<p class="mt-2 text-sm text-gray-300">Lab Algoritma &amp; Pemrograman</p>
