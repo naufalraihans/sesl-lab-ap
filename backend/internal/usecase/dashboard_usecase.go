@@ -38,6 +38,10 @@ func (uc *DashboardUsecase) Statistik() (*dto.StatistikResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Jangan kembalikan null untuk list (nil slice -> JSON null bikin frontend crash).
+	if perKelas == nil {
+		perKelas = []repository.KelasShiftCount{}
+	}
 
 	resp := &dto.StatistikResponse{
 		TotalMahasiswa: totalMhs,
@@ -45,6 +49,7 @@ func (uc *DashboardUsecase) Statistik() (*dto.StatistikResponse, error) {
 		SudahRegister:  sudah,
 		BelumRegister:  belum,
 		PerKelasShift:  perKelas,
+		SesiAktif:      make([]dto.SesiAktifInfo, 0),
 	}
 
 	aktifList, err := uc.aktivasi.ListActiveSesi()
@@ -52,7 +57,7 @@ func (uc *DashboardUsecase) Statistik() (*dto.StatistikResponse, error) {
 		return nil, err
 	}
 	for _, a := range aktifList {
-		info := dto.SesiAktifInfo{AktivasiSesiID: a.ID, Shift: a.Shift}
+		info := dto.SesiAktifInfo{AktivasiSesiID: a.ID, Shift: a.Shift, Courses: make([]dto.CourseProgressInfo, 0)}
 		if a.Sesi != nil {
 			info.JudulSesi = a.Sesi.JudulSesi
 		}

@@ -69,7 +69,7 @@
 		<table class="tbl">
 			<thead><tr><th>Kelas</th><th>Shift</th><th>Jumlah</th></tr></thead>
 			<tbody>
-				{#each stat.per_kelas_shift as r}
+				{#each stat.per_kelas_shift ?? [] as r}
 					<tr><td>{r.nama_kelas}</td><td>{r.shift}</td><td>{r.jumlah}</td></tr>
 				{/each}
 			</tbody>
@@ -77,16 +77,16 @@
 	</div>
 
 	<h2 class="mb-3 mt-8 text-xl font-bold text-ink-heading">Sesi Aktif &amp; Progress</h2>
-	{#if stat.sesi_aktif.length === 0}
+	{#if (stat.sesi_aktif ?? []).length === 0}
 		<p class="text-ink-caption">Tidak ada sesi aktif.</p>
 	{:else}
 		<div class="grid gap-4 md:grid-cols-2">
-			{#each stat.sesi_aktif as s}
+			{#each stat.sesi_aktif ?? [] as s}
 				<div class="card">
 					<h3 class="text-lg">{s.judul_sesi}</h3>
 					<p class="text-sm text-ink-caption">{s.nama_kelas} · Shift {s.shift}</p>
 					<div class="mt-3 space-y-2">
-						{#each s.courses as c}
+						{#each s.courses ?? [] as c}
 							<div class="rounded-lg border border-gray-100 p-2 text-sm">
 								<div class="flex justify-between">
 									<span>{labelJenis(c.jenis)}</span>
