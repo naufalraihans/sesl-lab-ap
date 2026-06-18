@@ -6,6 +6,11 @@ export default {
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 	theme: {
 		extend: {
+			fontFamily: {
+				sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				display: ['"Plus Jakarta Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace']
+			},
 			colors: {
 				primary: {
 					DEFAULT: '#D03153',
@@ -16,13 +21,14 @@ export default {
 				navbar: '#B02A47',
 				sidebar: '#942240',
 				surface: {
+					base: '#FDFCFB',
 					soft: '#FDF2F4',
-					muted: '#F9FAFB'
+					muted: '#FAF9F8'
 				},
 				ink: {
-					heading: '#1F2937',
-					body: '#374151',
-					caption: '#6B7280'
+					heading: '#1C1917',
+					body: '#44403C',
+					caption: '#78716C'
 				},
 				state: {
 					success: '#10B981',
@@ -37,6 +43,10 @@ export default {
 			},
 			borderRadius: {
 				DEFAULT: '0.5rem'
+			},
+			transitionTimingFunction: {
+				spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+				'smooth-out': 'cubic-bezier(0.16, 1, 0.3, 1)'
 			},
 			keyframes: {
 				'fade-in-up': {

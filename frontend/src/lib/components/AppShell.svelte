@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import { api } from '$lib/api';
 	import { user, clearAuth } from '$lib/stores/auth';
 
@@ -90,7 +92,11 @@
 			</div>
 		</header>
 		<main class="min-w-0 flex-1 p-4 md:p-6">
-			{@render children()}
+			{#key $page.url.pathname}
+				<div in:fly={{ y: 12, duration: 280, easing: cubicOut }}>
+					{@render children()}
+				</div>
+			{/key}
 		</main>
 	</div>
 </div>
