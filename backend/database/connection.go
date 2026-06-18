@@ -43,10 +43,10 @@ func Connect(dsn string, debug bool) (*gorm.DB, error) {
 	sqlDB.SetMaxIdleConns(1)
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
-	if err := sqlDB.Ping(); err != nil {
-		return nil, err
-	}
-
-	log.Println("✓ Terhubung ke PostgreSQL")
+	// Sengaja TIDAK Ping() di sini: koneksi dibuka lazy oleh query pertama.
+	// Di serverless ini menghemat 1 round-trip ke pooler tiap cold start
+	// (sebelumnya: ping + query). Error koneksi tetap muncul di query pertama,
+	// dan connect_timeout di DSN menjaga agar tidak menggantung.
+	log.Println("✓ Koneksi PostgreSQL siap (lazy)")
 	return db, nil
 }

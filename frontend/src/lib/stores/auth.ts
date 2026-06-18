@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import { clearSwrCache } from '$lib/cache';
 import type { User } from '$lib/types';
 
 function load(): User | null {
@@ -23,6 +24,7 @@ export function clearAuth() {
 		localStorage.removeItem('token');
 		localStorage.removeItem('user');
 	}
+	clearSwrCache();
 	user.set(null);
 }
 

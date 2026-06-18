@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib/api';
+	import { swrGet } from '$lib/cache';
 	import { labelJenis, labelStatus, statusBadgeClass } from '$lib/utils';
 	import type { SesiUserItem } from '$lib/types';
 
@@ -14,12 +14,13 @@
 	let data = $state<Dashboard | null>(null);
 	let err = $state('');
 
-	onMount(async () => {
-		try {
-			data = await api.get<Dashboard>('/api/praktikum/dashboard');
-		} catch (e) {
+	onMount(() => {
+		// SWR: tampil instan dari cache (bila ada) lalu disegarkan diam-diam.
+		swrGet<Dashboard>('/api/praktikum/dashboard', (v) => {
+			data = v;
+		}).catch((e) => {
 			err = (e as Error).message;
-		}
+		});
 	});
 </script>
 

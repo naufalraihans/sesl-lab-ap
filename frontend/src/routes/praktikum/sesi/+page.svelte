@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib/api';
+	import { swrGet } from '$lib/cache';
 	import { Lock } from 'lucide-svelte';
 	import type { SesiUserItem } from '$lib/types';
 
@@ -8,14 +8,15 @@
 	let err = $state('');
 	let loading = $state(true);
 
-	onMount(async () => {
-		try {
-			sesi = (await api.get<SesiUserItem[]>('/api/praktikum/sesi')) ?? [];
-		} catch (e) {
-			err = (e as Error).message;
-		} finally {
+	onMount(() => {
+		// SWR: kalau sudah pernah dibuka, tampil instan dari cache lalu disegarkan.
+		swrGet<SesiUserItem[]>('/api/praktikum/sesi', (v) => {
+			sesi = v ?? [];
 			loading = false;
-		}
+		}).catch((e) => {
+			err = (e as Error).message;
+			loading = false;
+		});
 	});
 </script>
 
