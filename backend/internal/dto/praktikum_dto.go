@@ -62,3 +62,14 @@ type RunResponse struct {
 	Stderr string `json:"stderr"`
 	Error  string `json:"error"`
 }
+
+// CompileRequest: kompilasi sumber C ke wasm32-wasi.
+type CompileRequest struct {
+	Source string `json:"source" binding:"required"`
+}
+
+// CompileResponse: hasil kompilasi. Wasm = base64 (kosong bila gagal); Stderr = pesan clang.
+type CompileResponse struct {
+	Wasm   string `json:"wasm"`
+	Stderr string `json:"stderr"`
+}

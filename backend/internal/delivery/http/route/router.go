@@ -39,6 +39,7 @@ type Handlers struct {
 	RekapJawaban *handler.RekapJawabanHandler
 	Cron         *handler.CronHandler
 	Run          *handler.RunHandler
+	Compile      *handler.CompileHandler
 }
 
 // HealthCheck GET /api/health
@@ -122,6 +123,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 		prak.POST("/autosave", h.Jawaban.AutoSave)
 		prak.POST("/submit", h.Jawaban.Submit)
 		prak.POST("/run", h.Run.Execute)
+		prak.POST("/compile-c", h.Compile.CompileC)
 	}
 
 	// ---- Admin (role admin) ----

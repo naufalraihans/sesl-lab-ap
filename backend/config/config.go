@@ -44,6 +44,10 @@ type Config struct {
 	// Glot.io (Run Code)
 	GlotURL   string
 	GlotToken string
+
+	// Compile C -> wasm32-wasi (clang + wasi-sdk). Kosong = fitur nonaktif.
+	CwasmClang   string
+	CwasmSysroot string
 }
 
 // Load membaca .env (jika ada) lalu environment OS.
@@ -75,6 +79,8 @@ func Load() *Config {
 		OllamaAPIKey:       getEnv("OLLAMA_API_KEY", ""),
 		GlotURL:            getEnv("GLOT_URL", "https://glot.io/api/run"),
 		GlotToken:          getEnv("GLOT_TOKEN", ""),
+		CwasmClang:         getEnv("CWASM_CLANG", ""),
+		CwasmSysroot:       getEnv("WASI_SYSROOT", ""),
 	}
 	return cfg
 }

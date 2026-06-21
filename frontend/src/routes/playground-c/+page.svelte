@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { Play, Square } from 'lucide-svelte';
+	import { api, ApiError } from '$lib/api';
 
 	type Status = 'init' | 'loading' | 'ready' | 'running' | 'unsupported';
 
@@ -10,6 +11,19 @@
 	let inputValue = $state('');
 	let inputEl: HTMLInputElement | undefined = $state();
 
+	let code = $state(`#include <stdio.h>
+int main(void) {
+    char nama[64];
+    printf("Siapa namamu? ");
+    scanf("%63s", nama);
+    int n;
+    printf("Masukkan sebuah angka: ");
+    scanf("%d", &n);
+    printf("Halo %s, kuadratnya adalah %d\\n", nama, n * n);
+    return 0;
+}
+`);
+
 	let worker: Worker | null = null;
 	let meta: Int32Array | null = null;
 	let dataArr: Uint8Array | null = null;
@@ -18,6 +32,13 @@
 
 	function append(text: string) {
 		output += text;
+	}
+
+	function b64ToArrayBuffer(b64: string): ArrayBuffer {
+		const bin = atob(b64);
+		const bytes = new Uint8Array(bin.length);
+		for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+		return bytes.buffer;
 	}
 
 	function setupWorker() {
@@ -50,12 +71,27 @@
 		worker.postMessage({ type: 'init', sab });
 	}
 
-	function run() {
+	async function run() {
 		if (status !== 'ready' || !worker) return;
 		output = '';
 		needInput = false;
 		status = 'running';
-		worker.postMessage({ type: 'run' }); // POC: worker memuat /scanf.wasm
+		try {
+			const res = await api.post<{ wasm: string; stderr: string }>('/praktikum/compile-c', {
+				source: code
+			});
+			if (!res.wasm) {
+				// Gagal kompilasi: tampilkan pesan clang di terminal.
+				append(res.stderr || 'Kompilasi gagal.');
+				status = 'ready';
+				return;
+			}
+			if (res.stderr) append(res.stderr + '\n'); // warning compiler (jika ada)
+			worker.postMessage({ type: 'run', wasm: b64ToArrayBuffer(res.wasm) });
+		} catch (e) {
+			append('\n[' + (e instanceof ApiError ? e.message : String(e)) + ']\n');
+			status = 'ready';
+		}
 	}
 
 	function submitInput() {
@@ -86,11 +122,10 @@
 </script>
 
 <div class="mx-auto max-w-4xl">
-	<h1 class="mb-1 text-2xl font-bold text-ink-heading">Playground C (Live) — POC</h1>
+	<h1 class="mb-1 text-2xl font-bold text-ink-heading">Playground C (Live)</h1>
 	<p class="mb-5 text-sm text-ink-caption">
-		Menjalankan program C (WebAssembly/WASI) langsung di browser dengan <code>scanf</code> interaktif.
-		Program contoh masih tetap (<code>Nama? </code> lalu echo); editor + compiler menyusul setelah
-		endpoint compile siap. (Eksperimental / Fase 1)
+		Tulis kode C, di-compile ke WebAssembly di server, lalu jalan langsung di browser —
+		termasuk <code>scanf</code> yang interaktif. (Eksperimental / Fase 2)
 	</p>
 
 	{#if status === 'unsupported'}
@@ -100,10 +135,24 @@
 		</div>
 	{:else}
 		<div class="grid gap-4">
+			<div>
+				<label class="label" for="code">Kode C</label>
+				<textarea
+					id="code"
+					bind:value={code}
+					class="input min-h-48 font-mono text-sm"
+					spellcheck="false"
+				></textarea>
+			</div>
+
 			<div class="flex items-center gap-2">
 				<button class="btn-primary" onclick={run} disabled={status !== 'ready'}>
 					<Play size={16} />
-					{status === 'loading' ? 'Memuat runtime…' : status === 'running' ? 'Berjalan…' : 'Run contoh'}
+					{status === 'loading'
+						? 'Memuat runtime…'
+						: status === 'running'
+							? 'Compile & jalan…'
+							: 'Run'}
 				</button>
 				<button class="btn-outline" onclick={stop} disabled={status === 'loading' || status === 'init'}>
 					<Square size={14} /> Stop / Reset
@@ -112,7 +161,7 @@
 
 			<div>
 				<p class="mb-1 text-xs font-medium text-ink-caption">Output / Terminal:</p>
-				<pre class="min-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-gray-900 p-3 text-sm text-gray-100">{output || '(klik Run contoh)'}</pre>
+				<pre class="min-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-gray-900 p-3 text-sm text-gray-100">{output || '(output akan muncul di sini)'}</pre>
 				{#if needInput}
 					<form class="mt-2 flex items-center gap-2" onsubmit={(e) => { e.preventDefault(); submitInput(); }}>
 						<span class="font-mono text-sm text-ink-caption">&gt;</span>

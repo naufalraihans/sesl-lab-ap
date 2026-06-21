@@ -11,6 +11,7 @@ import (
 	"lab-ap/internal/delivery/http/route"
 	"lab-ap/internal/repository"
 	"lab-ap/internal/usecase"
+	"lab-ap/pkg/cwasm"
 	"lab-ap/pkg/glot"
 	"lab-ap/pkg/jwt"
 	"lab-ap/pkg/ollama"
@@ -36,6 +37,7 @@ func Build(cfg *config.Config) (*gin.Engine, *Deps, error) {
 	sb := supabase.New(cfg.SupabaseURL, cfg.SupabaseServiceKey, cfg.SupabaseBucket)
 	oc := ollama.NewClient(cfg)
 	glotClient := glot.New(cfg.GlotURL, cfg.GlotToken)
+	cwasmCompiler := cwasm.New(cfg.CwasmClang, cfg.CwasmSysroot)
 
 	// ---- Repository ----
 	userRepo := repository.NewUserRepository(db)
@@ -97,6 +99,7 @@ func Build(cfg *config.Config) (*gin.Engine, *Deps, error) {
 		RekapJawaban: handler.NewRekapJawabanHandler(penilaianUC),
 		Cron:         handler.NewCronHandler(jawabanUC, cfg.CronSecret),
 		Run:          handler.NewRunHandler(glotClient),
+		Compile:      handler.NewCompileHandler(cwasmCompiler),
 	}
 
 	r := route.Setup(cfg, jm, h)
