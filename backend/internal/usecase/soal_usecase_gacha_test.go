@@ -33,3 +33,21 @@ func TestDistribusiDifficulty(t *testing.T) {
 		t.Fatalf("kuota parsial salah: %v", got2)
 	}
 }
+
+func TestPickRandom(t *testing.T) {
+	pool := []entity.Soal{{ID: 1}, {ID: 2}, {ID: 3}}
+
+	got, err := pickRandom(pool, 2, entity.CoursePretest, "easy")
+	if err != nil || len(got) != 2 {
+		t.Fatalf("pool cukup: harap 2 tanpa error, dapat %d err=%v", len(got), err)
+	}
+
+	if _, err := pickRandom(pool, 5, entity.CoursePretest, "easy"); err == nil {
+		t.Fatal("pool kurang harus error")
+	}
+
+	got0, err := pickRandom(pool, 0, entity.CoursePretest, "easy")
+	if err != nil || len(got0) != 0 {
+		t.Fatalf("n=0 harap 0 tanpa error, dapat %d err=%v", len(got0), err)
+	}
+}

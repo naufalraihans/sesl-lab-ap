@@ -55,7 +55,7 @@ func (uc *SesiUsecase) Update(id int, req dto.SesiRequest) (*entity.SesiPraktiku
 	return s, nil
 }
 
-func (uc *SesiUsecase) Delete(id int) error { return uc.sesi.Delete(id) }
+func (uc *SesiUsecase) Delete(id int) error { return mapDeleteErr(uc.sesi.Delete(id)) }
 
 // ---- Course ----
 
@@ -101,4 +101,4 @@ func (uc *SesiUsecase) UpdateCourse(id int, req dto.CourseRequest) (*entity.Cour
 	return c, nil
 }
 
-func (uc *SesiUsecase) DeleteCourse(id int) error { return uc.course.Delete(id) }
+func (uc *SesiUsecase) DeleteCourse(id int) error { return mapDeleteErr(uc.course.Delete(id)) }

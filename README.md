@@ -58,7 +58,9 @@ The project adopts a Clean Architecture pattern in the backend to ensure a stric
 ### 5. Security & Access Control
 - Strict Role-Based Access Control (RBAC) middleware separating Admin (Laboratory Assistants) and Users (Students).
 - Cryptographic PIN/Token Gate system requiring students to input dynamic tokens distributed inside the physical laboratory room.
-- Soft Delete implementation on crucial tables to prevent catastrophic accidental data loss.
+- `pengerjaan_course` (student grades) uses `ON DELETE RESTRICT` foreign keys so deleting a parent session/course/class/student is refused while grades still reference it — preventing accidental data loss.
+
+> **Route guard convention (frontend):** authentication is enforced by Svelte layout guards. Any **admin-only** page MUST live under `src/routes/praktikum/admin/` — that subtree's `+layout.svelte` redirects non-admins. Pages requiring only login go elsewhere under `praktikum/`. Putting an admin page outside `admin/` silently skips the role guard (backend still enforces `RequireRole`, but do not rely on that alone).
 
 ---
 

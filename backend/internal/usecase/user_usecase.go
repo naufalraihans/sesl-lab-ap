@@ -85,7 +85,7 @@ func (uc *UserUsecase) UpdateMahasiswa(id int, req dto.UserRequest) (*entity.Use
 	return u, nil
 }
 
-func (uc *UserUsecase) Delete(id int) error { return uc.users.Delete(id) }
+func (uc *UserUsecase) Delete(id int) error { return mapDeleteErr(uc.users.Delete(id)) }
 
 // ResetPassword mengosongkan password & menandai belum register (mahasiswa register ulang).
 func (uc *UserUsecase) ResetPassword(id int) error {

@@ -34,4 +34,4 @@ func (uc *KelasUsecase) Update(id int, req dto.KelasRequest) (*entity.Kelas, err
 	return k, nil
 }
 
-func (uc *KelasUsecase) Delete(id int) error { return uc.repo.Delete(id) }
+func (uc *KelasUsecase) Delete(id int) error { return mapDeleteErr(uc.repo.Delete(id)) }

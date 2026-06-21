@@ -22,6 +22,8 @@ func mapError(c *gin.Context, err error) {
 		response.Fail(c, http.StatusForbidden, err.Error(), nil)
 	case errors.Is(err, usecase.ErrConflict):
 		response.Fail(c, http.StatusConflict, "Data sudah ada / konflik", nil)
+	case errors.Is(err, usecase.ErrHasReferences):
+		response.Fail(c, http.StatusConflict, err.Error(), nil)
 	case errors.Is(err, usecase.ErrRegisterClosed):
 		response.Fail(c, http.StatusForbidden, err.Error(), nil)
 	case errors.Is(err, usecase.ErrAlreadyDone):
