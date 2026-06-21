@@ -72,6 +72,9 @@ export interface Course {
 	judul: string;
 	deskripsi: string;
 	durasi_menit: number;
+	kuota_easy?: number | null;
+	kuota_medium?: number | null;
+	kuota_hard?: number | null;
 }
 
 export interface Soal {

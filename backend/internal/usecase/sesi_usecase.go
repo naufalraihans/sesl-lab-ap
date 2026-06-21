@@ -73,6 +73,9 @@ func (uc *SesiUsecase) CreateCourse(sesiID int, req dto.CourseRequest) (*entity.
 		Judul:           req.Judul,
 		Deskripsi:       req.Deskripsi,
 		DurasiMenit:     req.DurasiMenit,
+		KuotaEasy:       req.KuotaEasy,
+		KuotaMedium:     req.KuotaMedium,
+		KuotaHard:       req.KuotaHard,
 	}
 	if err := uc.course.Create(c); err != nil {
 		return nil, ErrConflict // kemungkinan duplikat jenis per sesi
@@ -89,6 +92,9 @@ func (uc *SesiUsecase) UpdateCourse(id int, req dto.CourseRequest) (*entity.Cour
 	c.Judul = req.Judul
 	c.Deskripsi = req.Deskripsi
 	c.DurasiMenit = req.DurasiMenit
+	c.KuotaEasy = req.KuotaEasy
+	c.KuotaMedium = req.KuotaMedium
+	c.KuotaHard = req.KuotaHard
 	if err := uc.course.Update(c); err != nil {
 		return nil, err
 	}

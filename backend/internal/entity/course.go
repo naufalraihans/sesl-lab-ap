@@ -10,6 +10,11 @@ type Course struct {
 	Deskripsi       string      `gorm:"type:text" json:"deskripsi"`
 	DurasiMenit     int         `gorm:"not null;default:30" json:"durasi_menit"`
 
+	// Kuota gacha per difficulty (pretest/posttest). Nil = pakai default per jenis.
+	KuotaEasy   *int `gorm:"column:kuota_easy" json:"kuota_easy,omitempty"`
+	KuotaMedium *int `gorm:"column:kuota_medium" json:"kuota_medium,omitempty"`
+	KuotaHard   *int `gorm:"column:kuota_hard" json:"kuota_hard,omitempty"`
+
 	Soal []Soal `gorm:"foreignKey:CourseID" json:"soal,omitempty"`
 }
 

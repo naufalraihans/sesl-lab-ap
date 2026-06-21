@@ -15,7 +15,10 @@
 
 	let selectedSesi = $state<Sesi | null>(null);
 	let courses = $state<Course[]>([]);
-	let courseForm = $state({ jenis: 'pretest', judul: '', deskripsi: '', durasi_menit: 20 });
+	let courseForm = $state({
+		jenis: 'pretest', judul: '', deskripsi: '', durasi_menit: 20,
+		kuota_easy: null as number | null, kuota_medium: null as number | null, kuota_hard: null as number | null
+	});
 	let editCourseId = $state<number | null>(null);
 
 	let selectedCourse = $state<Course | null>(null);
@@ -64,10 +67,16 @@
 		catch (e) { err = (e as Error).message; }
 	}
 
-	function resetCourseForm() { editCourseId = null; courseForm = { jenis: 'pretest', judul: '', deskripsi: '', durasi_menit: 20 }; }
+	function resetCourseForm() {
+		editCourseId = null;
+		courseForm = { jenis: 'pretest', judul: '', deskripsi: '', durasi_menit: 20, kuota_easy: null, kuota_medium: null, kuota_hard: null };
+	}
 	function editCourse(c: Course) {
 		editCourseId = c.id;
-		courseForm = { jenis: c.jenis, judul: c.judul, deskripsi: c.deskripsi, durasi_menit: c.durasi_menit };
+		courseForm = {
+			jenis: c.jenis, judul: c.judul, deskripsi: c.deskripsi, durasi_menit: c.durasi_menit,
+			kuota_easy: c.kuota_easy ?? null, kuota_medium: c.kuota_medium ?? null, kuota_hard: c.kuota_hard ?? null
+		};
 	}
 
 	async function saveCourse() {
@@ -213,6 +222,24 @@
 			<textarea id="cd" class="input min-h-16" bind:value={courseForm.deskripsi}></textarea>
 			<label class="label mt-2" for="cm">Durasi (menit)</label>
 			<input id="cm" type="number" class="input" bind:value={courseForm.durasi_menit} min="1" />
+			{#if courseForm.jenis === 'pretest' || courseForm.jenis === 'posttest'}
+				<p class="label mt-2">Kuota soal acak per difficulty</p>
+				<p class="mb-1 text-xs text-ink-caption">Jumlah soal yang diambil acak dari pool. Kosongkan = default ({courseForm.jenis === 'pretest' ? '1/2/2' : '1/1/1'}).</p>
+				<div class="grid grid-cols-3 gap-2">
+					<div>
+						<span class="text-xs text-ink-caption">Easy</span>
+						<input type="number" class="input" bind:value={courseForm.kuota_easy} min="0" placeholder="–" />
+					</div>
+					<div>
+						<span class="text-xs text-ink-caption">Medium</span>
+						<input type="number" class="input" bind:value={courseForm.kuota_medium} min="0" placeholder="–" />
+					</div>
+					<div>
+						<span class="text-xs text-ink-caption">Hard</span>
+						<input type="number" class="input" bind:value={courseForm.kuota_hard} min="0" placeholder="–" />
+					</div>
+				</div>
+			{/if}
 			<div class="mt-3 flex gap-2">
 				<button class="btn-primary" onclick={saveCourse}>Simpan</button>
 				{#if editCourseId}<button class="btn-outline" onclick={resetCourseForm}>Batal</button>{/if}

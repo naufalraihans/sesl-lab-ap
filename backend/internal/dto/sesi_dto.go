@@ -14,4 +14,8 @@ type CourseRequest struct {
 	Judul       string `json:"judul"`
 	Deskripsi   string `json:"deskripsi"`
 	DurasiMenit int    `json:"durasi_menit" binding:"required,min=1"`
+	// Kuota gacha per difficulty (pretest/posttest). Kosong = default per jenis.
+	KuotaEasy   *int `json:"kuota_easy" binding:"omitempty,min=0"`
+	KuotaMedium *int `json:"kuota_medium" binding:"omitempty,min=0"`
+	KuotaHard   *int `json:"kuota_hard" binding:"omitempty,min=0"`
 }

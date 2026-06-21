@@ -97,18 +97,33 @@ func (uc *SoalUsecase) ListByCourse(courseID int) ([]entity.Soal, error) {
 
 // ---- Pengacakan ke soal_terpilih ----
 
-// distribusiDifficulty mengembalikan jumlah soal per difficulty (hardcoded by jenis).
-func distribusiDifficulty(jenis entity.JenisCourse) map[entity.Difficulty]int {
-	switch jenis {
+// distribusiDifficulty mengembalikan jumlah soal per difficulty. Pakai kuota
+// per course bila admin mengisinya; selain itu fallback ke default per jenis.
+func distribusiDifficulty(course *entity.Course) map[entity.Difficulty]int {
+	if course.KuotaEasy != nil || course.KuotaMedium != nil || course.KuotaHard != nil {
+		return map[entity.Difficulty]int{
+			entity.DiffEasy:   intOrZero(course.KuotaEasy),
+			entity.DiffMedium: intOrZero(course.KuotaMedium),
+			entity.DiffHard:   intOrZero(course.KuotaHard),
+		}
+	}
+	switch course.Jenis {
 	case entity.CoursePretest:
-		// 1 easy, 2 medium, 2 hard (total 5)
+		// default: 1 easy, 2 medium, 2 hard (total 5)
 		return map[entity.Difficulty]int{entity.DiffEasy: 1, entity.DiffMedium: 2, entity.DiffHard: 2}
 	case entity.CoursePosttest:
-		// 1 easy (essay), 1 medium (essay), 1 hard (coding) (total 3)
+		// default: 1 easy, 1 medium, 1 hard (total 3)
 		return map[entity.Difficulty]int{entity.DiffEasy: 1, entity.DiffMedium: 1, entity.DiffHard: 1}
 	default:
 		return nil
 	}
+}
+
+func intOrZero(p *int) int {
+	if p == nil {
+		return 0
+	}
+	return *p
 }
 
 // PilihSoalUntukCourse mengacak soal dari pool sesuai jenis course dan
@@ -119,7 +134,7 @@ func (uc *SoalUsecase) PilihSoalUntukCourse(course *entity.Course) ([]entity.Soa
 
 	switch course.Jenis {
 	case entity.CoursePretest, entity.CoursePosttest:
-		dist := distribusiDifficulty(course.Jenis)
+		dist := distribusiDifficulty(course)
 		for diff, n := range dist {
 			pool, err := uc.soal.PoolByDifficulty(course.ID, diff)
 			if err != nil {
