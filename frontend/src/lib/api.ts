@@ -44,6 +44,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 		throw new ApiError(`HTTP ${res.status}`, res.status);
 	}
 	if (!res.ok || !json.success) {
+		// Token kedaluwarsa/invalid: bersihkan sesi & arahkan ke login.
+		if (res.status === 401 && browser) {
+			localStorage.removeItem('token');
+			localStorage.removeItem('user');
+			if (location.pathname !== '/praktikum/login') location.href = '/praktikum/login';
+		}
 		throw new ApiError(json.message || `HTTP ${res.status}`, res.status);
 	}
 	return json.data as T;

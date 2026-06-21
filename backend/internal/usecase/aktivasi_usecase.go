@@ -49,18 +49,17 @@ func (uc *AktivasiUsecase) Get(id int) (*entity.AktivasiSesi, error) {
 	return a, nil
 }
 
-func generateRandomPIN() string {
+func generateRandomPIN() (string, error) {
 	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, 6)
 	// crypto/rand: token akses ujian tidak boleh mudah ditebak.
 	if _, err := rand.Read(b); err != nil {
-		// Sumber acak OS gagal (sangat jarang); kembalikan PIN deterministik aman-gagal.
-		return "ABC123"
+		return "", err // jangan jatuh ke PIN deterministik yang bisa ditebak
 	}
 	for i := range b {
 		b[i] = charset[int(b[i])%len(charset)]
 	}
-	return string(b)
+	return string(b), nil
 }
 
 func (uc *AktivasiUsecase) GenerateToken(id int) (*entity.AktivasiSesi, error) {
@@ -68,7 +67,10 @@ func (uc *AktivasiUsecase) GenerateToken(id int) (*entity.AktivasiSesi, error) {
 	if err != nil {
 		return nil, ErrNotFound
 	}
-	pin := generateRandomPIN()
+	pin, err := generateRandomPIN()
+	if err != nil {
+		return nil, err
+	}
 	aks.Token = &pin
 	if err := uc.aktivasi.UpdateSesi(aks); err != nil {
 		return nil, err

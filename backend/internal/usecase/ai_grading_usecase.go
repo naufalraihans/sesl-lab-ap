@@ -68,14 +68,22 @@ func (uc *aiGradingUsecase) GradeOne(jawabanID int) (*dto.AIGradeOneResponse, er
 		return nil, err
 	}
 
+	// Clamp nilai AI ke [0, poin] supaya tidak ditolak SetNilai bila model meleset.
+	nilai := res.Nilai
+	if nilai < 0 {
+		nilai = 0
+	} else if poin := j.SoalTerpilih.Soal.Poin; nilai > poin {
+		nilai = poin
+	}
+
 	feedback := "[AI] " + res.Feedback
 	if _, err := uc.penilaianUsecase.SetNilai(dto.NilaiRequest{
 		JawabanID: jawabanID,
-		Nilai:     res.Nilai,
+		Nilai:     nilai,
 		Feedback:  &feedback,
 	}); err != nil {
 		return nil, err
 	}
 
-	return &dto.AIGradeOneResponse{JawabanID: jawabanID, Nilai: res.Nilai, Feedback: feedback}, nil
+	return &dto.AIGradeOneResponse{JawabanID: jawabanID, Nilai: nilai, Feedback: feedback}, nil
 }
