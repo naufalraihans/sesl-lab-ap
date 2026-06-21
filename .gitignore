@@ -17,3 +17,13 @@ data.txt
 
 # Dokumen internal (PRD, ERD, catatan update, panduan deploy) — tidak ikut push repo
 updateAndPRDERD/
+
+# Claude Code: konfigurasi lokal & memory — tidak ikut repo
+.claude/
+memory/
+
+# Dump log build/check & artefak test — bukan source
+frontend/build_out.txt
+frontend/check_out.txt
+frontend/test-results/
+frontend/playwright-report/
