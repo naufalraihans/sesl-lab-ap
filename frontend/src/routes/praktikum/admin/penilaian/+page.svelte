@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
-	import { labelJenis, renderMath } from '$lib/utils';
+	import { labelJenis, labelShift, renderMath } from '$lib/utils';
 	import type { Kelas } from '$lib/types';
 
 	interface AktivasiSesi {
@@ -133,7 +133,7 @@
 					onclick={() => selectAktivasi(a)}
 				>
 					<p class="font-medium">{a.sesi?.judul_sesi ?? `Sesi #${a.sesi_praktikum_id}`}</p>
-					<p class="text-xs text-ink-caption">{a.kelas?.nama_kelas ?? a.kelas_id} · Shift {a.shift}</p>
+					<p class="text-xs text-ink-caption">{a.kelas?.nama_kelas ?? a.kelas_id} · {labelShift(a.shift)}</p>
 				</button>
 			{/each}
 		</div>

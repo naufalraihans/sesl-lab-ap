@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
-	import { labelJenis } from '$lib/utils';
+	import { labelJenis, labelShift } from '$lib/utils';
 	import { KeyRound } from 'lucide-svelte';
 	import type { Sesi, Kelas, User } from '$lib/types';
 
@@ -145,7 +145,7 @@
 						<tr class={selected?.id === a.id ? 'ring-2 ring-primary' : ''}>
 							<td>{a.sesi?.judul_sesi ?? a.sesi_praktikum_id}</td>
 							<td>{a.kelas?.nama_kelas ?? a.kelas_id}</td>
-							<td>{a.shift}</td>
+							<td>{a.shift === 0 ? 'Arsip' : a.shift}</td>
 							<td><button class="text-state-info hover:underline" onclick={() => selectAktivasi(a)}>Detail</button></td>
 						</tr>
 					{/each}
@@ -159,7 +159,7 @@
 	<hr class="my-6 border-gray-200" />
 	<div class="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
 		<h2 class="text-xl">
-			{selected.sesi?.judul_sesi} — {selected.kelas?.nama_kelas} Shift {selected.shift}
+			{selected.sesi?.judul_sesi} — {selected.kelas?.nama_kelas} {labelShift(selected.shift)}
 		</h2>
 		<div class="flex items-center gap-3">
 			{#if selected.token}

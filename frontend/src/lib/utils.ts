@@ -27,6 +27,11 @@ export function labelJenis(jenis: string): string {
 	}
 }
 
+// Shift 0 = aktivasi arsip (data historis hasil migrasi), bukan shift nyata.
+export function labelShift(shift: number): string {
+	return shift === 0 ? 'Arsip' : `Shift ${shift}`;
+}
+
 export function labelStatus(status: string): string {
 	switch (status) {
 		case 'belum_dikerjakan': return 'Belum Dikerjakan';
