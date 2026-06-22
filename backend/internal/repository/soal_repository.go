@@ -39,24 +39,26 @@ func (r *soalRepository) FindByID(id int) (*entity.Soal, error) {
 }
 
 func (r *soalRepository) ListByCourse(courseID int) ([]entity.Soal, error) {
+	// Sembunyikan soal arsip dari editor pool admin (hanya untuk Rekap Jawaban).
 	var ss []entity.Soal
-	return ss, r.db.Where("course_id = ?", courseID).Order("id asc").Find(&ss).Error
+	return ss, r.db.Where("course_id = ? AND is_arsip = false", courseID).Order("id asc").Find(&ss).Error
 }
 
+// Pool* mengecualikan soal arsip (is_arsip) agar gacha hanya memilih soal aktif.
 func (r *soalRepository) PoolByDifficulty(courseID int, diff entity.Difficulty) ([]entity.Soal, error) {
 	var ss []entity.Soal
-	err := r.db.Where("course_id = ? AND difficulty = ?", courseID, diff).Find(&ss).Error
+	err := r.db.Where("course_id = ? AND difficulty = ? AND is_arsip = false", courseID, diff).Find(&ss).Error
 	return ss, err
 }
 
 func (r *soalRepository) PoolAll(courseID int) ([]entity.Soal, error) {
 	var ss []entity.Soal
-	err := r.db.Where("course_id = ?", courseID).Find(&ss).Error
+	err := r.db.Where("course_id = ? AND is_arsip = false", courseID).Find(&ss).Error
 	return ss, err
 }
 
 func (r *soalRepository) PoolByKategori(courseID int, kat entity.KategoriUjian) ([]entity.Soal, error) {
 	var ss []entity.Soal
-	err := r.db.Where("course_id = ? AND kategori_ujian = ?", courseID, kat).Find(&ss).Error
+	err := r.db.Where("course_id = ? AND kategori_ujian = ? AND is_arsip = false", courseID, kat).Find(&ss).Error
 	return ss, err
 }
