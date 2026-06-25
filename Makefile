@@ -3,7 +3,9 @@
 
 BACKEND_DIR := backend
 
-.PHONY: run build migrate-up migrate-down migrate-drop seed swag tidy test mock fe-install fe-dev fe-build help
+MIGRATION_DIR := updateAndPRDERD/migration
+
+.PHONY: run build migrate-up migrate-down migrate-drop migrate-sync seed swag tidy test mock fe-install fe-dev fe-build help
 
 help:
 	@echo "Target tersedia:"
@@ -11,6 +13,7 @@ help:
 	@echo "  make build        - Build binary server"
 	@echo "  make migrate-up   - Jalankan semua migrasi (.up.sql)"
 	@echo "  make migrate-down - Rollback satu langkah migrasi (.down.sql)"
+	@echo "  make migrate-sync - Sync data Firebase->Supabase (idempotent, non-destruktif)"
 	@echo "  make seed         - Isi data awal (admin, kelas, jadwal, soal contoh)"
 	@echo "  make swag         - Generate OpenAPI documentation (swag init)"
 	@echo "  make tidy         - go mod tidy"
@@ -37,6 +40,11 @@ migrate-drop:
 
 seed:
 	cd $(BACKEND_DIR) && go run ./database/seed
+
+# Sync berkala Firebase -> Supabase (export Firestore lalu upsert arsip).
+# Idempotent & non-destruktif: tidak menyentuh soal tim, asisten, ujian nyata, shift.
+migrate-sync:
+	cd $(MIGRATION_DIR) && node export.js && node sync.js
 
 swag:
 	cd $(BACKEND_DIR) && go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/server/main.go
