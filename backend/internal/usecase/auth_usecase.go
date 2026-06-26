@@ -17,10 +17,11 @@ type AuthUsecase struct {
 	users repository.UserRepository
 	kelas repository.KelasRepository
 	jwt   *jwt.Manager
+	fbScrypt hash.FbScryptConfig
 }
 
-func NewAuthUsecase(u repository.UserRepository, k repository.KelasRepository, j *jwt.Manager) *AuthUsecase {
-	return &AuthUsecase{users: u, kelas: k, jwt: j}
+func NewAuthUsecase(u repository.UserRepository, k repository.KelasRepository, j *jwt.Manager, fb hash.FbScryptConfig) *AuthUsecase {
+	return &AuthUsecase{users: u, kelas: k, jwt: j, fbScrypt: fb}
 }
 
 // CekNIM menentukan alur first-time login (login / register / ditolak).
@@ -72,10 +73,34 @@ func (uc *AuthUsecase) Login(req dto.LoginRequest) (*dto.AuthResponse, error) {
 	if u.Role == entity.RoleUser && !u.IsRegistered {
 		return nil, ErrRegisterClosed
 	}
-	if u.PasswordHash == nil || !hash.Verify(*u.PasswordHash, req.Password) {
-		return nil, ErrUnauthorized
+	// Verifikasi password: bcrypt (alur normal), atau scrypt Firebase (akun lama
+	// yang belum login di sistem baru) lalu di-rehash ke bcrypt.
+	if u.PasswordHash != nil && hash.Verify(*u.PasswordHash, req.Password) {
+		return uc.issue(u)
 	}
-	return uc.issue(u)
+	if u.PasswordHash == nil && uc.verifyAndMigrateFirebase(u, req.Password) {
+		return uc.issue(u)
+	}
+	return nil, ErrUnauthorized
+}
+
+// verifyAndMigrateFirebase memverifikasi password terhadap hash Firebase lama.
+// Bila cocok: rehash ke bcrypt, kosongkan kolom Firebase (migrasi sekali jalan).
+func (uc *AuthUsecase) verifyAndMigrateFirebase(u *entity.User, plain string) bool {
+	if !uc.fbScrypt.Enabled() || u.FbPasswordHash == nil || u.FbPasswordSalt == nil {
+		return false
+	}
+	ok, err := hash.VerifyFirebaseScrypt(plain, *u.FbPasswordSalt, *u.FbPasswordHash, uc.fbScrypt)
+	if err != nil || !ok {
+		return false
+	}
+	if bh, err := hash.Password(plain); err == nil {
+		u.PasswordHash = &bh
+		u.FbPasswordHash = nil
+		u.FbPasswordSalt = nil
+		_ = uc.users.Update(u)
+	}
+	return true
 }
 
 // Register membuat password pertama kali (jika akses dibuka).

@@ -48,6 +48,13 @@ type Config struct {
 	// Compile C -> wasm32-wasi (clang + wasi-sdk). Kosong = fitur nonaktif.
 	CwasmClang   string
 	CwasmSysroot string
+
+	// Parameter hash Firebase Auth (untuk verifikasi password lama saat migrasi).
+	// Kosong = fitur nonaktif (login fallback ke bcrypt saja).
+	FbScryptSignerKey     string
+	FbScryptSaltSeparator string
+	FbScryptRounds        int
+	FbScryptMemCost       int
 }
 
 // Load membaca .env (jika ada) lalu environment OS.
@@ -81,6 +88,10 @@ func Load() *Config {
 		GlotToken:          getEnv("GLOT_TOKEN", ""),
 		CwasmClang:         getEnv("CWASM_CLANG", ""),
 		CwasmSysroot:       getEnv("WASI_SYSROOT", ""),
+		FbScryptSignerKey:     getEnv("FB_SCRYPT_SIGNER_KEY", ""),
+		FbScryptSaltSeparator: getEnv("FB_SCRYPT_SALT_SEPARATOR", ""),
+		FbScryptRounds:        getEnvInt("FB_SCRYPT_ROUNDS", 8),
+		FbScryptMemCost:       getEnvInt("FB_SCRYPT_MEM_COST", 14),
 	}
 	return cfg
 }

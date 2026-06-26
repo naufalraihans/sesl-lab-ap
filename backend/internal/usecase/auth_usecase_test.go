@@ -19,7 +19,7 @@ func setupAuthUsecase(t *testing.T) (*usecase.AuthUsecase, *mocks.UserRepository
 	mockKelasRepo := mocks.NewKelasRepository(t)
 	jwtManager := jwt.NewManager("secret", 24)
 
-	uc := usecase.NewAuthUsecase(mockUserRepo, mockKelasRepo, jwtManager)
+	uc := usecase.NewAuthUsecase(mockUserRepo, mockKelasRepo, jwtManager, hash.FbScryptConfig{})
 	return uc, mockUserRepo, mockKelasRepo
 }
 

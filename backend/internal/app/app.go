@@ -13,6 +13,7 @@ import (
 	"lab-ap/internal/usecase"
 	"lab-ap/pkg/cwasm"
 	"lab-ap/pkg/glot"
+	"lab-ap/pkg/hash"
 	"lab-ap/pkg/jwt"
 	"lab-ap/pkg/ollama"
 	"lab-ap/pkg/supabase"
@@ -58,7 +59,12 @@ func Build(cfg *config.Config) (*gin.Engine, *Deps, error) {
 	aktivasiTxRepo := repository.NewAktivasiTxRepo(db)
 
 	// ---- Usecase ----
-	authUC := usecase.NewAuthUsecase(userRepo, kelasRepo, jm)
+	authUC := usecase.NewAuthUsecase(userRepo, kelasRepo, jm, hash.FbScryptConfig{
+		SignerKey:     cfg.FbScryptSignerKey,
+		SaltSeparator: cfg.FbScryptSaltSeparator,
+		Rounds:        cfg.FbScryptRounds,
+		MemCost:       cfg.FbScryptMemCost,
+	})
 	profileUC := usecase.NewProfileUsecase(userRepo)
 	dashboardUC := usecase.NewDashboardUsecase(userRepo, aktivasiRepo, pengerjaanRepo)
 	sesiUC := usecase.NewSesiUsecase(sesiRepo, courseRepo)

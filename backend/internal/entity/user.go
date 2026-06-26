@@ -9,6 +9,10 @@ type User struct {
 	NIM          string     `gorm:"type:varchar(32);uniqueIndex;not null" json:"nim"`
 	Nama         string     `gorm:"type:varchar(150);not null" json:"nama"`
 	PasswordHash *string    `gorm:"type:varchar(255)" json:"-"`
+	// Hash+salt password lama dari Firebase Auth (scrypt). Diisi saat migrasi,
+	// dikosongkan setelah login pertama (di-rehash ke bcrypt di PasswordHash).
+	FbPasswordHash *string  `gorm:"type:varchar(255)" json:"-"`
+	FbPasswordSalt *string  `gorm:"type:varchar(255)" json:"-"`
 	IsRegistered bool       `gorm:"default:false" json:"is_registered"`
 	KelasID      *int       `gorm:"index" json:"kelas_id"`
 	Shift        *int       `json:"shift"`
