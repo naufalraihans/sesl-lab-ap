@@ -12,7 +12,9 @@ func TestVerifyFirebaseScrypt(t *testing.T) {
 		MemCost:       14,
 	}
 	const salt = "bWhzTGFiQVAtc2FsdC0wMQ=="
-	const hash = "n1Q5DOrTUsB993pdPHX9aCYUtz0gvu4p6VGSdmJvLpaOk4LFC88k1LxhIJCqmvUy+iQfVIIeawh/pA3JX/UlVg=="
+	// hash dalam base64URL (- dan _), seperti yang dikembalikan Firebase Admin SDK.
+	// Memastikan decoder menangani base64url, bukan hanya base64 standar.
+	const hash = "n1Q5DOrTUsB993pdPHX9aCYUtz0gvu4p6VGSdmJvLpaOk4LFC88k1LxhIJCqmvUy-iQfVIIeawh_pA3JX_UlVg=="
 
 	ok, err := VerifyFirebaseScrypt("RahasiaMhs123!", salt, hash, cfg)
 	if err != nil || !ok {

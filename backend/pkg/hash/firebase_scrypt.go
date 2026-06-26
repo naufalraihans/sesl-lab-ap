@@ -5,9 +5,19 @@ import (
 	"crypto/cipher"
 	"crypto/subtle"
 	"encoding/base64"
+	"strings"
 
 	"golang.org/x/crypto/scrypt"
 )
+
+// b64 mendekode base64 standar MAUPUN base64url. Firebase Admin SDK mengembalikan
+// passwordHash/passwordSalt sebagai base64url (- dan _), sedangkan signer key dari
+// console memakai base64 standar (+ dan /). Normalisasi agar keduanya terbaca.
+func b64(s string) ([]byte, error) {
+	s = strings.ReplaceAll(s, "-", "+")
+	s = strings.ReplaceAll(s, "_", "/")
+	return base64.StdEncoding.DecodeString(s)
+}
 
 // FbScryptConfig memuat parameter hash project Firebase Authentication
 // (Firebase Console -> Auth -> Password hash parameters).
@@ -28,15 +38,19 @@ func (c FbScryptConfig) Enabled() bool { return c.SignerKey != "" }
 //	out  = AES-256-CTR(key=dk[:32], iv=0) atas base64(signerKey)
 //	cocok bila base64(out) == passwordHash
 func VerifyFirebaseScrypt(password, saltB64, hashB64 string, cfg FbScryptConfig) (bool, error) {
-	salt, err := base64.StdEncoding.DecodeString(saltB64)
+	salt, err := b64(saltB64)
 	if err != nil {
 		return false, err
 	}
-	sep, err := base64.StdEncoding.DecodeString(cfg.SaltSeparator)
+	sep, err := b64(cfg.SaltSeparator)
 	if err != nil {
 		return false, err
 	}
-	signer, err := base64.StdEncoding.DecodeString(cfg.SignerKey)
+	signer, err := b64(cfg.SignerKey)
+	if err != nil {
+		return false, err
+	}
+	want, err := b64(hashB64)
 	if err != nil {
 		return false, err
 	}
@@ -53,6 +67,6 @@ func VerifyFirebaseScrypt(password, saltB64, hashB64 string, cfg FbScryptConfig)
 	out := make([]byte, len(signer))
 	cipher.NewCTR(block, make([]byte, aes.BlockSize)).XORKeyStream(out, signer)
 
-	got := base64.StdEncoding.EncodeToString(out)
-	return subtle.ConstantTimeCompare([]byte(got), []byte(hashB64)) == 1, nil
+	// Bandingkan byte mentah supaya bebas dari perbedaan alfabet base64 (std vs url).
+	return subtle.ConstantTimeCompare(out, want) == 1, nil
 }
