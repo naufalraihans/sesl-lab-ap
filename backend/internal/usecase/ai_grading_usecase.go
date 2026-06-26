@@ -35,7 +35,8 @@ func (uc *aiGradingUsecase) ListTargets(aktivasiSesiID, courseID int) (*dto.AIGr
 	ids := make([]int, 0)
 	for _, j := range all {
 		if j.IsSubmitted && j.Nilai == nil && j.JawabanTeks != "" &&
-			j.SoalTerpilih != nil && j.SoalTerpilih.Soal != nil {
+			j.SoalTerpilih != nil && j.SoalTerpilih.Soal != nil &&
+			!j.SoalTerpilih.Soal.IsArsip { // arsip: jangan ditawarkan utk AI-grade
 			ids = append(ids, j.ID)
 		}
 	}

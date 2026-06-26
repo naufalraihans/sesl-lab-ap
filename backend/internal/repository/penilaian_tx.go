@@ -107,6 +107,16 @@ func recalcKeysTx(tx *gorm.DB, keys []PengerjaanKey) error {
 // recalcTotalTx menghitung ulang total_nilai (SUM nilai jawaban) untuk satu
 // pengerjaan_course dan mengupsert nilainya, dalam transaksi tx.
 func recalcTotalTx(tx *gorm.DB, key PengerjaanKey) error {
+	// Arsip (aktivasi shift=0): total_nilai otoritatif dari migrasi (jawaban arsip nilai=NULL).
+	// Jangan di-recalc, kalau tidak akan menimpa jadi 0.
+	var aks entity.AktivasiSesi
+	if err := tx.Select("shift").First(&aks, key.AktivasiSesiID).Error; err != nil {
+		return err
+	}
+	if aks.Shift == 0 {
+		return nil
+	}
+
 	var stIDs []int
 	if err := tx.Model(&entity.SoalTerpilih{}).
 		Where("aktivasi_sesi_id = ? AND course_id = ?", key.AktivasiSesiID, key.CourseID).

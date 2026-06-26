@@ -41,7 +41,7 @@ func (uc *RekapUsecase) GetRekapKelas(kelasID int) (*dto.RekapKelasResponse, err
 	type mhsData struct {
 		NIM        string
 		Nama       string
-		Scores     map[string]float64
+		Scores     map[string]dto.RekapSel
 		TotalScore float64
 	}
 	mhsMap := make(map[string]*mhsData) // Key by NIM
@@ -53,7 +53,7 @@ func (uc *RekapUsecase) GetRekapKelas(kelasID int) (*dto.RekapKelasResponse, err
 			mhsMap[row.NIM] = &mhsData{
 				NIM:        row.NIM,
 				Nama:       row.Nama,
-				Scores:     make(map[string]float64),
+				Scores:     make(map[string]dto.RekapSel),
 				TotalScore: 0,
 			}
 			nimOrder = append(nimOrder, row.NIM)
@@ -61,13 +61,11 @@ func (uc *RekapUsecase) GetRekapKelas(kelasID int) (*dto.RekapKelasResponse, err
 
 		mhs := mhsMap[row.NIM]
 
-		// Jika ada pengerjaan course
+		// Jika ada pengerjaan course (sertakan sel walau total_nilai null, asal ada pengerjaan)
 		if row.CourseID != nil && row.CourseJenis != nil && row.SesiJudul != nil {
 			key := fmt.Sprintf("course_%d", *row.CourseID)
-			
-			// Buat label, misalnya "Modul 1 - pretest"
-			// SesiJudul misal "Modul 1 - Pengenalan"
-			// Kita ambil teks sebelum dash "-" jika ada untuk mempersingkat label.
+
+			// Buat label, misalnya "Modul 1 - pretest" (ambil teks sebelum "-").
 			shortSesi := *row.SesiJudul
 			if parts := strings.SplitN(*row.SesiJudul, "-", 2); len(parts) > 1 {
 				shortSesi = strings.TrimSpace(parts[0])
@@ -79,10 +77,21 @@ func (uc *RekapUsecase) GetRekapKelas(kelasID int) (*dto.RekapKelasResponse, err
 				columns = append(columns, colMeta{key: key, label: label})
 			}
 
+			isTest := *row.CourseJenis == "pretest" || *row.CourseJenis == "posttest"
+			murni := 0.0
 			if row.TotalNilai != nil {
-				mhs.Scores[key] = *row.TotalNilai
-				mhs.TotalScore += *row.TotalNilai
+				murni = *row.TotalNilai
 			}
+			sel := dto.RekapSel{Murni: murni, EditKeaktifan: isTest, Total: murni}
+			if row.PengerjaanID != nil {
+				sel.PengerjaanID = *row.PengerjaanID
+			}
+			if isTest && row.Keaktifan != nil {
+				sel.Keaktifan = row.Keaktifan
+				sel.Total = murni + *row.Keaktifan
+			}
+			mhs.Scores[key] = sel
+			mhs.TotalScore += sel.Total
 		}
 	}
 

@@ -7,10 +7,18 @@
 		label: string;
 	}
 
+	interface RekapSel {
+		pengerjaan_id: number;
+		murni: number;
+		keaktifan: number | null;
+		total: number;
+		edit_keaktifan: boolean;
+	}
+
 	interface RekapMahasiswa {
 		nim: string;
 		nama: string;
-		scores: Record<string, number>;
+		scores: Record<string, RekapSel>;
 		total_score: number;
 	}
 
@@ -30,6 +38,32 @@
 	let loading = $state(false);
 	let errorMsg = $state('');
 	let searchQuery = $state('');
+	// Perubahan keaktifan yang belum disimpan: pengerjaan_id -> nilai baru.
+	let edits = $state<Record<number, number>>({});
+	let saving = $state(false);
+
+	function liveKeaktifan(sel: RekapSel): number {
+		return Number(edits[sel.pengerjaan_id] ?? sel.keaktifan ?? 0);
+	}
+
+	async function saveKeaktifan() {
+		const items = Object.entries(edits).map(([pid, nilai]) => ({
+			pengerjaan_id: Number(pid),
+			nilai: Number(nilai)
+		}));
+		if (items.length === 0) return;
+		saving = true;
+		errorMsg = '';
+		try {
+			await api.post('/api/admin/keaktifan', { items });
+			edits = {};
+			await fetchRekap();
+		} catch (e) {
+			errorMsg = (e as Error).message;
+		} finally {
+			saving = false;
+		}
+	}
 
 	onMount(async () => {
 		try {
@@ -74,7 +108,8 @@
 		const rows = filteredData.map(m => {
 			const row = [m.nim, m.nama];
 			rekap!.columns.forEach(c => {
-				row.push((m.scores[c.key] ?? 0).toString());
+				const sel = m.scores[c.key];
+				row.push(sel ? sel.total.toString() : '0');
 			});
 			row.push(m.total_score.toString());
 			return row;
@@ -117,8 +152,11 @@
 		<label for="search" class="mb-1 block text-sm font-medium text-ink-caption">Cari Mahasiswa</label>
 		<input type="text" id="search" placeholder="NIM atau Nama..." class="input w-full" bind:value={searchQuery} />
 	</div>
-	<div class="flex-none">
-		<button class="btn-primary" onclick={exportCSV} disabled={!rekap || filteredData.length === 0}>
+	<div class="flex-none flex gap-2">
+		<button class="btn-primary" onclick={saveKeaktifan} disabled={saving || Object.keys(edits).length === 0}>
+			{saving ? 'Menyimpan…' : `Simpan Keaktifan${Object.keys(edits).length ? ` (${Object.keys(edits).length})` : ''}`}
+		</button>
+		<button class="btn-outline" onclick={exportCSV} disabled={!rekap || filteredData.length === 0}>
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
 			Export CSV
 		</button>
@@ -149,8 +187,25 @@
 							<td class="sticky left-0 bg-white z-10 font-medium text-ink-body border-r border-gray-100">{row.nim}</td>
 							<td class="sticky left-24 bg-white z-10 text-ink-body border-r border-gray-100 truncate max-w-xs">{row.nama}</td>
 							{#each rekap.columns as col}
+								{@const sel = row.scores[col.key]}
 								<td class="text-center text-ink-caption">
-									{row.scores[col.key] ?? '-'}
+									{#if !sel}
+										-
+									{:else if sel.edit_keaktifan}
+										<div class="flex items-center justify-center gap-1 text-xs">
+											<span>{sel.murni}</span>
+											<span class="text-ink-caption">+</span>
+											<input
+												type="number" min="0" max="100"
+												class="w-12 rounded border border-gray-200 px-1 py-0.5 text-center"
+												value={edits[sel.pengerjaan_id] ?? sel.keaktifan ?? ''}
+												oninput={(e) => (edits[sel.pengerjaan_id] = Number((e.target as HTMLInputElement).value))}
+											/>
+											<span class="font-semibold text-ink-body">= {sel.murni + liveKeaktifan(sel)}</span>
+										</div>
+									{:else}
+										{sel.total}
+									{/if}
 								</td>
 							{/each}
 							<td class="text-center bg-gray-50/50 border-l border-gray-100 font-semibold text-brand-blue">

@@ -13,6 +13,8 @@ type PengerjaanCourse struct {
 	WaktuSelesai   *time.Time       `json:"waktu_selesai"`
 	// TotalNilai: CACHED/DERIVED akumulasi SUM(jawaban.nilai). Di-recalc tiap update nilai.
 	TotalNilai *float64 `json:"total_nilai"`
+	// Keaktifan: nilai partisipasi manual (admin), per (mahasiswa, modul). Hanya pretest/posttest.
+	Keaktifan *float64 `gorm:"column:keaktifan" json:"keaktifan"`
 }
 
 func (PengerjaanCourse) TableName() string { return "pengerjaan_course" }

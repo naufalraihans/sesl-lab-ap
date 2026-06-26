@@ -66,3 +66,26 @@ func (h *PenilaianHandler) SetNilai(c *gin.Context) {
 	}
 	response.OK(c, http.StatusOK, "Nilai disimpan", res)
 }
+
+// SetKeaktifan POST /api/admin/keaktifan
+// @Summary Set Keaktifan
+// @Description Set nilai keaktifan (partisipasi) per pengerjaan pretest/posttest, massal.
+// @Tags Admin - Penilaian
+// @Security bearerAuth
+// @Accept json
+// @Produce json
+// @Param request body dto.KeaktifanRequest true "Payload Keaktifan"
+// @Success 200 {object} response.Envelope
+// @Router /admin/keaktifan [post]
+func (h *PenilaianHandler) SetKeaktifan(c *gin.Context) {
+	var req dto.KeaktifanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "Input tidak valid", err.Error())
+		return
+	}
+	if err := h.uc.SetKeaktifanBulk(req.Items); err != nil {
+		mapError(c, err)
+		return
+	}
+	response.OK(c, http.StatusOK, "Keaktifan disimpan", nil)
+}

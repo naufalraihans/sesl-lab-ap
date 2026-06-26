@@ -21,6 +21,9 @@ type PengerjaanRepository interface {
 	ProgressSummary(aktivasiSesiID, courseID int) (ProgressSummary, error)
 	// FindExpired mengambil pengerjaan yang sedang berjalan & sudah lewat deadline (untuk sweeper).
 	FindExpired() ([]ExpiredPengerjaan, error)
+	// SetKeaktifanIfTest set keaktifan HANYA bila course pengerjaan = pretest/posttest.
+	// Mengembalikan RowsAffected (0 = id tak ada / bukan pretest/posttest).
+	SetKeaktifanIfTest(pengerjaanID int, nilai float64) (int64, error)
 }
 
 // ProgressSummary: ringkasan progress per course aktivasi.
@@ -108,6 +111,13 @@ func (r *pengerjaanRepository) ProgressSummary(aktivasiSesiID, courseID int) (Pr
 		return s, err
 	}
 	return s, nil
+}
+
+func (r *pengerjaanRepository) SetKeaktifanIfTest(pengerjaanID int, nilai float64) (int64, error) {
+	res := r.db.Exec(`UPDATE pengerjaan_course SET keaktifan = ?
+		WHERE id = ? AND course_id IN (SELECT id FROM course WHERE jenis IN ('pretest','posttest'))`,
+		nilai, pengerjaanID)
+	return res.RowsAffected, res.Error
 }
 
 func (r *pengerjaanRepository) FindExpired() ([]ExpiredPengerjaan, error) {

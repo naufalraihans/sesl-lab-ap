@@ -49,6 +49,20 @@ func (uc *PenilaianUsecase) SetNilai(req dto.NilaiRequest) (*entity.JawabanMahas
 	return j, nil
 }
 
+// SetKeaktifanBulk menyetel keaktifan untuk daftar pengerjaan (hanya pretest/posttest).
+func (uc *PenilaianUsecase) SetKeaktifanBulk(items []dto.KeaktifanItem) error {
+	for _, it := range items {
+		n, err := uc.pengerjaan.SetKeaktifanIfTest(it.PengerjaanID, it.Nilai)
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			return fmt.Errorf("%w: pengerjaan %d bukan pretest/posttest atau tidak ditemukan", ErrBadRequest, it.PengerjaanID)
+		}
+	}
+	return nil
+}
+
 // Rekap mengembalikan rekap jawaban semua mahasiswa untuk satu aktivasi+course.
 func (uc *PenilaianUsecase) Rekap(aktivasiSesiID, courseID int) (*dto.RekapResponse, error) {
 	jawaban, err := uc.jawaban.ListRekap(aktivasiSesiID, courseID)

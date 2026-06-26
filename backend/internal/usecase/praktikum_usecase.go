@@ -142,19 +142,28 @@ func (uc *PraktikumUsecase) Dashboard(userID int) (*dto.DashboardUserResponse, e
 		}
 	}
 
-	// Riwayat nilai dari pengerjaan yang sudah dinilai.
+	// Riwayat nilai dari pengerjaan yang sudah dinilai. Nilai AKHIR = total_nilai +
+	// keaktifan (khusus pretest/posttest). Mahasiswa hanya melihat nilai akhir.
 	if pengList, err := uc.pengerjaan.ListByMahasiswa(userID); err == nil {
 		for _, p := range pengList {
-			if p.TotalNilai == nil {
+			if p.TotalNilai == nil && p.Keaktifan == nil {
 				continue
 			}
-			item := dto.NilaiCourseItem{Status: string(p.Status), TotalNilai: p.TotalNilai}
+			final := 0.0
+			if p.TotalNilai != nil {
+				final = *p.TotalNilai
+			}
+			item := dto.NilaiCourseItem{Status: string(p.Status)}
 			if c, err := uc.course.FindByID(p.CourseID); err == nil {
 				item.Jenis = string(c.Jenis)
+				if (c.Jenis == entity.CoursePretest || c.Jenis == entity.CoursePosttest) && p.Keaktifan != nil {
+					final += *p.Keaktifan
+				}
 				if sesi, err := uc.sesi.FindByID(c.SesiPraktikumID); err == nil {
 					item.SesiJudul = sesi.JudulSesi
 				}
 			}
+			item.TotalNilai = &final
 			resp.RiwayatNilai = append(resp.RiwayatNilai, item)
 		}
 	}

@@ -198,6 +198,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 		// Penilaian
 		admin.GET("/penilaian/rekap", h.Penilaian.Rekap)
 		admin.POST("/penilaian", h.Penilaian.SetNilai)
+		admin.POST("/keaktifan", h.Penilaian.SetKeaktifan)
 		// AI grading SINKRON 1-per-1 (frontend yang loop).
 		admin.GET("/penilaian/ai-grade/targets", h.AIGrading.ListTargets)
 		admin.POST("/penilaian/ai-grade/one", h.AIGrading.GradeOne)

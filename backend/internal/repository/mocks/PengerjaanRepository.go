@@ -33,6 +33,32 @@ func (_m *PengerjaanRepository) Create(p *entity.PengerjaanCourse) error {
 	return r0
 }
 
+// SetKeaktifanIfTest provides a mock function with given fields: pengerjaanID, nilai
+func (_m *PengerjaanRepository) SetKeaktifanIfTest(pengerjaanID int, nilai float64) (int64, error) {
+	ret := _m.Called(pengerjaanID, nilai)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetKeaktifanIfTest")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int, float64) (int64, error)); ok {
+		return rf(pengerjaanID, nilai)
+	}
+	if rf, ok := ret.Get(0).(func(int, float64) int64); ok {
+		r0 = rf(pengerjaanID, nilai)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+	if rf, ok := ret.Get(1).(func(int, float64) error); ok {
+		r1 = rf(pengerjaanID, nilai)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
 // Find provides a mock function with given fields: mahasiswaID, aktivasiSesiID, courseID
 func (_m *PengerjaanRepository) Find(mahasiswaID int, aktivasiSesiID int, courseID int) (*entity.PengerjaanCourse, error) {
 	ret := _m.Called(mahasiswaID, aktivasiSesiID, courseID)

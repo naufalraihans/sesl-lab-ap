@@ -7,6 +7,17 @@ type NilaiRequest struct {
 	Feedback  *string `json:"feedback"`
 }
 
+// KeaktifanItem: set keaktifan satu pengerjaan (pretest/posttest), 0..100.
+type KeaktifanItem struct {
+	PengerjaanID int     `json:"pengerjaan_id" binding:"required"`
+	Nilai        float64 `json:"nilai" binding:"min=0,max=100"`
+}
+
+// KeaktifanRequest: input keaktifan massal dari Rekap Nilai.
+type KeaktifanRequest struct {
+	Items []KeaktifanItem `json:"items" binding:"required,dive"`
+}
+
 // RekapItem: satu baris rekap jawaban mahasiswa per soal.
 type RekapItem struct {
 	JawabanID   int      `json:"jawaban_id"`

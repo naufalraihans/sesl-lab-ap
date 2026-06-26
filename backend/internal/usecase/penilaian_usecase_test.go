@@ -30,3 +30,18 @@ func TestSetNilaiValidasi(t *testing.T) {
 		t.Fatal("nilai < 0 harus ditolak")
 	}
 }
+
+// SetKeaktifanBulk sukses utk pretest/posttest (RowsAffected>0), tolak bila 0.
+func TestSetKeaktifanBulk(t *testing.T) {
+	pm := &mocks.PengerjaanRepository{}
+	pm.On("SetKeaktifanIfTest", 5, 10.0).Return(int64(1), nil) // pretest/posttest
+	pm.On("SetKeaktifanIfTest", 9, 7.0).Return(int64(0), nil)  // bukan / tak ada
+	uc := &PenilaianUsecase{pengerjaan: pm}
+
+	if err := uc.SetKeaktifanBulk([]dto.KeaktifanItem{{PengerjaanID: 5, Nilai: 10}}); err != nil {
+		t.Fatalf("valid harus sukses: %v", err)
+	}
+	if err := uc.SetKeaktifanBulk([]dto.KeaktifanItem{{PengerjaanID: 9, Nilai: 7}}); err == nil {
+		t.Fatal("RowsAffected 0 harus error")
+	}
+}
