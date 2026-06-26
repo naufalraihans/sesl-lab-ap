@@ -60,11 +60,24 @@ func (uc *aiGradingUsecase) GradeOne(jawabanID int) (*dto.AIGradeOneResponse, er
 	if j.SoalTerpilih.Soal.KunciJawaban != nil {
 		kunci = *j.SoalTerpilih.Soal.KunciJawaban
 	}
+	difficulty := ""
+	if j.SoalTerpilih.Soal.Difficulty != nil {
+		difficulty = string(*j.SoalTerpilih.Soal.Difficulty)
+	}
+	jenisCourse := ""
+	if j.SoalTerpilih.Course != nil {
+		jenisCourse = string(j.SoalTerpilih.Course.Jenis)
+	}
 
-	res, err := uc.ollamaClient.GradeAnswer(
-		context.Background(),
-		j.SoalTerpilih.Soal.TeksSoal, kunci, j.JawabanTeks, j.SoalTerpilih.Soal.Poin,
-	)
+	res, err := uc.ollamaClient.GradeAnswer(context.Background(), ollama.GradeParams{
+		Soal:        j.SoalTerpilih.Soal.TeksSoal,
+		Kunci:       kunci,
+		Jawaban:     j.JawabanTeks,
+		Poin:        j.SoalTerpilih.Soal.Poin,
+		JenisSoal:   string(j.SoalTerpilih.Soal.JenisSoal),
+		Difficulty:  difficulty,
+		JenisCourse: jenisCourse,
+	})
 	if err != nil {
 		return nil, err
 	}

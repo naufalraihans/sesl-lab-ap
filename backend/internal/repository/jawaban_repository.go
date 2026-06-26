@@ -51,7 +51,8 @@ func (r *jawabanRepository) FindByMahasiswaSoal(mahasiswaID, soalTerpilihID int)
 
 func (r *jawabanRepository) FindByID(id int) (*entity.JawabanMahasiswa, error) {
 	var j entity.JawabanMahasiswa
-	if err := r.db.Preload("SoalTerpilih").Preload("SoalTerpilih.Soal").First(&j, id).Error; err != nil {
+	if err := r.db.Preload("SoalTerpilih").Preload("SoalTerpilih.Soal").
+		Preload("SoalTerpilih.Course").First(&j, id).Error; err != nil {
 		return nil, err
 	}
 	return &j, nil
