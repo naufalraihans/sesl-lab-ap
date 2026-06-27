@@ -105,8 +105,20 @@
 		editSoalId = null;
 		soalForm = { course_id: selectedCourse?.id ?? 0, jenis_soal: 'essay', difficulty: '', kategori_ujian: '', teks_soal: '', gambar_url: '', poin: 20, kunci_jawaban: '' };
 	}
+	// Saran poin sesuai rubrik AI grading (default project lama), berdasar jenis course + difficulty.
+	function rubrikPoin(courseJenis: string, difficulty: string): number {
+		if (courseJenis === 'keterampilan') return 85;       // SP 35 + BTE 30 + TW 20
+		if (courseJenis === 'ujian_praktik') return 68;      // SP 25 + BTE 30 + TW 13
+		if (courseJenis === 'pretest') return difficulty === 'medium' ? 15 : difficulty === 'hard' ? 25 : 20;
+		if (courseJenis === 'posttest') return difficulty === 'medium' ? 35 : difficulty === 'hard' ? 68 : 20;
+		return 20;
+	}
+	function suggestPoin() {
+		soalForm.poin = rubrikPoin(selectedCourse?.jenis ?? '', soalForm.difficulty);
+	}
 	function openNewSoal() {
 		resetSoalForm();
+		suggestPoin(); // isi poin awal sesuai rubrik course
 		showSoalModal = true;
 	}
 	function closeSoalModal() {
@@ -329,7 +341,7 @@
 					<option value="coding">Coding</option>
 				</select>
 				<label class="label mt-2" for="sd2">Difficulty</label>
-				<select id="sd2" class="input" bind:value={soalForm.difficulty}>
+				<select id="sd2" class="input" bind:value={soalForm.difficulty} onchange={suggestPoin}>
 					<option value="">— Tidak ada —</option>
 					<option value="easy">Easy</option>
 					<option value="medium">Medium</option>
@@ -358,6 +370,7 @@
 				{/if}
 				<label class="label mt-2" for="sp">Poin</label>
 				<input id="sp" type="number" class="input" bind:value={soalForm.poin} min="0" />
+				<p class="mt-1 text-xs text-ink-caption">Saran rubrik: {rubrikPoin(selectedCourse.jenis, soalForm.difficulty)} (otomatis terisi; boleh diubah).</p>
 				<label class="label mt-2" for="kj">Kunci Jawaban (opsional)</label>
 				<div class="mt-1">
 					<RichTextEditor bind:value={soalForm.kunci_jawaban} placeholder="Tulis referensi atau rubrik jawaban..." />
