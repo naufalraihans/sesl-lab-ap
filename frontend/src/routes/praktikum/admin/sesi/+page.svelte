@@ -108,9 +108,9 @@
 	// Saran poin sesuai rubrik AI grading (default project lama), berdasar jenis course + difficulty.
 	function rubrikPoin(courseJenis: string, difficulty: string): number {
 		if (courseJenis === 'keterampilan') return 85;       // SP 35 + BTE 30 + TW 20
-		if (courseJenis === 'ujian_praktik') return 68;      // SP 25 + BTE 30 + TW 13
+		if (courseJenis === 'ujian_praktik') return 45;      // SP 25 + BTE 7 + TW 13
 		if (courseJenis === 'pretest') return difficulty === 'medium' ? 15 : difficulty === 'hard' ? 25 : 20;
-		if (courseJenis === 'posttest') return difficulty === 'medium' ? 35 : difficulty === 'hard' ? 68 : 20;
+		if (courseJenis === 'posttest') return difficulty === 'medium' ? 35 : difficulty === 'hard' ? 45 : 20;
 		return 20;
 	}
 	function suggestPoin() {

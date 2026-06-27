@@ -44,9 +44,11 @@ var (
 		"easy":   {"benar": 20, "salah": 8, "kosong": 0},
 		"medium": {"benar_penjelasan": 35, "benar_singkat": 20, "salah_penjelasan": 15, "salah": 10, "kosong": 0},
 	}
-	subKeterampilan = subCrit{SesuaiPetunjukMax: 35, BteMax: 30, TwMin: 3, TwMax: 20}
-	subPosttestHard = subCrit{SesuaiPetunjukMax: 25, BteMax: 30, TwMin: 3, TwMax: 13}
-	subUjianPraktik = subCrit{SesuaiPetunjukMax: 25, BteMax: 30, TwMin: 3, TwMax: 13}
+	// Keterampilan total 85 (SP35 + BTE30 + TW20). Coding posttest-hard & ujian
+	// praktik total 45 (SP25 + BTE7 + TW13) — BTE jauh lebih kecil. Sesuai rubrik resmi.
+	subKeterampilan = subCrit{SesuaiPetunjukMax: 35, BteMax: 30, TwMin: 10, TwMax: 20}
+	subPosttestHard = subCrit{SesuaiPetunjukMax: 25, BteMax: 7, TwMin: 3, TwMax: 13}
+	subUjianPraktik = subCrit{SesuaiPetunjukMax: 25, BteMax: 7, TwMin: 3, TwMax: 13}
 )
 
 // subForCourse memilih sub-kriteria coding berdasar jenis course.

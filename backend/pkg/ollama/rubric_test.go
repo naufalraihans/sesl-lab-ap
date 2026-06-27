@@ -12,11 +12,14 @@ func TestRubrikSelection(t *testing.T) {
 	if rubrikEssay("posttest", "medium")["benar_penjelasan"] != 35 {
 		t.Fatal("posttest medium benar_penjelasan harus 35")
 	}
-	if subForCourse("keterampilan") != (subCrit{35, 30, 3, 20}) {
-		t.Fatal("keterampilan sub-kriteria salah")
+	if subForCourse("keterampilan") != (subCrit{35, 30, 10, 20}) {
+		t.Fatal("keterampilan sub-kriteria salah (harus SP35 BTE30 TW10-20 = total 85)")
 	}
-	if subForCourse("ujian_praktik") != (subCrit{25, 30, 3, 13}) {
-		t.Fatal("ujian_praktik sub-kriteria salah")
+	if subForCourse("ujian_praktik") != (subCrit{25, 7, 3, 13}) {
+		t.Fatal("ujian_praktik sub-kriteria salah (harus SP25 BTE7 TW3-13 = total 45)")
+	}
+	if subForCourse("posttest") != (subCrit{25, 7, 3, 13}) {
+		t.Fatal("posttest hard sub-kriteria salah (harus SP25 BTE7 TW3-13 = total 45)")
 	}
 }
 
