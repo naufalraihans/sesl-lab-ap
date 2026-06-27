@@ -2,10 +2,25 @@ package ollama
 
 import (
 	"fmt"
+	"html"
 	"math"
+	"regexp"
 	"sort"
 	"strings"
 )
+
+var htmlTagRe = regexp.MustCompile(`(?s)<[^>]*>`)
+
+// stripHTML membersihkan teks dari tag HTML (editor edra) + unescape entitas,
+// supaya soal/kunci yang dikirim ke AI berupa teks/kode bersih (bukan HTML).
+func stripHTML(s string) string {
+	s = strings.ReplaceAll(s, "</p>", "\n")
+	s = strings.ReplaceAll(s, "</li>", "\n")
+	s = strings.ReplaceAll(s, "<br>", "\n")
+	s = strings.ReplaceAll(s, "<br/>", "\n")
+	s = htmlTagRe.ReplaceAllString(s, "")
+	return strings.TrimSpace(html.UnescapeString(s))
+}
 
 // Rubrik bobot AI grading — DEFAULT diambil dari project lama (lab-ap-v2 DEFAULT_RUBRIK).
 // Esai (pretest/posttest easy-medium, pretest hard): klasifikasi kategori -> poin.

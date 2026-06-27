@@ -95,12 +95,15 @@ func clamp(v, lo, hi float64) float64 {
 // GradeAnswer menilai satu jawaban memakai rubrik (default: ketentuan project lama).
 // Hasil di-skala ke poin soal agar adaptif terhadap bobot soal yang ditetapkan admin.
 func (c *Client) GradeAnswer(ctx context.Context, p GradeParams) (*AIResult, error) {
+	// Soal & kunci berasal dari editor HTML (edra) -> bersihkan agar AI baca teks/kode bersih.
+	soal := stripHTML(p.Soal)
+	kunci := stripHTML(p.Kunci)
 	coding := p.JenisSoal == "coding"
 	var prompt string
 	if coding {
-		prompt = promptCoding(p.Soal, p.Kunci, p.Jawaban, subForCourse(p.JenisCourse))
+		prompt = promptCoding(soal, kunci, p.Jawaban, subForCourse(p.JenisCourse))
 	} else {
-		prompt = promptEssay(p.Soal, p.Kunci, p.Jawaban, p.Difficulty, rubrikEssay(p.JenisCourse, p.Difficulty))
+		prompt = promptEssay(soal, kunci, p.Jawaban, p.Difficulty, rubrikEssay(p.JenisCourse, p.Difficulty))
 	}
 
 	content, err := c.chat(ctx, prompt)
