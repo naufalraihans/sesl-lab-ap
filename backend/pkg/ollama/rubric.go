@@ -121,7 +121,7 @@ func promptCoding(soal, instruksi, kode string, sc subCrit) string {
 	}
 	instrBlock := ""
 	if strings.TrimSpace(instruksi) != "" {
-		instrBlock = "\nKUNCI / INSTRUKSI (periksa pemenuhannya):\n" + instruksi + "\n"
+		instrBlock = "\nKUNCI JAWABAN / INSTRUKSI (acuan penilaian):\n" + instruksi + "\n"
 	}
 	return fmt.Sprintf(`Kamu adalah pengoreksi program (coding) mata kuliah Algoritma dan Pemrograman.
 
@@ -133,7 +133,11 @@ KODE MAHASISWA:
 
 NILAI 3 SUB-KRITERIA:
 
-1. "sesuai_petunjuk" (0-%d): seberapa sesuai kode dengan kunci/instruksi soal. Proporsional ke instruksi yang terpenuhi.
+1. "sesuai_petunjuk" (0-%d): KUNCI JAWABAN memuat instruksi BERBOBOT POIN per item, biasanya
+   berformat komentar "# N. deskripsi (X poin)" diikuti kode referensi item tsb.
+   Periksa kode mahasiswa terhadap SETIAP item instruksi, lalu JUMLAHKAN poin item yang terpenuhi:
+   terpenuhi penuh = poin penuh item, sebagian benar = proporsional, tidak ada = 0.
+   (Jika kunci tidak memuat bobot poin per item, nilai proporsional ke kesesuaian.) Maksimal %d.
 
 2. "berjalan_tanpa_error" (0-%d) — BACA SKALA INI:
    - %d: sempurna, zero error
@@ -153,7 +157,7 @@ ATURAN: jika kode TIDAK kosong, sesuai_petunjuk minimal 1. berjalan_tanpa_error 
 Jawab HANYA JSON (tanpa teks lain):
 {"sesuai_petunjuk":angka,"berjalan_tanpa_error":angka,"tepat_waktu_selesai":angka,"feedback":"catatan singkat (Indonesia)"}`,
 		soal, instrBlock, kode,
-		sc.SesuaiPetunjukMax,
+		sc.SesuaiPetunjukMax, sc.SesuaiPetunjukMax,
 		bteMax, bteMax, bteMinor, bteMax-1, bteSedang, bteMinor-1, bteBesar, bteSedang-1,
 		twMin, twMax, twMax, twMinor, twMax-1, twIncomplete, twMinor-1, twMin, twIncomplete-1,
 	)
