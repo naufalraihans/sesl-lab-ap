@@ -33,6 +33,9 @@
 	let aiStopRequested = false;
 
 	let nilaiEdits = $state<Record<number, { nilai: number; feedback: string }>>({});
+	// Checklist bulk-select untuk grading sebagian.
+	let selected = $state<Record<number, boolean>>({});
+	let selectedCount = $derived(rekap.filter((r) => selected[r.jawaban_id]).length);
 
 	async function loadAktivasi() {
 		try { aktivasiList = (await api.get<AktivasiSesi[]>('/api/admin/aktivasi')) ?? []; }
@@ -80,31 +83,19 @@
 		} catch (e) { err = (e as Error).message; }
 	}
 
-	async function startAIGrading() {
-		if (!selectedAktivasi || !selectedCourseId) return;
-		if (!confirm('Mulai penilaian AI untuk jawaban yang belum dinilai? Proses berjalan satu per satu (bisa dihentikan).')) return;
+	// Inti: nilai sederet jawaban_id satu per satu (dipakai "nilai semua" & "nilai terpilih").
+	async function gradeIds(ids: number[]) {
+		if (ids.length === 0) { msg = 'Tidak ada jawaban untuk dinilai.'; return; }
 		err = ''; msg = '';
 		aiProcessed = 0; aiFailed = 0; aiStopRequested = false;
+		aiTotal = ids.length; aiRunning = true;
 		try {
-			const res = await api.get<{ jawaban_ids: number[]; total: number }>(
-				`/api/admin/penilaian/ai-grade/targets?aktivasi_sesi_id=${selectedAktivasi.id}&course_id=${selectedCourseId}`
-			);
-			const ids = res?.jawaban_ids ?? [];
-			aiTotal = ids.length;
-			if (aiTotal === 0) { msg = 'Tidak ada jawaban baru yang perlu dinilai.'; return; }
-
-			aiRunning = true;
 			for (const id of ids) {
 				if (aiStopRequested) break;
-				try {
-					await api.post('/api/admin/penilaian/ai-grade/one', { jawaban_id: id });
-				} catch {
-					aiFailed++; // 1 jawaban gagal/timeout → lanjut yang lain
-				}
+				try { await api.post('/api/admin/penilaian/ai-grade/one', { jawaban_id: id }); }
+				catch { aiFailed++; } // 1 jawaban gagal/timeout → lanjut yang lain
 				aiProcessed++;
 			}
-		} catch (e) {
-			err = (e as Error).message;
 		} finally {
 			aiRunning = false;
 			const sukses = aiProcessed - aiFailed;
@@ -114,6 +105,39 @@
 			if (selectedCourseId) await loadRekap(selectedCourseId);
 		}
 	}
+
+	// Nilai SEMUA jawaban yang belum dinilai (perilaku lama).
+	async function startAIGrading() {
+		if (!selectedAktivasi || !selectedCourseId) return;
+		if (!confirm('Mulai penilaian AI untuk SEMUA jawaban yang belum dinilai?')) return;
+		try {
+			const res = await api.get<{ jawaban_ids: number[]; total: number }>(
+				`/api/admin/penilaian/ai-grade/targets?aktivasi_sesi_id=${selectedAktivasi.id}&course_id=${selectedCourseId}`
+			);
+			await gradeIds(res?.jawaban_ids ?? []);
+		} catch (e) { err = (e as Error).message; }
+	}
+
+	// Nilai HANYA jawaban yang dicentang.
+	async function gradeSelected() {
+		const ids = rekap.filter((r) => selected[r.jawaban_id]).map((r) => r.jawaban_id);
+		if (ids.length === 0) { msg = 'Belum ada jawaban yang dipilih.'; return; }
+		if (!confirm(`Nilai ${ids.length} jawaban terpilih dengan AI?`)) return;
+		await gradeIds(ids);
+		selected = {};
+	}
+
+	function pilihSemua() {
+		const s: Record<number, boolean> = {};
+		for (const r of rekap) s[r.jawaban_id] = true;
+		selected = s;
+	}
+	function pilihBelumDinilai() {
+		const s: Record<number, boolean> = {};
+		for (const r of rekap) if (r.is_submitted && r.nilai == null && r.jawaban_teks?.trim()) s[r.jawaban_id] = true;
+		selected = s;
+	}
+	function kosongkanPilihan() { selected = {}; }
 
 	function stopAIGrading() { aiStopRequested = true; }
 </script>
@@ -169,15 +193,25 @@
 						</p>
 					</div>
 				{:else}
-					<div class="mb-4 flex items-center justify-between rounded-lg border border-gray-200 bg-surface-muted p-4">
-						<div>
-							<h3 class="font-medium text-ink-body">Otomatisasi Penilaian (AI)</h3>
-							<p class="text-sm text-ink-caption">Menilai jawaban yang belum bernilai, satu per satu. Bisa dihentikan kapan saja; jawaban yang gagal bisa diulang dengan menekan tombol lagi.</p>
+					<div class="mb-4 rounded-lg border border-gray-200 bg-surface-muted p-4">
+						<div class="flex flex-wrap items-center justify-between gap-3">
+							<div>
+								<h3 class="font-medium text-ink-body">Otomatisasi Penilaian (AI)</h3>
+								<p class="text-sm text-ink-caption">Nilai semua yang belum dinilai, atau centang beberapa lalu "Nilai Terpilih". Satu per satu, bisa dihentikan.</p>
+							</div>
+							<div class="flex flex-wrap gap-2">
+								<button class="btn-outline py-2" onclick={gradeSelected} disabled={selectedCount === 0}>Nilai Terpilih ({selectedCount})</button>
+								<button class="btn-primary py-2" onclick={startAIGrading}>
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m2 16 3-3 3 3"></path><path d="m2 16 3 3 3-3"></path><path d="M14 6h-4a4 4 0 0 0-4 4v10"></path><path d="M18 10a4 4 0 0 1 4 4v6"></path><path d="m22 20-3 3-3-3"></path></svg>
+									Nilai Semua
+								</button>
+							</div>
 						</div>
-						<button class="btn-primary" onclick={startAIGrading}>
-							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m2 16 3-3 3 3"></path><path d="m2 16 3 3 3-3"></path><path d="M14 6h-4a4 4 0 0 0-4 4v10"></path><path d="M18 10a4 4 0 0 1 4 4v6"></path><path d="m22 20-3 3-3-3"></path></svg>
-							Mulai AI Grading
-						</button>
+						<div class="mt-3 flex flex-wrap gap-4 text-xs">
+							<button class="text-state-info hover:underline" onclick={pilihSemua}>Pilih semua</button>
+							<button class="text-state-info hover:underline" onclick={pilihBelumDinilai}>Pilih yang belum dinilai</button>
+							<button class="text-ink-caption hover:underline" onclick={kosongkanPilihan}>Kosongkan</button>
+						</div>
 					</div>
 				{/if}
 
@@ -185,6 +219,12 @@
 					{#each rekap as r}
 						<div class="card">
 							<div class="flex flex-wrap items-center gap-3 text-sm">
+								<input
+									type="checkbox" class="h-4 w-4"
+									checked={!!selected[r.jawaban_id]}
+									onchange={(e) => (selected[r.jawaban_id] = (e.target as HTMLInputElement).checked)}
+									title="Pilih untuk dinilai AI"
+								/>
 								<span class="font-medium">{r.nama_mahasiswa}</span>
 								<span class="text-ink-caption">{r.nim}</span>
 								<span class="badge {r.is_submitted ? 'bg-state-success-bg text-state-success' : 'bg-state-warning-bg text-state-warning'}">
