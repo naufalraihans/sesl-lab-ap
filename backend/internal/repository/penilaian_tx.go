@@ -107,21 +107,32 @@ func recalcKeysTx(tx *gorm.DB, keys []PengerjaanKey) error {
 // recalcTotalTx menghitung ulang total_nilai (SUM nilai jawaban) untuk satu
 // pengerjaan_course dan mengupsert nilainya, dalam transaksi tx.
 func recalcTotalTx(tx *gorm.DB, key PengerjaanKey) error {
-	// Arsip (aktivasi shift=0): total_nilai otoritatif dari migrasi (jawaban arsip nilai=NULL).
-	// Jangan di-recalc, kalau tidak akan menimpa jadi 0.
-	var aks entity.AktivasiSesi
-	if err := tx.Select("shift").First(&aks, key.AktivasiSesiID).Error; err != nil {
-		return err
-	}
-	if aks.Shift == 0 {
-		return nil
-	}
-
 	var stIDs []int
 	if err := tx.Model(&entity.SoalTerpilih{}).
 		Where("aktivasi_sesi_id = ? AND course_id = ?", key.AktivasiSesiID, key.CourseID).
 		Pluck("id", &stIDs).Error; err != nil {
 		return err
+	}
+
+	// Arsip (aktivasi shift=0): total_nilai otoritatif dari migrasi. Selama BELUM ada jawaban
+	// yang dinilai ulang, jangan di-recalc (kalau tidak total migrasi tertimpa jadi 0).
+	// Begitu admin mulai menilai (AI/manual), barulah total = SUM nilai re-grade.
+	var aks entity.AktivasiSesi
+	if err := tx.Select("shift").First(&aks, key.AktivasiSesiID).Error; err != nil {
+		return err
+	}
+	if aks.Shift == 0 {
+		var nGraded int64
+		if len(stIDs) > 0 {
+			if err := tx.Model(&entity.JawabanMahasiswa{}).
+				Where("mahasiswa_id = ? AND soal_terpilih_id IN ? AND nilai IS NOT NULL", key.MahasiswaID, stIDs).
+				Count(&nGraded).Error; err != nil {
+				return err
+			}
+		}
+		if nGraded == 0 {
+			return nil
+		}
 	}
 
 	var total float64
