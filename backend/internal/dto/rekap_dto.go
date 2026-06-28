@@ -13,6 +13,7 @@ type RekapSel struct {
 	Keaktifan     *float64 `json:"keaktifan"`      // null bila bukan pretest/posttest
 	Total         float64  `json:"total"`           // murni + (keaktifan||0)
 	EditKeaktifan bool     `json:"edit_keaktifan"`  // true bila pretest/posttest
+	NilaiAkhir    *float64 `json:"nilai_akhir"`     // konversi 0-100 (murni/max*100), khusus ujian praktik
 }
 
 // RekapMahasiswa merepresentasikan baris pada tabel pivot.

@@ -13,6 +13,7 @@
 		keaktifan: number | null;
 		total: number;
 		edit_keaktifan: boolean;
+		nilai_akhir: number | null;
 	}
 
 	interface RekapMahasiswa {
@@ -203,6 +204,9 @@
 											/>
 											<span class="font-semibold text-ink-body">= {sel.murni + liveKeaktifan(sel)}</span>
 										</div>
+									{:else if sel.nilai_akhir != null}
+										<span class="font-semibold text-brand-blue">{sel.nilai_akhir}</span>
+										<span class="text-xs text-ink-caption">({sel.total})</span>
 									{:else}
 										{sel.total}
 									{/if}

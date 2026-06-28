@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"lab-ap/internal/dto"
@@ -89,6 +90,11 @@ func (uc *RekapUsecase) GetRekapKelas(kelasID int) (*dto.RekapKelasResponse, err
 			if isTest && row.Keaktifan != nil {
 				sel.Keaktifan = row.Keaktifan
 				sel.Total = murni + *row.Keaktifan
+			}
+			// Ujian praktik: konversi 0-100 = murni / max-poin * 100 (dibulatkan).
+			if *row.CourseJenis == "ujian_praktik" && row.MaxNilai != nil && *row.MaxNilai > 0 {
+				na := math.Round(murni / *row.MaxNilai * 100)
+				sel.NilaiAkhir = &na
 			}
 			mhs.Scores[key] = sel
 			mhs.TotalScore += sel.Total

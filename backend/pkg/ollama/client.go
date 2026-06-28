@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -122,7 +123,7 @@ func (c *Client) GradeAnswer(ctx context.Context, p GradeParams) (*AIResult, err
 		sp := clamp(r.SesuaiPetunjuk, 0, float64(sc.SesuaiPetunjukMax))
 		bte := clamp(r.BerjalanTanpaError, 0, float64(sc.BteMax))
 		tw := clamp(r.TepatWaktuSelesai, float64(sc.TwMin), float64(sc.TwMax))
-		res.Nilai = clamp(p.Poin*(sp+bte+tw)/max, 0, p.Poin)
+		res.Nilai = math.Round(clamp(p.Poin*(sp+bte+tw)/max, 0, p.Poin)) // nilai bulat (tanpa koma)
 		res.Feedback = r.Feedback
 	} else {
 		var r essayResp
@@ -143,7 +144,7 @@ func (c *Client) GradeAnswer(ctx context.Context, p GradeParams) (*AIResult, err
 		if maxCat == 0 {
 			maxCat = 1
 		}
-		res.Nilai = clamp(p.Poin*float64(catPoin)/float64(maxCat), 0, p.Poin)
+		res.Nilai = math.Round(clamp(p.Poin*float64(catPoin)/float64(maxCat), 0, p.Poin)) // nilai bulat (tanpa koma)
 		res.Feedback = r.Feedback
 	}
 	return res, nil
