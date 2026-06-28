@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"math"
+
 	"lab-ap/internal/dto"
 	"lab-ap/internal/entity"
 	"lab-ap/internal/repository"
@@ -14,6 +16,7 @@ type PraktikumUsecase struct {
 	pengerjaan repository.PengerjaanRepository
 	users      repository.UserRepository
 	jadwal     repository.JadwalRepository
+	terpilih   repository.SoalTerpilihRepository
 }
 
 func NewPraktikumUsecase(
@@ -23,8 +26,9 @@ func NewPraktikumUsecase(
 	p repository.PengerjaanRepository,
 	u repository.UserRepository,
 	j repository.JadwalRepository,
+	t repository.SoalTerpilihRepository,
 ) *PraktikumUsecase {
-	return &PraktikumUsecase{sesi: s, course: c, aktivasi: a, pengerjaan: p, users: u, jadwal: j}
+	return &PraktikumUsecase{sesi: s, course: c, aktivasi: a, pengerjaan: p, users: u, jadwal: j, terpilih: t}
 }
 
 // ListSesi mengembalikan seluruh sesi dari sudut pandang mahasiswa (aktif/terkunci).
@@ -158,6 +162,20 @@ func (uc *PraktikumUsecase) Dashboard(userID int) (*dto.DashboardUserResponse, e
 				item.Jenis = string(c.Jenis)
 				if (c.Jenis == entity.CoursePretest || c.Jenis == entity.CoursePosttest) && p.Keaktifan != nil {
 					final += *p.Keaktifan
+				}
+				// Ujian praktik: tampilkan nilai akhir 0-100 (sum/maks-poin*100, bulat), sama spt rekap admin.
+				if c.Jenis == entity.CourseUjianPraktik {
+					if sts, err := uc.terpilih.ListByAktivasiCourse(p.AktivasiSesiID, p.CourseID); err == nil {
+						maxPoin := 0.0
+						for _, st := range sts {
+							if st.Soal != nil {
+								maxPoin += st.Soal.Poin
+							}
+						}
+						if maxPoin > 0 {
+							final = math.Round(final / maxPoin * 100)
+						}
+					}
 				}
 				if sesi, err := uc.sesi.FindByID(c.SesiPraktikumID); err == nil {
 					item.SesiJudul = sesi.JudulSesi
