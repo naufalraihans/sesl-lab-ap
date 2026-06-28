@@ -127,6 +127,20 @@
 		selected = {};
 	}
 
+	// Reset nilai (& feedback) jawaban terpilih jadi kosong → bisa dinilai ulang.
+	async function resetSelected() {
+		const ids = rekap.filter((r) => selected[r.jawaban_id]).map((r) => r.jawaban_id);
+		if (ids.length === 0) { msg = 'Belum ada jawaban yang dipilih.'; return; }
+		if (!confirm(`Reset nilai ${ids.length} jawaban terpilih jadi kosong? Feedback juga dihapus.`)) return;
+		err = ''; msg = '';
+		try {
+			await api.post('/api/admin/penilaian/bulk-action', { action: 'reset_nilai', jawaban_ids: ids });
+			msg = `${ids.length} nilai direset.`;
+			selected = {};
+			if (selectedCourseId) await loadRekap(selectedCourseId);
+		} catch (e) { err = (e as Error).message; }
+	}
+
 	function pilihSemua() {
 		const s: Record<number, boolean> = {};
 		for (const r of rekap) s[r.jawaban_id] = true;
@@ -201,6 +215,7 @@
 							</div>
 							<div class="flex flex-wrap gap-2">
 								<button class="btn-outline py-2" onclick={gradeSelected} disabled={selectedCount === 0}>Nilai Terpilih ({selectedCount})</button>
+								<button class="btn-outline border-state-error py-2 text-state-error hover:bg-state-error hover:text-white" onclick={resetSelected} disabled={selectedCount === 0}>Reset Terpilih ({selectedCount})</button>
 								<button class="btn-primary py-2" onclick={startAIGrading}>
 									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m2 16 3-3 3 3"></path><path d="m2 16 3 3 3-3"></path><path d="M14 6h-4a4 4 0 0 0-4 4v10"></path><path d="M18 10a4 4 0 0 1 4 4v6"></path><path d="m22 20-3 3-3-3"></path></svg>
 									Nilai Semua
