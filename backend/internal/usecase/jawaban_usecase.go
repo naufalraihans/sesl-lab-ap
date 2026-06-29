@@ -77,6 +77,16 @@ func deadlineFrom(mulai *time.Time, durasiMenit int) *time.Time {
 	return &d
 }
 
+// effectiveDeadline: timer GLOBAL — anchor = aktivasi_course.started_at (peserta
+// pertama mulai), sama untuk semua peserta course. Susulan dikecualikan: pakai
+// timer per-user (waktu_mulai sendiri) karena mengerjakan di hari berbeda.
+func effectiveDeadline(ac *entity.AktivasiCourse, waktuMulai *time.Time, isSusulan bool, durasiMenit int) *time.Time {
+	if isSusulan {
+		return deadlineFrom(waktuMulai, durasiMenit)
+	}
+	return deadlineFrom(ac.StartedAt, durasiMenit)
+}
+
 // GetRuang mengembalikan data ruang pengerjaan (soal + jawaban tersimpan + timer).
 // Read-only: tidak memulai timer.
 func (uc *JawabanUsecase) GetRuang(userID, aktivasiSesiID, courseID int) (*dto.RuangCourseResponse, error) {
@@ -120,6 +130,14 @@ func (uc *JawabanUsecase) Mulai(userID int, req dto.MulaiCourseRequest) (*dto.Ru
 		if err := uc.pengerjaan.Update(p); err != nil {
 			return nil, err
 		}
+		// Set anchor timer global (skip susulan). Atomic: hanya peserta pertama yang menang.
+		if isSusulan, _ := uc.aktivasi.IsSusulan(aktivasi.ID, userID); !isSusulan {
+			_ = uc.aktivasi.SetCourseStartedAtIfNull(ac.ID, now)
+			// reload ac agar buildRuang memakai started_at otoritatif (milik kita / peserta pertama lain).
+			if fresh, err := uc.aktivasi.FindCourse(aktivasi.ID, course.ID); err == nil {
+				ac = fresh
+			}
+		}
 	}
 	return uc.buildRuang(userID, aktivasi, ac, course)
 }
@@ -139,6 +157,7 @@ func (uc *JawabanUsecase) AutoSave(userID int, req dto.AutoSaveRequest) error {
 		return ErrAlreadyDone
 	}
 	// Validasi deadline (server-authoritative).
+	isSusulan, _ := uc.aktivasi.IsSusulan(st.AktivasiSesiID, userID)
 	p, err := uc.pengerjaan.Find(userID, st.AktivasiSesiID, st.CourseID)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -153,11 +172,17 @@ func (uc *JawabanUsecase) AutoSave(userID int, req dto.AutoSaveRequest) error {
 		p.WaktuMulai = &now
 		p.Status = entity.StatusSedang
 		_ = uc.pengerjaan.Update(p)
+		if !isSusulan {
+			_ = uc.aktivasi.SetCourseStartedAtIfNull(ac.ID, now)
+			if fresh, err := uc.aktivasi.FindCourse(st.AktivasiSesiID, st.CourseID); err == nil {
+				ac = fresh
+			}
+		}
 	}
 	if p.Status == entity.StatusSelesai {
 		return ErrAlreadyDone
 	}
-	if dl := deadlineFrom(p.WaktuMulai, course.DurasiMenit); dl != nil && time.Now().After(*dl) {
+	if dl := effectiveDeadline(ac, p.WaktuMulai, isSusulan, course.DurasiMenit); dl != nil && time.Now().After(*dl) {
 		// Lewat deadline → auto-submit & tolak.
 		_ = uc.finalize(userID, st.AktivasiSesiID, st.CourseID)
 		return ErrTimeUp
@@ -254,7 +279,8 @@ func (uc *JawabanUsecase) buildRuang(userID int, aktivasi *entity.AktivasiSesi, 
 	if p, err := uc.pengerjaan.Find(userID, aktivasi.ID, course.ID); err == nil {
 		resp.Status = string(p.Status)
 		resp.WaktuMulai = p.WaktuMulai
-		resp.Deadline = deadlineFrom(p.WaktuMulai, course.DurasiMenit)
+		isSusulan, _ := uc.aktivasi.IsSusulan(aktivasi.ID, userID)
+		resp.Deadline = effectiveDeadline(ac, p.WaktuMulai, isSusulan, course.DurasiMenit)
 	}
 
 	for _, st := range soalTerpilih {

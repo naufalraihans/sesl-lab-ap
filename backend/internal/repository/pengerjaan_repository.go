@@ -122,13 +122,18 @@ func (r *pengerjaanRepository) SetKeaktifanIfTest(pengerjaanID int, nilai float6
 
 func (r *pengerjaanRepository) FindExpired() ([]ExpiredPengerjaan, error) {
 	var out []ExpiredPengerjaan
-	// Deadline = waktu_mulai + course.durasi_menit menit. Hanya yg status sedang_dikerjakan.
+	// Deadline = anchor + course.durasi_menit. Anchor: reguler pakai ac.started_at
+	// (timer global, peserta pertama), susulan pakai pc.waktu_mulai (per-user).
+	// Hanya yg status sedang_dikerjakan.
+	anchor := "CASE WHEN ps.id IS NOT NULL THEN pc.waktu_mulai ELSE ac.started_at END"
 	err := r.db.Table("pengerjaan_course AS pc").
 		Select("pc.mahasiswa_id, pc.aktivasi_sesi_id, pc.course_id").
 		Joins("JOIN course c ON c.id = pc.course_id").
+		Joins("JOIN aktivasi_course ac ON ac.aktivasi_sesi_id = pc.aktivasi_sesi_id AND ac.course_id = pc.course_id").
+		Joins("LEFT JOIN peserta_susulan ps ON ps.aktivasi_sesi_id = pc.aktivasi_sesi_id AND ps.mahasiswa_id = pc.mahasiswa_id").
 		Where("pc.status = ?", entity.StatusSedang).
-		Where("pc.waktu_mulai IS NOT NULL").
-		Where("NOW() > pc.waktu_mulai + (c.durasi_menit * interval '1 minute')").
+		Where("(" + anchor + ") IS NOT NULL").
+		Where("NOW() > (" + anchor + ") + (c.durasi_menit * interval '1 minute')").
 		Scan(&out).Error
 	return out, err
 }

@@ -12,6 +12,8 @@ type AktivasiCourse struct {
 	Urutan         int        `json:"urutan"`
 	OpenedAt       *time.Time `json:"opened_at"`
 	ClosedAt       *time.Time `json:"closed_at"`
+	// StartedAt: anchor timer global, di-set sekali oleh peserta pertama yang mulai.
+	StartedAt *time.Time `json:"started_at"`
 
 	Course *Course `gorm:"foreignKey:CourseID" json:"course,omitempty"`
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"time"
 
 	"lab-ap/internal/entity"
 
@@ -25,6 +26,9 @@ type AktivasiRepository interface {
 	FindCourseByID(id int) (*entity.AktivasiCourse, error)
 	FindCourse(aktivasiSesiID, courseID int) (*entity.AktivasiCourse, error)
 	ListCoursesByAktivasi(aktivasiSesiID int) ([]entity.AktivasiCourse, error)
+	// SetCourseStartedAtIfNull menetapkan anchor timer global HANYA bila belum di-set
+	// (atomic: peserta pertama menang). No-op bila started_at sudah terisi.
+	SetCourseStartedAtIfNull(aktivasiCourseID int, t time.Time) error
 
 	// peserta_susulan
 	AddSusulan(p *entity.PesertaSusulan) error
@@ -111,6 +115,12 @@ func (r *aktivasiRepository) FindCourse(aktivasiSesiID, courseID int) (*entity.A
 		return nil, err
 	}
 	return &ac, nil
+}
+
+func (r *aktivasiRepository) SetCourseStartedAtIfNull(aktivasiCourseID int, t time.Time) error {
+	return r.db.Model(&entity.AktivasiCourse{}).
+		Where("id = ? AND started_at IS NULL", aktivasiCourseID).
+		Update("started_at", t).Error
 }
 
 func (r *aktivasiRepository) ListCoursesByAktivasi(aktivasiSesiID int) ([]entity.AktivasiCourse, error) {
