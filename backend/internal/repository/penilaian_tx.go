@@ -83,6 +83,49 @@ func (r *PenilaianTxRepo) BulkDeleteAndRecalc(jawabanIDs []int) error {
 	})
 }
 
+// BulkUnlockByJawaban membuka kembali pengerjaan (status -> belum_dikerjakan,
+// waktu_mulai/selesai NULL) untuk tiap (mahasiswa,aktivasi,course) yang menaungi
+// jawaban terpilih, sekaligus melepas is_submitted SEMUA jawaban mahasiswa di
+// course itu — agar mahasiswa bisa mengerjakan & submit ulang. total_nilai
+// SENGAJA dibiarkan (kalau mau bersih, pakai aksi delete terpisah).
+func (r *PenilaianTxRepo) BulkUnlockByJawaban(jawabanIDs []int) error {
+	if len(jawabanIDs) == 0 {
+		return nil
+	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		keys, err := affectedKeysTx(tx, jawabanIDs)
+		if err != nil {
+			return err
+		}
+		for _, k := range keys {
+			if err := tx.Model(&entity.PengerjaanCourse{}).
+				Where("mahasiswa_id = ? AND aktivasi_sesi_id = ? AND course_id = ?",
+					k.MahasiswaID, k.AktivasiSesiID, k.CourseID).
+				Updates(map[string]interface{}{
+					"status":        entity.StatusBelum,
+					"waktu_mulai":   nil,
+					"waktu_selesai": nil,
+				}).Error; err != nil {
+				return err
+			}
+			var stIDs []int
+			if err := tx.Model(&entity.SoalTerpilih{}).
+				Where("aktivasi_sesi_id = ? AND course_id = ?", k.AktivasiSesiID, k.CourseID).
+				Pluck("id", &stIDs).Error; err != nil {
+				return err
+			}
+			if len(stIDs) > 0 {
+				if err := tx.Model(&entity.JawabanMahasiswa{}).
+					Where("mahasiswa_id = ? AND soal_terpilih_id IN ?", k.MahasiswaID, stIDs).
+					Updates(map[string]interface{}{"is_submitted": false, "waktu_submit": nil}).Error; err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+}
+
 // affectedKeysTx mengambil daftar unik (mahasiswa, aktivasi, course) untuk
 // sekumpulan jawaban dalam SATU query join (anti N+1).
 func affectedKeysTx(tx *gorm.DB, jawabanIDs []int) ([]PengerjaanKey, error) {

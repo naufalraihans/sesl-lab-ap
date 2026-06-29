@@ -32,6 +32,6 @@ type RekapJawabanResponse struct {
 
 // BulkActionRequest digunakan untuk menghapus atau mereset nilai masal
 type BulkActionRequest struct {
-	Action     string `json:"action" binding:"required,oneof=delete reset_nilai"`
+	Action     string `json:"action" binding:"required,oneof=delete reset_nilai buka_kunci"`
 	JawabanIDs []int  `json:"jawaban_ids" binding:"required,min=1"`
 }

@@ -164,3 +164,8 @@ func (uc *PenilaianUsecase) BulkDeleteJawaban(jawabanIDs []int) error {
 	return uc.tx.BulkDeleteAndRecalc(jawabanIDs)
 }
 
+// BulkUnlock membuka kunci pengerjaan agar mahasiswa bisa mengerjakan ulang
+// (status -> belum_dikerjakan, waktu reset, is_submitted dilepas). total_nilai dibiarkan.
+func (uc *PenilaianUsecase) BulkUnlock(jawabanIDs []int) error {
+	return uc.tx.BulkUnlockByJawaban(jawabanIDs)
+}

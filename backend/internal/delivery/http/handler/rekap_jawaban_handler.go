@@ -67,6 +67,8 @@ func (h *RekapJawabanHandler) BulkAction(c *gin.Context) {
 		err = h.penilaianUsecase.BulkDeleteJawaban(req.JawabanIDs)
 	} else if req.Action == "reset_nilai" {
 		err = h.penilaianUsecase.BulkResetNilai(req.JawabanIDs)
+	} else if req.Action == "buka_kunci" {
+		err = h.penilaianUsecase.BulkUnlock(req.JawabanIDs)
 	}
 
 	if err != nil {

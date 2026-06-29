@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis, renderMath } from '$lib/utils';
-	import { RotateCcw, Trash2, X } from 'lucide-svelte';
+	import { RotateCcw, Trash2, X, LockOpen } from 'lucide-svelte';
 	import type { Kelas } from '$lib/types';
 
 	interface Sesi {
@@ -118,12 +118,14 @@
 		selectedIds = new Set(selectedIds);
 	}
 
-	async function doBulkAction(action: 'reset_nilai' | 'delete') {
+	async function doBulkAction(action: 'reset_nilai' | 'delete' | 'buka_kunci') {
 		if (selectedIds.size === 0) return;
-		const msgConfirm = action === 'delete' 
-			? `Hapus permanen ${selectedIds.size} jawaban terpilih?` 
+		const msgConfirm = action === 'delete'
+			? `Hapus permanen ${selectedIds.size} jawaban terpilih?`
+			: action === 'buka_kunci'
+			? `Buka kunci pengerjaan untuk ${selectedIds.size} jawaban terpilih? Mahasiswa terkait bisa mengerjakan & submit ulang (selama course masih dibuka).`
 			: `Reset nilai (jadi null) untuk ${selectedIds.size} jawaban terpilih?`;
-		
+
 		if (!confirm(msgConfirm)) return;
 
 		errorMsg = '';
@@ -245,6 +247,9 @@
 			</button>
 			<button class="btn-outline inline-flex items-center gap-1 border-state-error text-state-error hover:bg-state-error hover:text-white" onclick={() => doBulkAction('delete')}>
 				<Trash2 size={14} /> Hapus
+			</button>
+			<button class="btn-outline inline-flex items-center gap-1 border-primary text-primary hover:bg-primary hover:text-white" onclick={() => doBulkAction('buka_kunci')}>
+				<LockOpen size={14} /> Buka Kunci
 			</button>
 			<button class="btn-outline" onclick={() => (selectedIds = new Set())}>Batal</button>
 		</div>
