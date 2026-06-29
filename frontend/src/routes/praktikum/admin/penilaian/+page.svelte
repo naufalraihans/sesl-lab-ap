@@ -30,6 +30,7 @@
 	let aiProcessed = $state(0);
 	let aiTotal = $state(0);
 	let aiFailed = $state(0);
+	let aiFailedItems = $state<{ jawaban_id: number; nama: string; nim: string }[]>([]);
 	let aiStopRequested = false;
 
 	let nilaiEdits = $state<Record<number, { nilai: number; feedback: string }>>({});
@@ -87,20 +88,24 @@
 	async function gradeIds(ids: number[]) {
 		if (ids.length === 0) { msg = 'Tidak ada jawaban untuk dinilai.'; return; }
 		err = ''; msg = '';
-		aiProcessed = 0; aiFailed = 0; aiStopRequested = false;
+		aiProcessed = 0; aiFailed = 0; aiFailedItems = []; aiStopRequested = false;
 		aiTotal = ids.length; aiRunning = true;
 		try {
 			for (const id of ids) {
 				if (aiStopRequested) break;
 				try { await api.post('/api/admin/penilaian/ai-grade/one', { jawaban_id: id }); }
-				catch { aiFailed++; } // 1 jawaban gagal/timeout → lanjut yang lain
+				catch {
+					aiFailed++; // 1 jawaban gagal/timeout → lanjut yang lain, catat siapa
+					const r = rekap.find((x) => x.jawaban_id === id);
+					aiFailedItems = [...aiFailedItems, { jawaban_id: id, nama: r?.nama_mahasiswa ?? '?', nim: r?.nim ?? '-' }];
+				}
 				aiProcessed++;
 			}
 		} finally {
 			aiRunning = false;
 			const sukses = aiProcessed - aiFailed;
 			msg = `AI grading selesai: ${sukses} berhasil`
-				+ (aiFailed ? `, ${aiFailed} gagal (klik lagi untuk mengulang yang gagal)` : '')
+				+ (aiFailed ? `, ${aiFailed} gagal (lihat daftar di bawah)` : '')
 				+ (aiStopRequested ? ' — dihentikan' : '') + '.';
 			if (selectedCourseId) await loadRekap(selectedCourseId);
 		}
@@ -116,6 +121,13 @@
 			);
 			await gradeIds(res?.jawaban_ids ?? []);
 		} catch (e) { err = (e as Error).message; }
+	}
+
+	// Ulangi grading HANYA untuk jawaban yang tadi gagal.
+	async function retryFailed() {
+		const ids = aiFailedItems.map((x) => x.jawaban_id);
+		if (ids.length === 0) return;
+		await gradeIds(ids);
 	}
 
 	// Nilai HANYA jawaban yang dicentang.
@@ -160,6 +172,20 @@
 
 {#if msg}<p class="mb-3 rounded-lg bg-state-success-bg p-3 text-sm text-state-success">{msg}</p>{/if}
 {#if err}<p class="mb-3 rounded-lg bg-state-error-bg p-3 text-sm text-state-error">{err}</p>{/if}
+
+{#if !aiRunning && aiFailedItems.length > 0}
+	<div class="mb-3 rounded-lg border border-state-error/30 bg-state-error-bg p-3 text-sm">
+		<div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+			<span class="font-medium text-state-error">{aiFailedItems.length} jawaban gagal dinilai:</span>
+			<button class="btn-outline border-state-error px-3 py-1 text-xs text-state-error hover:bg-state-error hover:text-white" onclick={retryFailed}>Ulangi yang gagal ({aiFailedItems.length})</button>
+		</div>
+		<ul class="ml-4 list-disc space-y-0.5 text-ink-body">
+			{#each aiFailedItems as f}
+				<li>{f.nama} <span class="text-ink-caption">({f.nim})</span></li>
+			{/each}
+		</ul>
+	</div>
+{/if}
 
 <div class="grid gap-4 lg:grid-cols-4">
 	<div class="card">
