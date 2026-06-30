@@ -26,8 +26,9 @@ type RekapJawabanItem struct {
 
 // RekapJawabanResponse adalah response untuk tabel Rekap Jawaban
 type RekapJawabanResponse struct {
-	Items []RekapJawabanItem `json:"items"`
-	Total int64              `json:"total"`
+	Items   []RekapJawabanItem `json:"items"`
+	Total   int64              `json:"total"`
+	Limited bool               `json:"limited"` // true = hasil dipotong; gunakan Cari untuk data lain
 }
 
 // BulkActionRequest digunakan untuk menghapus atau mereset nilai masal

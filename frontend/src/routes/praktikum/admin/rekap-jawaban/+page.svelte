@@ -34,6 +34,7 @@
 	interface RekapResponse {
 		items: RekapJawabanItem[];
 		total: number;
+		limited?: boolean;
 	}
 
 	let kelasList = $state<Kelas[]>([]);
@@ -356,7 +357,11 @@
 	<div class="py-10 text-center text-ink-caption">Memuat data jawaban...</div>
 {:else if rekap}
 	<div class="mb-2 text-sm text-ink-caption">
-		Total: <strong>{rekap.total}</strong> jawaban
+		{#if rekap.limited}
+			Menampilkan <strong>{rekap.total}</strong> jawaban terbaru. Pakai <strong>Cari (NIM/Nama)</strong> untuk menemukan data lainnya.
+		{:else}
+			Total: <strong>{rekap.total}</strong> jawaban
+		{/if}
 	</div>
 	
 	{#if rekap.items.length === 0}

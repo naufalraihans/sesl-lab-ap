@@ -102,16 +102,25 @@ func (uc *PenilaianUsecase) Rekap(aktivasiSesiID, courseID int) (*dto.RekapRespo
 	return resp, nil
 }
 
+// rekapDefaultLimit membatasi jumlah baris saat TANPA pencarian, supaya tidak
+// menarik seluruh tabel (hemat kuota read). Pencarian by nama/NIM tetap full.
+const rekapDefaultLimit = 100
+
 // GetRekapJawabanGlobal mengembalikan rekap jawaban secara flat untuk dashboard
 func (uc *PenilaianUsecase) GetRekapJawabanGlobal(kelasID, sesiID int, search, jenis string) (*dto.RekapJawabanResponse, error) {
-	jawabanList, err := uc.jawaban.GetAllJawabanFlat(kelasID, sesiID, search, jenis)
+	limit := rekapDefaultLimit
+	if search != "" {
+		limit = 0 // ada pencarian: tampilkan semua yang cocok
+	}
+	jawabanList, err := uc.jawaban.GetAllJawabanFlat(kelasID, sesiID, search, jenis, limit)
 	if err != nil {
 		return nil, err
 	}
 
 	resp := &dto.RekapJawabanResponse{
-		Items: make([]dto.RekapJawabanItem, 0, len(jawabanList)),
-		Total: int64(len(jawabanList)),
+		Items:   make([]dto.RekapJawabanItem, 0, len(jawabanList)),
+		Total:   int64(len(jawabanList)),
+		Limited: limit > 0 && len(jawabanList) >= limit,
 	}
 
 	for _, j := range jawabanList {

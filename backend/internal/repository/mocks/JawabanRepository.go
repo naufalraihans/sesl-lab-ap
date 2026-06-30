@@ -127,9 +127,9 @@ func (_m *JawabanRepository) FindByMahasiswaSoal(mahasiswaID int, soalTerpilihID
 	return r0, r1
 }
 
-// GetAllJawabanFlat provides a mock function with given fields: kelasID, sesiID, search, jenis
-func (_m *JawabanRepository) GetAllJawabanFlat(kelasID int, sesiID int, search string, jenis string) ([]entity.JawabanMahasiswa, error) {
-	ret := _m.Called(kelasID, sesiID, search, jenis)
+// GetAllJawabanFlat provides a mock function with given fields: kelasID, sesiID, search, jenis, limit
+func (_m *JawabanRepository) GetAllJawabanFlat(kelasID int, sesiID int, search string, jenis string, limit int) ([]entity.JawabanMahasiswa, error) {
+	ret := _m.Called(kelasID, sesiID, search, jenis, limit)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAllJawabanFlat")
@@ -137,19 +137,19 @@ func (_m *JawabanRepository) GetAllJawabanFlat(kelasID int, sesiID int, search s
 
 	var r0 []entity.JawabanMahasiswa
 	var r1 error
-	if rf, ok := ret.Get(0).(func(int, int, string, string) ([]entity.JawabanMahasiswa, error)); ok {
-		return rf(kelasID, sesiID, search, jenis)
+	if rf, ok := ret.Get(0).(func(int, int, string, string, int) ([]entity.JawabanMahasiswa, error)); ok {
+		return rf(kelasID, sesiID, search, jenis, limit)
 	}
-	if rf, ok := ret.Get(0).(func(int, int, string, string) []entity.JawabanMahasiswa); ok {
-		r0 = rf(kelasID, sesiID, search, jenis)
+	if rf, ok := ret.Get(0).(func(int, int, string, string, int) []entity.JawabanMahasiswa); ok {
+		r0 = rf(kelasID, sesiID, search, jenis, limit)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]entity.JawabanMahasiswa)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(int, int, string, string) error); ok {
-		r1 = rf(kelasID, sesiID, search, jenis)
+	if rf, ok := ret.Get(1).(func(int, int, string, string, int) error); ok {
+		r1 = rf(kelasID, sesiID, search, jenis, limit)
 	} else {
 		r1 = ret.Error(1)
 	}

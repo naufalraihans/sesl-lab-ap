@@ -25,7 +25,7 @@ type JawabanRepository interface {
 	// ListRekap: rekap jawaban untuk satu aktivasi+course (semua mahasiswa).
 	ListRekap(aktivasiSesiID, courseID int) ([]entity.JawabanMahasiswa, error)
 	// GetAllJawabanFlat: rekap global untuk halaman admin
-	GetAllJawabanFlat(kelasID, sesiID int, search, jenis string) ([]entity.JawabanMahasiswa, error)
+	GetAllJawabanFlat(kelasID, sesiID int, search, jenis string, limit int) ([]entity.JawabanMahasiswa, error)
 	// BulkResetNilai: reset nilai ke null untuk daftar jawaban_id
 	BulkResetNilai(jawabanIDs []int) error
 	// BulkDelete: hapus jawaban berdasarkan daftar jawaban_id
@@ -149,7 +149,7 @@ func (r *jawabanRepository) ListRekap(aktivasiSesiID, courseID int) ([]entity.Ja
 	return js, err
 }
 
-func (r *jawabanRepository) GetAllJawabanFlat(kelasID, sesiID int, search, jenis string) ([]entity.JawabanMahasiswa, error) {
+func (r *jawabanRepository) GetAllJawabanFlat(kelasID, sesiID int, search, jenis string, limit int) ([]entity.JawabanMahasiswa, error) {
 	var js []entity.JawabanMahasiswa
 
 	query := r.db.Preload("Mahasiswa").Preload("Mahasiswa.Kelas").
@@ -179,7 +179,11 @@ func (r *jawabanRepository) GetAllJawabanFlat(kelasID, sesiID int, search, jenis
 		query = query.Where("(users.nama ILIKE ? OR users.nim ILIKE ?)", searchLike, searchLike)
 	}
 
-	err := query.Order("jawaban_mahasiswa.waktu_submit DESC").Find(&js).Error
+	query = query.Order("jawaban_mahasiswa.waktu_submit DESC")
+	if limit > 0 {
+		query = query.Limit(limit) // batasi read: tanpa search hanya N terbaru
+	}
+	err := query.Find(&js).Error
 	return js, err
 }
 
