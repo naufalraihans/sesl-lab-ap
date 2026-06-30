@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis, labelShift } from '$lib/utils';
-	import { KeyRound } from 'lucide-svelte';
+	import { KeyRound, Trash2 } from 'lucide-svelte';
 	import type { Sesi, Kelas, User } from '$lib/types';
 
 	interface AktivasiSesi {
@@ -102,6 +102,20 @@
 			}
 		} catch (e) { err = (e as Error).message; }
 	}
+
+	// Hapus aktivasi + GENOSIDA semua data anaknya (jawaban, nilai, soal terpilih, susulan).
+	async function hapusAktivasi(a: AktivasiSesi) {
+		err = ''; msg = '';
+		const nama = `${a.sesi?.judul_sesi ?? a.sesi_praktikum_id} — ${a.kelas?.nama_kelas ?? a.kelas_id} ${labelShift(a.shift)}`;
+		if (!confirm(`HAPUS aktivasi "${nama}"?\n\nIni MENGHAPUS PERMANEN semua jawaban, nilai, soal terpilih, dan susulan di aktivasi ini. Tidak bisa di-undo.`)) return;
+		if (!confirm('Yakin 100%? Semua jawaban & nilai mahasiswa di aktivasi ini akan hilang selamanya.')) return;
+		try {
+			await api.del(`/api/admin/aktivasi/${a.id}`);
+			msg = `Aktivasi "${nama}" beserta seluruh data terkait dihapus.`;
+			if (selected?.id === a.id) selected = null;
+			await load();
+		} catch (e) { err = (e as Error).message; }
+	}
 </script>
 
 <h1 class="mb-4 text-2xl">Aktivasi Sesi</h1>
@@ -146,7 +160,10 @@
 							<td>{a.sesi?.judul_sesi ?? a.sesi_praktikum_id}</td>
 							<td>{a.kelas?.nama_kelas ?? a.kelas_id}</td>
 							<td>{a.shift === 0 ? 'Arsip' : a.shift}</td>
-							<td><button class="text-state-info hover:underline" onclick={() => selectAktivasi(a)}>Detail</button></td>
+							<td class="flex items-center gap-3">
+								<button class="text-state-info hover:underline" onclick={() => selectAktivasi(a)}>Detail</button>
+								<button class="inline-flex items-center gap-1 text-state-error hover:underline" onclick={() => hapusAktivasi(a)}><Trash2 size={14} /> Hapus</button>
+							</td>
 						</tr>
 					{/each}
 				</tbody>

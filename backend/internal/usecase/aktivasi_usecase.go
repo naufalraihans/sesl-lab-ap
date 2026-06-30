@@ -240,3 +240,9 @@ func (uc *AktivasiUsecase) RemoveSusulan(aktivasiSesiID, mahasiswaID int) error 
 func (uc *AktivasiUsecase) ListSusulan(aktivasiSesiID int) ([]entity.PesertaSusulan, error) {
 	return uc.aktivasi.ListSusulan(aktivasiSesiID)
 }
+
+// DeleteSesi menghapus satu aktivasi beserta SEMUA data anaknya (jawaban, nilai,
+// soal terpilih, susulan, aktivasi_course) — cascade di repository.
+func (uc *AktivasiUsecase) DeleteSesi(id int) error {
+	return uc.aktivasi.DeleteSesi(id)
+}

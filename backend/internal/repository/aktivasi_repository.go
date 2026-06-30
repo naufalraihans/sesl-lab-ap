@@ -84,8 +84,31 @@ func (r *aktivasiRepository) ListActiveSesi() ([]entity.AktivasiSesi, error) {
 	return as, err
 }
 
+// DeleteSesi menghapus aktivasi_sesi BESERTA seluruh data anaknya (cascade manual,
+// satu transaksi): jawaban mahasiswa, soal terpilih, pengerjaan (nilai), susulan,
+// dan aktivasi_course. Urut anak->induk agar lolos FK RESTRICT (migrasi 021).
 func (r *aktivasiRepository) DeleteSesi(id int) error {
-	return r.db.Delete(&entity.AktivasiSesi{}, id).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// jawaban mahasiswa (anak dari soal_terpilih milik aktivasi ini)
+		if err := tx.Where("soal_terpilih_id IN (?)",
+			tx.Model(&entity.SoalTerpilih{}).Select("id").Where("aktivasi_sesi_id = ?", id)).
+			Delete(&entity.JawabanMahasiswa{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("aktivasi_sesi_id = ?", id).Delete(&entity.SoalTerpilih{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("aktivasi_sesi_id = ?", id).Delete(&entity.PengerjaanCourse{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("aktivasi_sesi_id = ?", id).Delete(&entity.PesertaSusulan{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("aktivasi_sesi_id = ?", id).Delete(&entity.AktivasiCourse{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&entity.AktivasiSesi{}, id).Error
+	})
 }
 
 // ---- aktivasi_course ----

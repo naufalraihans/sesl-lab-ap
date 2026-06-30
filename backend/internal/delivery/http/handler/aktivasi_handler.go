@@ -206,3 +206,24 @@ func (h *AktivasiHandler) GenerateToken(c *gin.Context) {
 	}
 	response.OK(c, http.StatusOK, "Token berhasil digenerate", res)
 }
+
+// Delete DELETE /api/admin/aktivasi/:id
+// @Summary Hapus Aktivasi (beserta semua jawaban & nilai di bawahnya)
+// @Description Menghapus satu aktivasi sesi + cascade: jawaban mahasiswa, nilai, soal terpilih, susulan, aktivasi_course.
+// @Tags Admin - Aktivasi
+// @Security bearerAuth
+// @Produce json
+// @Param id path int true "ID Aktivasi"
+// @Success 200 {object} response.Envelope
+// @Router /admin/aktivasi/{id} [delete]
+func (h *AktivasiHandler) Delete(c *gin.Context) {
+	id, ok := idParam(c, "id")
+	if !ok {
+		return
+	}
+	if err := h.uc.DeleteSesi(id); err != nil {
+		mapError(c, err)
+		return
+	}
+	response.OK(c, http.StatusOK, "Aktivasi beserta seluruh data terkait dihapus", nil)
+}

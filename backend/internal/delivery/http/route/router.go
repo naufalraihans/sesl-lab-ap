@@ -189,6 +189,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 		admin.GET("/aktivasi", h.Aktivasi.List)
 		admin.POST("/aktivasi", h.Aktivasi.Aktivasi)
 		admin.GET("/aktivasi/:id", h.Aktivasi.Get)
+		admin.DELETE("/aktivasi/:id", h.Aktivasi.Delete)
 		admin.POST("/aktivasi/:id/token", h.Aktivasi.GenerateToken)
 		admin.POST("/aktivasi/:id/susulan", h.Aktivasi.AddSusulan)
 		admin.GET("/aktivasi/:id/susulan", h.Aktivasi.ListSusulan)
