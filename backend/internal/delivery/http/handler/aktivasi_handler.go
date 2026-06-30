@@ -227,3 +227,25 @@ func (h *AktivasiHandler) Delete(c *gin.Context) {
 	}
 	response.OK(c, http.StatusOK, "Aktivasi beserta seluruh data terkait dihapus", nil)
 }
+
+// Peserta GET /api/admin/aktivasi/:id/peserta
+// @Summary Daftar peserta + status pengerjaan (live monitoring)
+// @Description Peserta yang sudah join/mengerjakan aktivasi ini beserta status per course.
+// @Tags Admin - Aktivasi
+// @Security bearerAuth
+// @Produce json
+// @Param id path int true "ID Aktivasi"
+// @Success 200 {object} response.Envelope
+// @Router /admin/aktivasi/{id}/peserta [get]
+func (h *AktivasiHandler) Peserta(c *gin.Context) {
+	id, ok := idParam(c, "id")
+	if !ok {
+		return
+	}
+	res, err := h.uc.PesertaProgress(id)
+	if err != nil {
+		mapError(c, err)
+		return
+	}
+	response.OK(c, http.StatusOK, "Daftar peserta", res)
+}

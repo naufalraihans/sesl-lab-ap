@@ -33,6 +33,36 @@ func (_m *PengerjaanRepository) Create(p *entity.PengerjaanCourse) error {
 	return r0
 }
 
+// ListPesertaProgress provides a mock function with given fields: aktivasiSesiID
+func (_m *PengerjaanRepository) ListPesertaProgress(aktivasiSesiID int) ([]repository.PesertaProgress, error) {
+	ret := _m.Called(aktivasiSesiID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListPesertaProgress")
+	}
+
+	var r0 []repository.PesertaProgress
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int) ([]repository.PesertaProgress, error)); ok {
+		return rf(aktivasiSesiID)
+	}
+	if rf, ok := ret.Get(0).(func(int) []repository.PesertaProgress); ok {
+		r0 = rf(aktivasiSesiID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]repository.PesertaProgress)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int) error); ok {
+		r1 = rf(aktivasiSesiID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SetKeaktifanIfTest provides a mock function with given fields: pengerjaanID, nilai
 func (_m *PengerjaanRepository) SetKeaktifanIfTest(pengerjaanID int, nilai float64) (int64, error) {
 	ret := _m.Called(pengerjaanID, nilai)

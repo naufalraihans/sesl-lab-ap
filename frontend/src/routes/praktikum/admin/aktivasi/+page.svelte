@@ -17,6 +17,11 @@
 		course?: { jenis: string; judul: string };
 	}
 	interface Susulan { id: number; mahasiswa_id: number; alasan: string; mahasiswa?: { nama: string; nim: string } }
+	interface Peserta {
+		mahasiswa_id: number; nim: string; nama: string;
+		course_id: number; judul_course: string; status: string;
+		waktu_mulai: string | null; waktu_selesai: string | null;
+	}
 
 	let aktivasiList = $state<AktivasiSesi[]>([]);
 	let sesiList = $state<Sesi[]>([]);
@@ -29,6 +34,7 @@
 	let selected = $state<AktivasiSesi | null>(null);
 	let susulanList = $state<Susulan[]>([]);
 	let susulanForm = $state({ mahasiswa_id: 0, alasan: '' });
+	let pesertaList = $state<Peserta[]>([]);
 
 	async function load() {
 		try {
@@ -54,7 +60,19 @@
 			const detail = await api.get<AktivasiSesi>(`/api/admin/aktivasi/${a.id}`);
 			if (detail) selected = detail;
 			susulanList = (await api.get<Susulan[]>(`/api/admin/aktivasi/${a.id}/susulan`)) ?? [];
+			await loadPeserta(a.id);
 		} catch (e) { err = (e as Error).message; }
+	}
+
+	async function loadPeserta(aktivasiId: number) {
+		try { pesertaList = (await api.get<Peserta[]>(`/api/admin/aktivasi/${aktivasiId}/peserta`)) ?? []; }
+		catch (e) { err = (e as Error).message; }
+	}
+
+	function statusBadge(s: string): { label: string; cls: string } {
+		if (s === 'sedang_dikerjakan') return { label: 'Sedang mengerjakan', cls: 'bg-state-warning-bg text-state-warning' };
+		if (s === 'selesai') return { label: 'Selesai', cls: 'bg-state-success-bg text-state-success' };
+		return { label: 'Belum', cls: 'bg-gray-100 text-ink-caption' };
 	}
 
 	async function toggleCourse(ac: AktivasiCourse) {
@@ -210,6 +228,38 @@
 	</div>
 
 	<hr class="my-6 border-gray-200" />
+	<div class="mb-2 flex items-center justify-between">
+		<h3 class="text-lg">Peserta & Status Pengerjaan</h3>
+		<button class="btn-outline py-1.5 text-xs" onclick={() => selected && loadPeserta(selected.id)}>↻ Refresh</button>
+	</div>
+	<p class="mb-3 text-xs text-ink-caption">
+		Yang sudah join/mengerjakan di shift ini.
+		{#if pesertaList.length > 0}
+			Sedang mengerjakan: <strong class="text-state-warning">{pesertaList.filter(p => p.status === 'sedang_dikerjakan').length}</strong> ·
+			Selesai: <strong class="text-state-success">{pesertaList.filter(p => p.status === 'selesai').length}</strong>
+		{/if}
+	</p>
+	{#if pesertaList.length === 0}
+		<p class="mb-6 text-sm text-ink-caption">Belum ada mahasiswa yang mulai mengerjakan.</p>
+	{:else}
+		<div class="mb-6 overflow-x-auto">
+			<table class="w-full text-sm">
+				<thead><tr class="text-left text-ink-caption"><th class="py-1">Nama</th><th>NIM</th><th>Course</th><th>Status</th><th>Mulai</th></tr></thead>
+				<tbody>
+					{#each pesertaList as p}
+						<tr class="border-t border-gray-100">
+							<td class="py-1.5">{p.nama}</td>
+							<td class="font-mono text-xs">{p.nim}</td>
+							<td>{p.judul_course}</td>
+							<td><span class="badge {statusBadge(p.status).cls}">{statusBadge(p.status).label}</span></td>
+							<td class="text-xs text-ink-caption">{p.waktu_mulai ? new Date(p.waktu_mulai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/if}
+
 	<h3 class="mb-2 text-lg">Peserta Susulan</h3>
 	<div class="grid gap-4 lg:grid-cols-3">
 		<div class="card">

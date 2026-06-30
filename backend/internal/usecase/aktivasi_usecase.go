@@ -246,3 +246,8 @@ func (uc *AktivasiUsecase) ListSusulan(aktivasiSesiID int) ([]entity.PesertaSusu
 func (uc *AktivasiUsecase) DeleteSesi(id int) error {
 	return uc.aktivasi.DeleteSesi(id)
 }
+
+// PesertaProgress: daftar peserta yang sudah join/mengerjakan aktivasi + status live.
+func (uc *AktivasiUsecase) PesertaProgress(aktivasiSesiID int) ([]repository.PesertaProgress, error) {
+	return uc.pengerjaan.ListPesertaProgress(aktivasiSesiID)
+}

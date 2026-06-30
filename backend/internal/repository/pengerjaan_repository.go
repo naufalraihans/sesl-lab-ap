@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"time"
 
 	"lab-ap/internal/entity"
 
@@ -24,6 +25,21 @@ type PengerjaanRepository interface {
 	// SetKeaktifanIfTest set keaktifan HANYA bila course pengerjaan = pretest/posttest.
 	// Mengembalikan RowsAffected (0 = id tak ada / bukan pretest/posttest).
 	SetKeaktifanIfTest(pengerjaanID int, nilai float64) (int64, error)
+	// ListPesertaProgress: peserta yang sudah join/mengerjakan suatu aktivasi (semua course),
+	// join nama/nim + judul course + status. Untuk monitoring live di panel admin.
+	ListPesertaProgress(aktivasiSesiID int) ([]PesertaProgress, error)
+}
+
+// PesertaProgress: satu baris status pengerjaan peserta per course (untuk monitoring).
+type PesertaProgress struct {
+	MahasiswaID  int        `json:"mahasiswa_id"`
+	NIM          string     `json:"nim"`
+	Nama         string     `json:"nama"`
+	CourseID     int        `json:"course_id"`
+	JudulCourse  string     `json:"judul_course"`
+	Status       string     `json:"status"`
+	WaktuMulai   *time.Time `json:"waktu_mulai"`
+	WaktuSelesai *time.Time `json:"waktu_selesai"`
 }
 
 // ProgressSummary: ringkasan progress per course aktivasi.
@@ -89,6 +105,18 @@ func (r *pengerjaanRepository) ListByAktivasiCourse(aktivasiSesiID, courseID int
 	var ps []entity.PengerjaanCourse
 	err := r.db.Where("aktivasi_sesi_id = ? AND course_id = ?", aktivasiSesiID, courseID).Find(&ps).Error
 	return ps, err
+}
+
+func (r *pengerjaanRepository) ListPesertaProgress(aktivasiSesiID int) ([]PesertaProgress, error) {
+	var out []PesertaProgress
+	err := r.db.Table("pengerjaan_course AS pc").
+		Select("pc.mahasiswa_id, u.nim, u.nama, pc.course_id, c.judul AS judul_course, pc.status, pc.waktu_mulai, pc.waktu_selesai").
+		Joins("JOIN users u ON u.id = pc.mahasiswa_id").
+		Joins("JOIN course c ON c.id = pc.course_id").
+		Where("pc.aktivasi_sesi_id = ?", aktivasiSesiID).
+		Order("u.nama ASC, pc.course_id ASC").
+		Scan(&out).Error
+	return out, err
 }
 
 func (r *pengerjaanRepository) MarkSelesaiForCourse(aktivasiSesiID, courseID int) error {
