@@ -193,7 +193,7 @@
 			</h3>
 			<span class="text-sm text-ink-caption">{s.poin} poin · {s.jenis_soal}</span>
 		</div>
-		<div class="prose prose-sm max-w-none text-ink-body" use:renderMath>
+		<div class="prose prose-sm max-w-none text-ink-body" use:renderMath={s.teks_soal}>
 			{@html s.teks_soal}
 		</div>
 		{#if s.gambar_url}

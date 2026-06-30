@@ -49,7 +49,7 @@ export function statusBadgeClass(status: string): string {
 	}
 }
 
-export function renderMath(node: HTMLElement, content?: any) {
+export function renderMath(node: HTMLElement, _content?: unknown) {
 	function process() {
 		renderMathInElement(node, {
 			delimiters: [
@@ -59,12 +59,15 @@ export function renderMath(node: HTMLElement, content?: any) {
 			throwOnError: false
 		});
 	}
-	
-	process();
-	
+
+	// ponytail: tunda 1 microtask agar render jalan SETELAH {@html} menempel/ter-update
+	// di DOM. update() dipanggil Svelte saat argumen action berubah — jadi pemakai
+	// dengan konten reaktif (mis. Ruang: pindah soal) WAJIB `use:renderMath={teks}`.
+	queueMicrotask(process);
+
 	return {
 		update() {
-			process();
+			queueMicrotask(process);
 		}
 	};
 }
