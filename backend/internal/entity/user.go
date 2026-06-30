@@ -16,6 +16,7 @@ type User struct {
 	IsRegistered bool       `gorm:"default:false" json:"is_registered"`
 	KelasID      *int       `gorm:"index" json:"kelas_id"`
 	Shift        *int       `json:"shift"`
+	Gelombang    *int       `json:"gelombang"` // hanya dipakai saat ujian praktik
 	Kelompok     *string    `gorm:"type:varchar(50)" json:"kelompok"`
 	FotoURL      *string    `gorm:"type:varchar(500)" json:"foto_url"`
 	NomorHP      *string    `gorm:"type:varchar(30)" json:"nomor_hp"`

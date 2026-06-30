@@ -90,9 +90,12 @@ func (uc *PenilaianUsecase) Rekap(aktivasiSesiID, courseID int) (*dto.RekapRespo
 			item.NIM = u.NIM
 		}
 		if j.SoalTerpilih != nil && j.SoalTerpilih.Soal != nil {
+			item.SoalTerpilihID = j.SoalTerpilihID
 			item.SoalID = j.SoalTerpilih.Soal.ID
 			item.TeksSoal = j.SoalTerpilih.Soal.TeksSoal
 			item.Poin = j.SoalTerpilih.Soal.Poin
+			item.JenisSoal = string(j.SoalTerpilih.Soal.JenisSoal)
+			item.Urutan = j.SoalTerpilih.Urutan
 		}
 		resp.Items = append(resp.Items, item)
 	}

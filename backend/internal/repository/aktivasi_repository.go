@@ -15,7 +15,7 @@ type AktivasiRepository interface {
 	CreateSesi(a *entity.AktivasiSesi) error
 	UpdateSesi(a *entity.AktivasiSesi) error
 	FindSesiByID(id int) (*entity.AktivasiSesi, error)
-	FindSesiByComposite(sesiID, kelasID, shift int) (*entity.AktivasiSesi, error)
+	FindSesiByComposite(sesiID, kelasID, shift int, gelombang *int) (*entity.AktivasiSesi, error)
 	ListSesi() ([]entity.AktivasiSesi, error)
 	ListActiveSesi() ([]entity.AktivasiSesi, error)
 	DeleteSesi(id int) error
@@ -59,10 +59,14 @@ func (r *aktivasiRepository) FindSesiByID(id int) (*entity.AktivasiSesi, error) 
 	return &a, nil
 }
 
-func (r *aktivasiRepository) FindSesiByComposite(sesiID, kelasID, shift int) (*entity.AktivasiSesi, error) {
+func (r *aktivasiRepository) FindSesiByComposite(sesiID, kelasID, shift int, gelombang *int) (*entity.AktivasiSesi, error) {
+	g := 0 // gelombang NULL diperlakukan sebagai 0 (sesi normal), selaras dgn unique index
+	if gelombang != nil {
+		g = *gelombang
+	}
 	var a entity.AktivasiSesi
 	err := r.db.Preload("AktivasiCourses").
-		Where("sesi_praktikum_id = ? AND kelas_id = ? AND shift = ?", sesiID, kelasID, shift).
+		Where("sesi_praktikum_id = ? AND kelas_id = ? AND shift = ? AND COALESCE(gelombang, 0) = ?", sesiID, kelasID, shift, g).
 		First(&a).Error
 	if err != nil {
 		return nil, err

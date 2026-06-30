@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis, renderMath } from '$lib/utils';
-	import { RotateCcw, Trash2, X, LockOpen } from 'lucide-svelte';
-	import type { Kelas } from '$lib/types';
+	import { RotateCcw, Trash2, X, LockOpen, Syringe } from 'lucide-svelte';
+	import type { Kelas, User } from '$lib/types';
 
 	interface Sesi {
 		id: number;
@@ -185,6 +185,98 @@
 		if (str.length <= len) return str;
 		return str.slice(0, len) + '...';
 	}
+
+	// --- Inject Jawaban ---
+	interface AktivasiSesiSimple {
+		id: number; sesi_praktikum_id: number; kelas_id: number; shift: number;
+		sesi?: { judul_sesi: string }; kelas?: { nama_kelas: string };
+		aktivasi_courses?: { id: number; course_id: number; course?: { jenis: string; judul: string } }[];
+	}
+	interface SoalTerpilihSimple {
+		soal_terpilih_id: number; urutan: number; jenis_soal: string;
+		teks_soal: string; poin: number;
+	}
+
+	let showInjectModal = $state(false);
+	let injectAktivasiList = $state<AktivasiSesiSimple[]>([]);
+	let injectUsers = $state<User[]>([]);
+	let injectSoalList = $state<SoalTerpilihSimple[]>([]);
+	let injectLoading = $state(false);
+
+	let injectForm = $state({
+		aktivasi_sesi_id: 0,
+		course_id: 0,
+		mahasiswa_id: 0,
+		soal_terpilih_id: 0,
+		jawaban_teks: '',
+		auto_submit: false
+	});
+
+	// Courses for selected aktivasi
+	let injectCourses = $derived(
+		injectAktivasiList.find(a => a.id === injectForm.aktivasi_sesi_id)?.aktivasi_courses ?? []
+	);
+
+	async function openInjectModal() {
+		showInjectModal = true;
+		injectForm = { aktivasi_sesi_id: 0, course_id: 0, mahasiswa_id: 0, soal_terpilih_id: 0, jawaban_teks: '', auto_submit: false };
+		injectSoalList = [];
+		try {
+			injectAktivasiList = (await api.get<AktivasiSesiSimple[]>('/api/admin/aktivasi')) ?? [];
+			injectUsers = (await api.get<User[]>('/api/admin/users')) ?? [];
+		} catch (e) { errorMsg = (e as Error).message; }
+	}
+
+	async function loadInjectSoal() {
+		if (!injectForm.aktivasi_sesi_id || !injectForm.course_id) {
+			injectSoalList = [];
+			return;
+		}
+		try {
+			const rekap = await api.get<{ items: { soal_terpilih_id: number; urutan: number; jenis_soal: string; teks_soal: string; poin: number }[] }>(
+				`/api/admin/penilaian/rekap?aktivasi_sesi_id=${injectForm.aktivasi_sesi_id}&course_id=${injectForm.course_id}`
+			);
+			// Deduplicate soal_terpilih across all mahasiswa's jawaban
+			const seen = new Set<number>();
+			injectSoalList = (rekap?.items ?? []).reduce((acc: SoalTerpilihSimple[], item) => {
+				if (item.soal_terpilih_id && !seen.has(item.soal_terpilih_id)) {
+					seen.add(item.soal_terpilih_id);
+					acc.push({
+						soal_terpilih_id: item.soal_terpilih_id,
+						urutan: item.urutan ?? 0,
+						jenis_soal: item.jenis_soal ?? '',
+						teks_soal: item.teks_soal ?? '',
+						poin: item.poin ?? 0
+					});
+				}
+				return acc;
+			}, []);
+			injectSoalList.sort((a, b) => a.urutan - b.urutan);
+		} catch {
+			injectSoalList = [];
+		}
+	}
+
+	async function doInject() {
+		if (!injectForm.mahasiswa_id || !injectForm.soal_terpilih_id) return;
+		injectLoading = true;
+		errorMsg = ''; successMsg = '';
+		try {
+			await api.post('/api/admin/jawaban/inject', {
+				mahasiswa_id: injectForm.mahasiswa_id,
+				soal_terpilih_id: injectForm.soal_terpilih_id,
+				jawaban_teks: injectForm.jawaban_teks,
+				auto_submit: injectForm.auto_submit
+			});
+			successMsg = 'Jawaban berhasil diinject/diedit.';
+			showInjectModal = false;
+			await fetchRekap();
+		} catch (e) {
+			errorMsg = (e as Error).message;
+		} finally {
+			injectLoading = false;
+		}
+	}
 </script>
 
 <h1 class="mb-4 text-2xl font-bold">Rekap Jawaban Global</h1>
@@ -230,7 +322,10 @@
 		<label for="search" class="mb-1 block text-sm font-medium text-ink-caption">Cari (NIM/Nama)</label>
 		<input type="text" id="search" placeholder="Tekan Enter untuk cari..." class="input w-full" bind:value={searchQuery} onkeydown={handleSearch} />
 	</div>
-	<div class="flex-none">
+	<div class="flex-none flex gap-2">
+		<button class="btn-outline inline-flex items-center gap-1" onclick={openInjectModal}>
+			<Syringe size={16} /> Inject Jawaban
+		</button>
 		<button class="btn-primary" onclick={fetchRekap} disabled={loading}>
 			{#if loading} Memuat... {:else} Refresh {/if}
 		</button>
@@ -433,6 +528,97 @@
 			<div class="flex justify-end gap-3">
 				<button class="btn-outline" onclick={() => showEditModal = false}>Batal</button>
 				<button class="btn-primary" onclick={saveNilai}>Simpan Nilai</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Modal Inject/Edit Jawaban -->
+{#if showInjectModal}
+	<div class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+		<button class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick={() => showInjectModal = false} aria-label="Tutup Modal"></button>
+		<div class="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
+			<div class="flex items-center justify-between border-b px-6 py-4">
+				<h3 class="text-lg font-bold text-ink-body">Inject / Edit Jawaban</h3>
+				<button class="text-ink-caption hover:text-ink-body" onclick={() => showInjectModal = false}><X size={20} /></button>
+			</div>
+
+			<div class="overflow-y-auto p-6 space-y-4">
+				<!-- Aktivasi -->
+				<div>
+					<label class="label block mb-1" for="inject_aktivasi">Aktivasi Sesi</label>
+					<select id="inject_aktivasi" class="input w-full" bind:value={injectForm.aktivasi_sesi_id}
+						onchange={() => { injectForm.course_id = 0; injectForm.soal_terpilih_id = 0; injectSoalList = []; }}>
+						<option value={0}>— Pilih Aktivasi —</option>
+						{#each injectAktivasiList as a}
+							<option value={a.id}>{a.sesi?.judul_sesi ?? `Sesi ${a.sesi_praktikum_id}`} — {a.kelas?.nama_kelas ?? `Kelas ${a.kelas_id}`} Shift {a.shift}</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Course -->
+				{#if injectForm.aktivasi_sesi_id}
+				<div>
+					<label class="label block mb-1" for="inject_course">Course</label>
+					<select id="inject_course" class="input w-full" bind:value={injectForm.course_id}
+						onchange={() => { injectForm.soal_terpilih_id = 0; loadInjectSoal(); }}>
+						<option value={0}>— Pilih Course —</option>
+						{#each injectCourses as ac}
+							<option value={ac.course_id}>{ac.course?.judul ?? labelJenis(ac.course?.jenis ?? '')}</option>
+						{/each}
+					</select>
+				</div>
+				{/if}
+
+				<!-- Mahasiswa -->
+				{#if injectForm.course_id}
+				<div>
+					<label class="label block mb-1" for="inject_mhs">Mahasiswa</label>
+					<select id="inject_mhs" class="input w-full" bind:value={injectForm.mahasiswa_id}
+						onchange={() => {}}>
+						<option value={0}>— Pilih Mahasiswa —</option>
+						{#each injectUsers as u}
+							<option value={u.id}>{u.nama} ({u.nim})</option>
+						{/each}
+					</select>
+				</div>
+				{/if}
+
+				<!-- Soal -->
+				{#if injectSoalList.length > 0}
+				<div>
+					<label class="label block mb-1" for="inject_soal">Soal</label>
+					<select id="inject_soal" class="input w-full" bind:value={injectForm.soal_terpilih_id}>
+						<option value={0}>— Pilih Soal —</option>
+						{#each injectSoalList as s}
+							<option value={s.soal_terpilih_id}>Soal {s.urutan} ({s.jenis_soal}, {s.poin} poin)</option>
+						{/each}
+					</select>
+				</div>
+				{/if}
+
+				<!-- Jawaban -->
+				{#if injectForm.soal_terpilih_id}
+				<div>
+					<label class="label block mb-1" for="inject_jawaban">Jawaban</label>
+					<textarea id="inject_jawaban" class="input w-full min-h-[120px] font-mono text-sm"
+						placeholder="Tulis jawaban yang akan diinject..."
+						bind:value={injectForm.jawaban_teks}></textarea>
+				</div>
+
+				<label class="flex items-center gap-2 cursor-pointer">
+					<input type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary" bind:checked={injectForm.auto_submit} />
+					<span class="text-sm text-ink-body">Langsung submit (mahasiswa tidak bisa edit)</span>
+				</label>
+				{/if}
+			</div>
+
+			<div class="border-t bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+				<button class="btn-outline" onclick={() => showInjectModal = false}>Batal</button>
+				<button class="btn-primary" onclick={doInject}
+					disabled={!injectForm.mahasiswa_id || !injectForm.soal_terpilih_id || injectLoading}>
+					{injectLoading ? 'Menyimpan...' : 'Inject Jawaban'}
+				</button>
 			</div>
 		</div>
 	</div>

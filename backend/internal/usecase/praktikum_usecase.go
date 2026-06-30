@@ -43,11 +43,16 @@ func (uc *PraktikumUsecase) ListSesi(userID int) ([]dto.SesiUserItem, error) {
 		return nil, err
 	}
 
-	// Map sesiID -> aktivasi milik kelas+shift user.
+	// Map sesiID -> aktivasi milik kelas+shift user. Untuk ujian praktik,
+	// gelombang user ikut menyaring (NULL gelombang → tidak match aktivasi ujian).
 	aktivasiBySesi := map[int]*entity.AktivasiSesi{}
 	if user.KelasID != nil && user.Shift != nil {
 		for _, s := range allSesi {
-			if a, err := uc.aktivasi.FindSesiByComposite(s.ID, *user.KelasID, *user.Shift); err == nil {
+			var gel *int
+			if s.IsUjianPraktik {
+				gel = user.Gelombang
+			}
+			if a, err := uc.aktivasi.FindSesiByComposite(s.ID, *user.KelasID, *user.Shift, gel); err == nil {
 				full, _ := uc.aktivasi.FindSesiByID(a.ID)
 				aktivasiBySesi[s.ID] = full
 			}

@@ -89,8 +89,14 @@ func (uc *AktivasiUsecase) Aktivasi(req dto.AktivasiRequest) (*entity.AktivasiSe
 		return nil, ErrNotFound
 	}
 
-	// Cek duplikat aktivasi.
-	if _, err := uc.aktivasi.FindSesiByComposite(req.SesiPraktikumID, req.KelasID, req.Shift); err == nil {
+	// Gelombang hanya berlaku untuk ujian praktik; sesi normal selalu NULL.
+	var gelombang *int
+	if sesi.IsUjianPraktik {
+		gelombang = req.Gelombang
+	}
+
+	// Cek duplikat aktivasi (per gelombang untuk ujian praktik).
+	if _, err := uc.aktivasi.FindSesiByComposite(req.SesiPraktikumID, req.KelasID, req.Shift, gelombang); err == nil {
 		return nil, ErrConflict
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -157,6 +163,7 @@ func (uc *AktivasiUsecase) Aktivasi(req dto.AktivasiRequest) (*entity.AktivasiSe
 		SesiPraktikumID: req.SesiPraktikumID,
 		KelasID:         req.KelasID,
 		Shift:           req.Shift,
+		Gelombang:       gelombang,
 		IsActive:        true,
 		ActivatedAt:     time.Now(),
 	}
