@@ -80,7 +80,7 @@ func Build(cfg *config.Config) (*gin.Engine, *Deps, error) {
 	praktikumUC := usecase.NewPraktikumUsecase(sesiRepo, courseRepo, aktivasiRepo, pengerjaanRepo, userRepo, jadwalRepo, terpilihRepo)
 	ampuanUC := usecase.NewAmpuanUsecase(ampuanRepo)
 	rekapUC := usecase.NewRekapUsecase(rekapRepo, kelasRepo)
-	aiGradingUC := usecase.NewAIGradingUsecase(jawabanRepo, penilaianUC, oc)
+	aiGradingUC := usecase.NewAIGradingUsecase(jawabanRepo, penilaianUC, oc, konfRepo)
 
 	// ---- Handler ----
 	h := route.Handlers{

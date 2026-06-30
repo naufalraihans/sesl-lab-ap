@@ -17,4 +17,5 @@ const (
 	KeyGDriveJadwalURL = "gdrive_jadwal_url"
 	KeyJadwalMode      = "jadwal_mode" // "gdrive" | "internal"
 	KeyModulFileURL    = "modul_file_url"
+	KeyAIModel         = "ai_model" // override model AI grading; kosong = default env OLLAMA_MODEL
 )

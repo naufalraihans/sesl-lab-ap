@@ -69,6 +69,7 @@ type GradeParams struct {
 	JenisSoal   string  // "essay" / "coding"
 	Difficulty  string  // "easy" / "medium" / "hard" / ""
 	JenisCourse string  // "pretest" / "posttest" / "keterampilan" / "ujian_praktik"
+	Model       string  // override model AI; kosong = pakai default (cfg.OllamaModel)
 }
 
 type essayResp struct {
@@ -107,7 +108,11 @@ func (c *Client) GradeAnswer(ctx context.Context, p GradeParams) (*AIResult, err
 		prompt = promptEssay(soal, kunci, p.Jawaban, p.Difficulty, rubrikEssay(p.JenisCourse, p.Difficulty))
 	}
 
-	content, err := c.chat(ctx, prompt)
+	model := c.cfg.OllamaModel
+	if p.Model != "" {
+		model = p.Model
+	}
+	content, err := c.chat(ctx, prompt, model)
 	if err != nil {
 		return nil, err
 	}
@@ -151,9 +156,9 @@ func (c *Client) GradeAnswer(ctx context.Context, p GradeParams) (*AIResult, err
 }
 
 // chat memanggil Ollama /api/chat dengan satu prompt dan mengembalikan isi balasan.
-func (c *Client) chat(ctx context.Context, prompt string) (string, error) {
+func (c *Client) chat(ctx context.Context, prompt, model string) (string, error) {
 	reqPayload := ChatRequest{
-		Model:    c.cfg.OllamaModel,
+		Model:    model,
 		Messages: []ChatMessage{{Role: "user", Content: prompt}},
 		Format:   "json",
 		Stream:   false,

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"lab-ap/internal/dto"
+	"lab-ap/internal/entity"
 	"lab-ap/internal/repository"
 	"lab-ap/pkg/ollama"
 )
@@ -19,10 +20,11 @@ type aiGradingUsecase struct {
 	jawabanRepo      repository.JawabanRepository
 	penilaianUsecase *PenilaianUsecase // untuk SetNilai (recalc total_nilai)
 	ollamaClient     *ollama.Client
+	konfRepo         repository.KonfigurasiRepository // untuk override model AI (key ai_model)
 }
 
-func NewAIGradingUsecase(j repository.JawabanRepository, pu *PenilaianUsecase, oc *ollama.Client) AIGradingUsecase {
-	return &aiGradingUsecase{jawabanRepo: j, penilaianUsecase: pu, ollamaClient: oc}
+func NewAIGradingUsecase(j repository.JawabanRepository, pu *PenilaianUsecase, oc *ollama.Client, kr repository.KonfigurasiRepository) AIGradingUsecase {
+	return &aiGradingUsecase{jawabanRepo: j, penilaianUsecase: pu, ollamaClient: oc, konfRepo: kr}
 }
 
 // ListTargets mengembalikan jawaban_id yang perlu dinilai AI untuk satu course:
@@ -68,6 +70,12 @@ func (uc *aiGradingUsecase) GradeOne(jawabanID int) (*dto.AIGradeOneResponse, er
 		jenisCourse = string(j.SoalTerpilih.Course.Jenis)
 	}
 
+	// Override model AI dari konfigurasi (key ai_model); kosong = default env.
+	model := ""
+	if k, err := uc.konfRepo.Get(entity.KeyAIModel); err == nil && k != nil {
+		model = k.Value
+	}
+
 	res, err := uc.ollamaClient.GradeAnswer(context.Background(), ollama.GradeParams{
 		Soal:        j.SoalTerpilih.Soal.TeksSoal,
 		Kunci:       kunci,
@@ -76,6 +84,7 @@ func (uc *aiGradingUsecase) GradeOne(jawabanID int) (*dto.AIGradeOneResponse, er
 		JenisSoal:   string(j.SoalTerpilih.Soal.JenisSoal),
 		Difficulty:  difficulty,
 		JenisCourse: jenisCourse,
+		Model:       model,
 	})
 	if err != nil {
 		return nil, err

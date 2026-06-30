@@ -42,7 +42,26 @@
 		try { aktivasiList = (await api.get<AktivasiSesi[]>('/api/admin/aktivasi')) ?? []; }
 		catch (e) { err = (e as Error).message; }
 	}
-	onMount(loadAktivasi);
+
+	// Model AI grading (override). Kosong = pakai default server (env OLLAMA_MODEL).
+	let aiModel = $state('');
+	let aiModelSaving = $state(false);
+	async function loadAiModel() {
+		try {
+			const konf = (await api.get<{ key: string; value: string }[]>('/api/admin/konfigurasi')) ?? [];
+			aiModel = konf.find((k) => k.key === 'ai_model')?.value ?? '';
+		} catch { /* abaikan: biarkan default */ }
+	}
+	async function saveAiModel() {
+		aiModelSaving = true; err = ''; msg = '';
+		try {
+			await api.post('/api/admin/konfigurasi', { key: 'ai_model', value: aiModel.trim() });
+			msg = aiModel.trim() ? `Model AI di-set ke "${aiModel.trim()}".` : 'Model AI dikembalikan ke default server.';
+		} catch (e) { err = (e as Error).message; }
+		finally { aiModelSaving = false; }
+	}
+
+	onMount(() => { loadAktivasi(); loadAiModel(); });
 
 	async function selectAktivasi(a: AktivasiSesi) {
 		selectedAktivasi = a; selectedCourseId = null; rekap = [];
@@ -268,6 +287,14 @@
 							<button class="text-state-info hover:underline" onclick={pilihSemua}>Pilih semua</button>
 							<button class="text-state-info hover:underline" onclick={pilihBelumDinilai}>Pilih yang belum dinilai</button>
 							<button class="text-ink-caption hover:underline" onclick={kosongkanPilihan}>Kosongkan</button>
+						</div>
+						<div class="mt-3 border-t border-gray-200 pt-3">
+							<label for="aiModel" class="block text-xs font-medium text-ink-caption">Model AI (kosongkan = default server)</label>
+							<div class="mt-1 flex flex-wrap items-center gap-2">
+								<input id="aiModel" class="input flex-1 min-w-[220px] font-mono text-sm" placeholder="mis. gpt-oss:120b, qwen3:235b, deepseek-v3" bind:value={aiModel} />
+								<button class="btn-outline py-2" onclick={saveAiModel} disabled={aiModelSaving}>{aiModelSaving ? 'Menyimpan…' : 'Simpan Model'}</button>
+							</div>
+							<p class="mt-1 text-xs text-ink-caption">Berlaku untuk semua grading AI berikutnya. Nama harus persis yang dikenali server Ollama.</p>
 						</div>
 					</div>
 				{/if}
