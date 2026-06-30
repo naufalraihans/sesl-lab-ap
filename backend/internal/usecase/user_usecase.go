@@ -27,6 +27,7 @@ func (uc *UserUsecase) CreateMahasiswa(req dto.UserRequest) (*entity.User, error
 		Nama:         req.Nama,
 		KelasID:      req.KelasID,
 		Shift:        req.Shift,
+		Gelombang:    req.Gelombang,
 		Kelompok:     req.Kelompok,
 		IsRegistered: false,
 	}
@@ -50,6 +51,7 @@ func (uc *UserUsecase) BulkUpsertMahasiswa(req dto.UserBulkRequest) (*dto.BulkRe
 			Nama:         r.Nama,
 			KelasID:      r.KelasID,
 			Shift:        r.Shift,
+			Gelombang:    r.Gelombang,
 			Kelompok:     r.Kelompok,
 			IsRegistered: false, // Default false, tapi OnConflict TIDAK akan menimpa is_registered
 		})
@@ -78,6 +80,7 @@ func (uc *UserUsecase) UpdateMahasiswa(id int, req dto.UserRequest) (*entity.Use
 	u.Nama = req.Nama
 	u.KelasID = req.KelasID
 	u.Shift = req.Shift
+	u.Gelombang = req.Gelombang
 	u.Kelompok = req.Kelompok
 	if err := uc.users.Update(u); err != nil {
 		return nil, err

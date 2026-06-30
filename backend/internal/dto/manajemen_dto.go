@@ -8,6 +8,7 @@ type UserRequest struct {
 	Nama    string `json:"nama" binding:"required"`
 	KelasID *int   `json:"kelas_id"`
 	Shift    *int     `json:"shift" binding:"omitempty,oneof=1 2"`
+	Gelombang *int    `json:"gelombang" binding:"omitempty,oneof=1 2"`
 	Kelompok *string  `json:"kelompok"`
 }
 

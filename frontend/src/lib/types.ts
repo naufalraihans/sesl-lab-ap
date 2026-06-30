@@ -9,6 +9,7 @@ export interface User {
 	kelas_id?: number | null;
 	nama_kelas?: string;
 	shift?: number | null;
+	gelombang?: number | null;
 	foto_url?: string | null;
 	nomor_hp?: string | null;
 	medsos_link?: string | null;

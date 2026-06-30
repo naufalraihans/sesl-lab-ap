@@ -33,9 +33,13 @@ func NewJawabanUsecase(
 }
 
 // cekAkses memverifikasi mahasiswa boleh mengakses aktivasi (kelas+shift cocok ATAU susulan).
+// Untuk ujian praktik (aktivasi.Gelombang terisi), gelombang mahasiswa juga harus cocok.
 func (uc *JawabanUsecase) cekAkses(user *entity.User, aktivasi *entity.AktivasiSesi) (bool, error) {
 	cocok := user.KelasID != nil && user.Shift != nil &&
 		*user.KelasID == aktivasi.KelasID && *user.Shift == aktivasi.Shift
+	if cocok && aktivasi.Gelombang != nil {
+		cocok = user.Gelombang != nil && *user.Gelombang == *aktivasi.Gelombang
+	}
 	if cocok {
 		return true, nil
 	}
@@ -306,4 +310,62 @@ func (uc *JawabanUsecase) buildRuang(userID int, aktivasi *entity.AktivasiSesi, 
 		resp.Soal = append(resp.Soal, item)
 	}
 	return resp, nil
+}
+
+// AdminInjectJawaban memungkinkan admin menginject jawaban baru atau mengedit jawaban
+// existing untuk mahasiswa tertentu. Tidak ada validasi kelas+shift, deadline, atau is_open
+// karena ini aksi admin eksplisit.
+func (uc *JawabanUsecase) AdminInjectJawaban(req dto.AdminInjectJawabanRequest) error {
+	// 1. Validasi soal_terpilih exists.
+	st, err := uc.terpilih.FindByID(req.SoalTerpilihID)
+	if err != nil {
+		return fmt.Errorf("%w: soal_terpilih tidak ditemukan", ErrNotFound)
+	}
+
+	// 2. Validasi mahasiswa exists.
+	if _, err := uc.users.FindByID(req.MahasiswaID); err != nil {
+		return fmt.Errorf("%w: mahasiswa tidak ditemukan", ErrNotFound)
+	}
+
+	// 3. Pastikan pengerjaan_course ada.
+	p, err := uc.pengerjaan.FindOrCreate(req.MahasiswaID, st.AktivasiSesiID, st.CourseID)
+	if err != nil {
+		return err
+	}
+	if p.WaktuMulai == nil {
+		now := time.Now()
+		p.WaktuMulai = &now
+		p.Status = entity.StatusSedang
+		_ = uc.pengerjaan.Update(p)
+	}
+
+	// 4. Upsert jawaban (create or update, bahkan jika sudah submitted).
+	now := time.Now()
+	j, err := uc.jawaban.FindByMahasiswaSoal(req.MahasiswaID, st.ID)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		// Create baru.
+		j = &entity.JawabanMahasiswa{
+			MahasiswaID:    req.MahasiswaID,
+			SoalTerpilihID: st.ID,
+			JawabanTeks:    req.JawabanTeks,
+			IsSubmitted:    req.AutoSubmit,
+			UpdatedAt:      now,
+		}
+		if req.AutoSubmit {
+			j.WaktuSubmit = &now
+		}
+		return uc.jawaban.Create(j)
+	}
+
+	// Update existing (termasuk yang sudah submitted — admin privilege).
+	j.JawabanTeks = req.JawabanTeks
+	j.UpdatedAt = now
+	if req.AutoSubmit {
+		j.IsSubmitted = true
+		j.WaktuSubmit = &now
+	}
+	return uc.jawaban.Update(j)
 }

@@ -11,7 +11,7 @@
 	let msg = $state('');
 
 	let editId = $state<number | null>(null);
-	let form = $state({ nim: '', nama: '', kelas_id: null as number | null, shift: 1 as number, kelompok: '' });
+	let form = $state({ nim: '', nama: '', kelas_id: null as number | null, shift: 1 as number, gelombang: null as number | null, kelompok: '' });
 
 	let showImport = $state(false);
 	let importRows = $state<any[]>([]);
@@ -61,18 +61,18 @@
 
 	function resetForm() {
 		editId = null;
-		form = { nim: '', nama: '', kelas_id: kelas[0]?.id ?? null, shift: 1, kelompok: '' };
+		form = { nim: '', nama: '', kelas_id: kelas[0]?.id ?? null, shift: 1, gelombang: null, kelompok: '' };
 	}
 
 	function edit(u: User) {
 		editId = u.id;
-		form = { nim: u.nim, nama: u.nama, kelas_id: u.kelas_id ?? null, shift: u.shift ?? 1, kelompok: u.kelompok ?? '' };
+		form = { nim: u.nim, nama: u.nama, kelas_id: u.kelas_id ?? null, shift: u.shift ?? 1, gelombang: u.gelombang ?? null, kelompok: u.kelompok ?? '' };
 	}
 
 	async function save() {
 		err = ''; msg = '';
 		try {
-			const body = { nim: form.nim, nama: form.nama, kelas_id: form.kelas_id, shift: Number(form.shift), kelompok: form.kelompok || null };
+			const body = { nim: form.nim, nama: form.nama, kelas_id: form.kelas_id, shift: Number(form.shift), gelombang: form.gelombang ? Number(form.gelombang) : null, kelompok: form.kelompok || null };
 			if (editId) await api.put(`/api/admin/users/${editId}`, body);
 			else await api.post('/api/admin/users', body);
 			msg = 'Tersimpan.';
@@ -125,6 +125,7 @@
 						nama: row.Nama,
 						kelas_id: k.id,
 						shift: Number(row.Shift) || 1,
+						gelombang: row.Gelombang ? Number(row.Gelombang) : null,
 						kelompok: row.Kelompok || ''
 					});
 				}
@@ -149,7 +150,7 @@
 	}
 
 	function downloadTemplate() {
-		const csvContent = "NIM,Nama,Kelas,Shift,Kelompok\n12345678,Budi Santoso,4IA01,1,A\n";
+		const csvContent = "NIM,Nama,Kelas,Shift,Gelombang,Kelompok\n12345678,Budi Santoso,4IA01,1,,A\n";
 		const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
@@ -179,8 +180,8 @@
 		<div class="card border-primary border-dashed border-2 lg:col-span-3">
 			<h2 class="mb-3 text-lg font-bold">Import Mahasiswa via CSV</h2>
 			<p class="mb-3 text-sm text-ink-caption">
-				Pastikan file CSV memiliki header (baris pertama) persis: <strong>NIM, Nama, Kelas, Shift, Kelompok</strong>.<br/>
-				Jika NIM sudah ada di sistem, data namanya, kelas, dan shift akan di-_update_ tanpa mereset password.
+				Pastikan file CSV memiliki header (baris pertama) persis: <strong>NIM, Nama, Kelas, Shift, Gelombang, Kelompok</strong>.<br/>
+				Kolom Gelombang opsional (hanya untuk ujian praktik), boleh dikosongkan. Jika NIM sudah ada di sistem, data namanya, kelas, dan shift akan di-_update_ tanpa mereset password.
 			</p>
 			<input type="file" accept=".csv" class="mb-3 block w-full text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-primary/90" onchange={onFileChange} />
 			
@@ -231,6 +232,12 @@
 			<option value={1}>Shift 1</option>
 			<option value={2}>Shift 2</option>
 		</select>
+		<label class="label mt-2" for="gelombang">Gelombang <span class="text-ink-caption font-normal">(ujian praktik)</span></label>
+		<select id="gelombang" class="input" bind:value={form.gelombang}>
+			<option value={null}>— Tidak ada —</option>
+			<option value={1}>Gelombang 1</option>
+			<option value={2}>Gelombang 2</option>
+		</select>
 		<label class="label mt-2" for="kelompok">Kelompok</label>
 		<input id="kelompok" class="input" bind:value={form.kelompok} placeholder="mis. A, B, 1" />
 		<div class="mt-3 flex gap-2">
@@ -262,7 +269,7 @@
 							checked={users.length > 0 && selectedIds.size === users.length}
 							onchange={toggleSelectAll} aria-label="Pilih semua" />
 					</th>
-					<th>NIM</th><th>Nama</th><th>Kelas</th><th>Shift</th><th>Kelompok</th><th>Status</th><th>Aksi</th>
+					<th>NIM</th><th>Nama</th><th>Kelas</th><th>Shift</th><th>Gel.</th><th>Kelompok</th><th>Status</th><th>Aksi</th>
 				</tr></thead>
 				<tbody>
 					{#each users as u}
@@ -275,6 +282,7 @@
 							<td>{u.nama}</td>
 							<td>{u.nama_kelas ?? u.kelas?.nama_kelas ?? '-'}</td>
 							<td>{u.shift ?? '-'}</td>
+							<td>{u.gelombang ?? '-'}</td>
 							<td>{u.kelompok ?? '-'}</td>
 							<td>
 								{#if u.is_registered}

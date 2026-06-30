@@ -42,7 +42,7 @@ func (r *userRepository) Delete(id int) error {
 func (r *userRepository) BulkUpsert(users []entity.User) error {
 	return r.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "nim"}},
-		DoUpdates: clause.AssignmentColumns([]string{"nama", "kelas_id", "shift", "kelompok"}),
+		DoUpdates: clause.AssignmentColumns([]string{"nama", "kelas_id", "shift", "gelombang", "kelompok"}),
 	}).CreateInBatches(users, 100).Error
 }
 

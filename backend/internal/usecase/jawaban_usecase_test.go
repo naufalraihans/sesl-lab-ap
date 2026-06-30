@@ -56,4 +56,25 @@ func TestCekAkses(t *testing.T) {
 	if ok, _ := ucNil.cekAkses(noShift, akt); ok {
 		t.Fatal("shift nil tidak boleh otomatis lolos")
 	}
+
+	// Ujian praktik: aktivasi punya gelombang → gelombang user harus cocok.
+	aktGel := &entity.AktivasiSesi{ID: 9, KelasID: 2, Shift: 1, Gelombang: ptrInt(1)}
+	ucGel := &JawabanUsecase{}
+	if ok, err := ucGel.cekAkses(&entity.User{ID: 7, KelasID: ptrInt(2), Shift: ptrInt(1), Gelombang: ptrInt(1)}, aktGel); err != nil || !ok {
+		t.Fatalf("gelombang cocok harus boleh; ok=%v err=%v", ok, err)
+	}
+	// Gelombang beda → ditolak (jatuh ke cek susulan, di-mock false).
+	mGel := &mocks.AktivasiRepository{}
+	mGel.On("IsSusulan", 9, 7).Return(false, nil)
+	ucGelTolak := &JawabanUsecase{aktivasi: mGel}
+	if ok, _ := ucGelTolak.cekAkses(&entity.User{ID: 7, KelasID: ptrInt(2), Shift: ptrInt(1), Gelombang: ptrInt(2)}, aktGel); ok {
+		t.Fatal("gelombang beda tidak boleh lolos")
+	}
+	// Gelombang user nil saat ujian praktik → ditolak.
+	mGelNil := &mocks.AktivasiRepository{}
+	mGelNil.On("IsSusulan", 9, 7).Return(false, nil)
+	ucGelNil := &JawabanUsecase{aktivasi: mGelNil}
+	if ok, _ := ucGelNil.cekAkses(&entity.User{ID: 7, KelasID: ptrInt(2), Shift: ptrInt(1), Gelombang: nil}, aktGel); ok {
+		t.Fatal("gelombang nil saat ujian praktik tidak boleh lolos")
+	}
 }

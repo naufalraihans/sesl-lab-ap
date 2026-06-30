@@ -7,6 +7,7 @@
 
 	interface AktivasiSesi {
 		id: number; sesi_praktikum_id: number; kelas_id: number; shift: number;
+		gelombang?: number | null;
 		is_active: boolean; activated_at: string; token?: string;
 		sesi?: { judul_sesi: string };
 		kelas?: { nama_kelas: string };
@@ -29,7 +30,9 @@
 	let users = $state<User[]>([]);
 	let err = $state(''); let msg = $state('');
 
-	let form = $state({ sesi_praktikum_id: 0, kelas_id: 0, shift: 1, gacha_pilihan: 'pretest' });
+	let form = $state({ sesi_praktikum_id: 0, kelas_id: 0, shift: 1, gelombang: null as number | null, gacha_pilihan: 'pretest' });
+	// Gelombang hanya relevan untuk sesi ujian praktik.
+	let isUjianPraktik = $derived(sesiList.find((s) => s.id === form.sesi_praktikum_id)?.is_ujian_praktik ?? false);
 
 	let selected = $state<AktivasiSesi | null>(null);
 	let susulanList = $state<Susulan[]>([]);
@@ -159,6 +162,15 @@
 			<option value={1}>Shift 1</option>
 			<option value={2}>Shift 2</option>
 		</select>
+		{#if isUjianPraktik}
+		<label class="label mt-2" for="agel">Gelombang</label>
+		<select id="agel" class="input" bind:value={form.gelombang}>
+			<option value={null}>— Tanpa gelombang —</option>
+			<option value={1}>Gelombang 1</option>
+			<option value={2}>Gelombang 2</option>
+		</select>
+		<p class="mt-1 text-xs text-ink-caption">Aktifkan terpisah per gelombang. Mahasiswa hanya bisa akses gelombangnya sendiri.</p>
+		{/if}
 		<label class="label mt-2" for="ag">Gacha (Pre/Post-test)</label>
 		<select id="ag" class="input" bind:value={form.gacha_pilihan}>
 			<option value="pretest">Pre-test</option>
@@ -171,13 +183,14 @@
 	<div class="lg:col-span-2">
 		<div class="table-wrap">
 			<table class="tbl">
-				<thead><tr><th>Sesi</th><th>Kelas</th><th>Shift</th><th>Aksi</th></tr></thead>
+				<thead><tr><th>Sesi</th><th>Kelas</th><th>Shift</th><th>Gel.</th><th>Aksi</th></tr></thead>
 				<tbody>
 					{#each aktivasiList as a}
 						<tr class={selected?.id === a.id ? 'ring-2 ring-primary' : ''}>
 							<td>{a.sesi?.judul_sesi ?? a.sesi_praktikum_id}</td>
 							<td>{a.kelas?.nama_kelas ?? a.kelas_id}</td>
 							<td>{a.shift === 0 ? 'Arsip' : a.shift}</td>
+							<td>{a.gelombang ?? '-'}</td>
 							<td class="flex items-center gap-3">
 								<button class="text-state-info hover:underline" onclick={() => selectAktivasi(a)}>Detail</button>
 								<button class="inline-flex items-center gap-1 text-state-error hover:underline" onclick={() => hapusAktivasi(a)}><Trash2 size={14} /> Hapus</button>

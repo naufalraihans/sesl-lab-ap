@@ -165,9 +165,9 @@ func (_m *AktivasiRepository) FindCourseByID(id int) (*entity.AktivasiCourse, er
 	return r0, r1
 }
 
-// FindSesiByComposite provides a mock function with given fields: sesiID, kelasID, shift
-func (_m *AktivasiRepository) FindSesiByComposite(sesiID int, kelasID int, shift int) (*entity.AktivasiSesi, error) {
-	ret := _m.Called(sesiID, kelasID, shift)
+// FindSesiByComposite provides a mock function with given fields: sesiID, kelasID, shift, gelombang
+func (_m *AktivasiRepository) FindSesiByComposite(sesiID int, kelasID int, shift int, gelombang *int) (*entity.AktivasiSesi, error) {
+	ret := _m.Called(sesiID, kelasID, shift, gelombang)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FindSesiByComposite")
@@ -175,19 +175,19 @@ func (_m *AktivasiRepository) FindSesiByComposite(sesiID int, kelasID int, shift
 
 	var r0 *entity.AktivasiSesi
 	var r1 error
-	if rf, ok := ret.Get(0).(func(int, int, int) (*entity.AktivasiSesi, error)); ok {
-		return rf(sesiID, kelasID, shift)
+	if rf, ok := ret.Get(0).(func(int, int, int, *int) (*entity.AktivasiSesi, error)); ok {
+		return rf(sesiID, kelasID, shift, gelombang)
 	}
-	if rf, ok := ret.Get(0).(func(int, int, int) *entity.AktivasiSesi); ok {
-		r0 = rf(sesiID, kelasID, shift)
+	if rf, ok := ret.Get(0).(func(int, int, int, *int) *entity.AktivasiSesi); ok {
+		r0 = rf(sesiID, kelasID, shift, gelombang)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*entity.AktivasiSesi)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(int, int, int) error); ok {
-		r1 = rf(sesiID, kelasID, shift)
+	if rf, ok := ret.Get(1).(func(int, int, int, *int) error); ok {
+		r1 = rf(sesiID, kelasID, shift, gelombang)
 	} else {
 		r1 = ret.Error(1)
 	}

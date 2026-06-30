@@ -8,6 +8,7 @@ type AktivasiSesi struct {
 	SesiPraktikumID int       `gorm:"not null;uniqueIndex:idx_aktivasi_sesi_kelas_shift" json:"sesi_praktikum_id"`
 	KelasID         int       `gorm:"not null;uniqueIndex:idx_aktivasi_sesi_kelas_shift" json:"kelas_id"`
 	Shift           int       `gorm:"not null;uniqueIndex:idx_aktivasi_sesi_kelas_shift" json:"shift"`
+	Gelombang       *int      `json:"gelombang"` // nullable; diisi hanya untuk ujian praktik
 	IsActive        bool      `gorm:"default:true" json:"is_active"`
 	Token           *string   `gorm:"type:varchar(10)" json:"token"`
 	ActivatedAt     time.Time `json:"activated_at"`

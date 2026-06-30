@@ -111,3 +111,26 @@ func (h *JawabanHandler) Submit(c *gin.Context) {
 	}
 	response.OK(c, http.StatusOK, "Jawaban ter-submit", nil)
 }
+
+// AdminInjectJawaban POST /api/admin/jawaban/inject
+// @Summary Admin Inject/Edit Jawaban
+// @Description Admin menginject jawaban baru atau mengedit jawaban existing untuk mahasiswa tertentu
+// @Tags Admin - Jawaban
+// @Security bearerAuth
+// @Accept json
+// @Produce json
+// @Param request body dto.AdminInjectJawabanRequest true "Payload Inject"
+// @Success 200 {object} response.Envelope
+// @Router /admin/jawaban/inject [post]
+func (h *JawabanHandler) AdminInjectJawaban(c *gin.Context) {
+	var req dto.AdminInjectJawabanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "Input tidak valid", err.Error())
+		return
+	}
+	if err := h.uc.AdminInjectJawaban(req); err != nil {
+		mapError(c, err)
+		return
+	}
+	response.OK(c, http.StatusOK, "Jawaban berhasil diinject", nil)
+}

@@ -38,6 +38,11 @@
 	let links = $derived($user?.role === 'admin' ? adminLinks : userLinks);
 	let open = $state(false);
 
+	// Saat user di halaman pengerjaan soal, sembunyikan sidebar agar fokus.
+	let inSession = $derived(
+		/\/praktikum\/sesi\/\d+\/(pretest|posttest|keterampilan|ujian)/.test($page.url.pathname)
+	);
+
 	function active(href: string): boolean {
 		return $page.url.pathname === href || $page.url.pathname.startsWith(href + '/');
 	}
@@ -50,7 +55,8 @@
 </script>
 
 <div class="flex min-h-screen bg-surface-muted">
-	<!-- Sidebar -->
+	<!-- Sidebar (hidden saat sesi pengerjaan) -->
+	{#if !inSession}
 	<aside class="fixed inset-y-0 left-0 z-30 w-64 -translate-x-full bg-sidebar/95 backdrop-blur-xl border-r border-white/10 text-white transition-all duration-300 md:static md:translate-x-0 {open ? 'translate-x-0' : ''} shadow-2xl md:shadow-none">
 		<div class="flex items-center gap-3 px-6 py-5">
 			<span class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 shadow-inner border border-white/20"><img src="/logoLab.webp" alt="Logo Lab AP" class="h-7 w-7 object-contain" /></span>
@@ -75,13 +81,16 @@
 	{#if open}
 		<button class="fixed inset-0 z-20 bg-black/40 md:hidden" onclick={() => (open = false)} aria-label="Tutup"></button>
 	{/if}
+	{/if}
 
 	<!-- Main -->
 	<div class="flex min-w-0 flex-1 flex-col">
 		<header class="sticky top-0 z-20 flex items-center justify-between glass border-b px-6 py-4 transition-all">
+			{#if !inSession}
 			<button class="md:hidden rounded-lg p-2 hover:bg-surface-soft transition-colors" onclick={() => (open = true)} aria-label="Menu">
 				<svg class="h-6 w-6 text-ink-body" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
 			</button>
+			{/if}
 			<div class="ml-auto flex items-center gap-4">
 				<div class="flex flex-col items-end">
 					<span class="text-sm font-semibold text-ink-heading leading-tight">{$user?.nama}</span>

@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { api } from '$lib/api';
 	import { labelJenis, renderMath } from '$lib/utils';
 	import CodeEditor from './CodeEditor.svelte';
 	import Countdown from './Countdown.svelte';
-	import { Save } from 'lucide-svelte';
+	import { Save, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import type { RuangCourse } from '$lib/types';
 
 	let { aktivasiSesiId, courseId }: { aktivasiSesiId: number; courseId: number } = $props();
@@ -22,6 +23,18 @@
 	let starting = $state(false);
 
 	let locked = $derived(!ruang || !ruang.is_open || ruang.status === 'selesai');
+
+	// --- Navigasi soal ---
+	let activeIndex = $state(0);
+	let currentSoal = $derived(ruang?.soal[activeIndex] ?? null);
+
+	async function goToSoal(index: number) {
+		// Auto-save soal sebelumnya saat pindah
+		if (currentSoal && dirty.has(currentSoal.soal_terpilih_id)) {
+			await saveOne(currentSoal.soal_terpilih_id);
+		}
+		activeIndex = index;
+	}
 
 	async function load(start = false) {
 		try {
@@ -79,6 +92,7 @@
 			});
 			info = 'Jawaban berhasil di-submit.';
 			await load();
+			setTimeout(() => goto('/praktikum/dashboard'), 1000);
 		} catch (e) {
 			err = (e as Error).message;
 		} finally {
@@ -90,6 +104,7 @@
 		info = 'Waktu habis. Jawaban otomatis ter-submit.';
 		await flush().catch(() => {});
 		await load();
+		setTimeout(() => goto('/praktikum/dashboard'), 1500);
 	}
 
 	onMount(async () => {
@@ -119,7 +134,7 @@
 			<p class="text-ink-caption mb-6">Masukkan PIN Ujian yang diberikan oleh Asisten untuk memulai pengerjaan.</p>
 			
 			<div class="mb-4">
-				<input type="text" class="input text-center text-2xl font-mono tracking-widest uppercase" placeholder="PIN 6 DIGIT" maxlength="6" bind:value={inputToken} />
+				<input type="text" class="input text-center text-2xl font-mono tracking-widest uppercase" placeholder="PIN 6 DIGIT" maxlength="6" bind:value={inputToken} oninput={() => { inputToken = inputToken.toUpperCase(); }} />
 			</div>
 			
 			{#if err}<p class="mb-4 text-sm text-state-error">{err}</p>{/if}
@@ -154,48 +169,81 @@
 	{#if err}<p class="mb-3 rounded-lg bg-state-error-bg p-3 text-sm text-state-error">{err}</p>{/if}
 	{#if info}<p class="mb-3 rounded-lg bg-state-info-bg p-3 text-sm text-state-info">{info}</p>{/if}
 
-	<div class="space-y-5">
+	<!-- Navigasi nomor soal -->
+	<div class="mb-4 flex flex-wrap gap-2">
 		{#each ruang.soal as s, i}
-			<div class="card">
-				<div class="mb-2 flex items-center justify-between">
-					<h3 class="text-base">Soal {i + 1}
-						{#if s.kategori_ujian}<span class="badge ml-2 bg-surface-soft text-primary">{s.kategori_ujian}</span>{/if}
-					</h3>
-					<span class="text-sm text-ink-caption">{s.poin} poin · {s.jenis_soal}</span>
-				</div>
-				<div class="prose prose-sm max-w-none text-ink-body" use:renderMath>
-					{@html s.teks_soal}
-				</div>
-				{#if s.gambar_url}
-					<img src={s.gambar_url} alt="Flowchart" class="mt-3 max-w-full rounded-lg border border-gray-200" />
-				{/if}
-
-				<div class="mt-3">
-					{#if s.jenis_soal === 'coding'}
-						<CodeEditor
-							bind:value={answers[s.soal_terpilih_id]}
-							readonly={locked}
-							language="c"
-							runnable={true}
-							oninput={() => markDirty(s.soal_terpilih_id)}
-						/>
-					{:else}
-						<textarea
-							class="input min-h-32"
-							bind:value={answers[s.soal_terpilih_id]}
-							readonly={locked}
-							placeholder="Tulis jawaban Anda…"
-							oninput={() => markDirty(s.soal_terpilih_id)}
-							onblur={() => saveOne(s.soal_terpilih_id)}
-						></textarea>
-					{/if}
-					{#if s.jenis_soal === 'coding' && !locked}
-						<button class="btn-outline mt-2 py-1.5 text-xs" onclick={() => saveOne(s.soal_terpilih_id)}><Save size={14} /> Simpan soal ini</button>
-					{/if}
-				</div>
-			</div>
+			<button
+				class="grid h-10 w-10 place-items-center rounded-lg text-sm font-bold transition-all duration-200
+				{i === activeIndex ? 'bg-primary text-white shadow-lg scale-110' : 'bg-surface-soft text-ink-body hover:bg-primary/10'}
+				{answers[s.soal_terpilih_id] ? 'ring-2 ring-state-success ring-offset-1' : ''}"
+				onclick={() => goToSoal(i)}
+			>
+				{i + 1}
+			</button>
 		{/each}
 	</div>
+
+	<!-- Soal aktif (satu saja) -->
+	{#if currentSoal}
+	{@const s = currentSoal}
+	<div class="card">
+		<div class="mb-2 flex items-center justify-between">
+			<h3 class="text-base">Soal {activeIndex + 1}
+				{#if s.kategori_ujian}<span class="badge ml-2 bg-surface-soft text-primary">{s.kategori_ujian}</span>{/if}
+			</h3>
+			<span class="text-sm text-ink-caption">{s.poin} poin · {s.jenis_soal}</span>
+		</div>
+		<div class="prose prose-sm max-w-none text-ink-body" use:renderMath>
+			{@html s.teks_soal}
+		</div>
+		{#if s.gambar_url}
+			<img src={s.gambar_url} alt="Flowchart" class="mt-3 max-w-full rounded-lg border border-gray-200" />
+		{/if}
+
+		<div class="mt-3">
+			{#if s.jenis_soal === 'coding'}
+				<CodeEditor
+					bind:value={answers[s.soal_terpilih_id]}
+					readonly={locked}
+					language="c"
+					runnable={true}
+					oninput={() => markDirty(s.soal_terpilih_id)}
+				/>
+			{:else}
+				<textarea
+					class="input min-h-32"
+					bind:value={answers[s.soal_terpilih_id]}
+					readonly={locked}
+					placeholder="Tulis jawaban Anda…"
+					oninput={() => markDirty(s.soal_terpilih_id)}
+					onblur={() => saveOne(s.soal_terpilih_id)}
+				></textarea>
+			{/if}
+			{#if s.jenis_soal === 'coding' && !locked}
+				<button class="btn-outline mt-2 py-1.5 text-xs" onclick={() => saveOne(s.soal_terpilih_id)}><Save size={14} /> Simpan soal ini</button>
+			{/if}
+		</div>
+	</div>
+
+	<!-- Prev / Next -->
+	<div class="mt-4 flex items-center justify-between">
+		<button
+			class="btn-outline inline-flex items-center gap-1 px-4 py-2 text-sm"
+			disabled={activeIndex === 0}
+			onclick={() => goToSoal(activeIndex - 1)}
+		>
+			<ChevronLeft size={16} /> Sebelumnya
+		</button>
+		<span class="text-sm text-ink-caption">{activeIndex + 1} / {ruang.soal.length}</span>
+		<button
+			class="btn-outline inline-flex items-center gap-1 px-4 py-2 text-sm"
+			disabled={activeIndex === ruang.soal.length - 1}
+			onclick={() => goToSoal(activeIndex + 1)}
+		>
+			Selanjutnya <ChevronRight size={16} />
+		</button>
+	</div>
+	{/if}
 
 	{#if !locked}
 		<div class="sticky bottom-4 mt-6 flex justify-end">

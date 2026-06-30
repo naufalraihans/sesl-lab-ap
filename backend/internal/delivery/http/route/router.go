@@ -208,6 +208,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 		// Rekap Jawaban Global & Bulk Actions
 		admin.GET("/rekap-jawaban", h.RekapJawaban.GetRekapJawabanGlobal)
 		admin.POST("/penilaian/bulk-action", h.RekapJawaban.BulkAction)
+		admin.POST("/jawaban/inject", h.Jawaban.AdminInjectJawaban)
 
 		// Rekap
 		admin.GET("/rekap/kelas/:id_kelas", h.Rekap.GetRekapKelas)

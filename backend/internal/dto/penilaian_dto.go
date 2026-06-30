@@ -20,17 +20,20 @@ type KeaktifanRequest struct {
 
 // RekapItem: satu baris rekap jawaban mahasiswa per soal.
 type RekapItem struct {
-	JawabanID   int      `json:"jawaban_id"`
-	MahasiswaID int      `json:"mahasiswa_id"`
-	NamaMhs     string   `json:"nama_mahasiswa"`
-	NIM         string   `json:"nim"`
-	SoalID      int      `json:"soal_id"`
-	TeksSoal    string   `json:"teks_soal"`
-	Poin        float64  `json:"poin"`
-	JawabanTeks string   `json:"jawaban_teks"`
-	IsSubmitted bool     `json:"is_submitted"`
-	Nilai       *float64 `json:"nilai"`
-	Feedback    *string  `json:"feedback"`
+	JawabanID      int      `json:"jawaban_id"`
+	MahasiswaID    int      `json:"mahasiswa_id"`
+	SoalTerpilihID int      `json:"soal_terpilih_id"`
+	NamaMhs        string   `json:"nama_mahasiswa"`
+	NIM            string   `json:"nim"`
+	SoalID         int      `json:"soal_id"`
+	TeksSoal       string   `json:"teks_soal"`
+	JenisSoal      string   `json:"jenis_soal"`
+	Poin           float64  `json:"poin"`
+	Urutan         int      `json:"urutan"`
+	JawabanTeks    string   `json:"jawaban_teks"`
+	IsSubmitted    bool     `json:"is_submitted"`
+	Nilai          *float64 `json:"nilai"`
+	Feedback       *string  `json:"feedback"`
 }
 
 // RekapResponse: rekap jawaban satu aktivasi+course.

@@ -47,3 +47,12 @@ type RuangCourseResponse struct {
 	RequireToken   bool                 `json:"require_token"`
 	Soal           []SoalTampilResponse `json:"soal"`
 }
+
+// AdminInjectJawabanRequest: admin inject jawaban baru atau edit jawaban existing untuk mahasiswa.
+// Bypass validasi kelas+shift karena aksi admin eksplisit.
+type AdminInjectJawabanRequest struct {
+	MahasiswaID    int    `json:"mahasiswa_id" binding:"required"`
+	SoalTerpilihID int    `json:"soal_terpilih_id" binding:"required"`
+	JawabanTeks    string `json:"jawaban_teks"`
+	AutoSubmit     bool   `json:"auto_submit"` // true = langsung mark is_submitted
+}
