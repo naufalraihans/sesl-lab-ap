@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"lab-ap/internal/dto"
@@ -111,7 +112,7 @@ func (uc *JawabanUsecase) Mulai(userID int, req dto.MulaiCourseRequest) (*dto.Ru
 	if course.Jenis == entity.CourseUjianPraktik {
 		if aktivasi.Token != nil {
 			if req.Token == nil || *req.Token != *aktivasi.Token {
-				return nil, errors.New("token ujian tidak valid")
+				return nil, fmt.Errorf("%w: token ujian tidak valid", ErrBadRequest)
 			}
 		}
 	}
