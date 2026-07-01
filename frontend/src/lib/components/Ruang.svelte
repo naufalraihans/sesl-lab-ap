@@ -201,24 +201,26 @@
 		{/if}
 
 		<div class="mt-3">
-			{#if s.jenis_soal === 'coding'}
-				<CodeEditor
-					bind:value={answers[s.soal_terpilih_id]}
-					readonly={locked}
-					language="c"
-					runnable={true}
-					oninput={() => markDirty(s.soal_terpilih_id)}
-				/>
-			{:else}
-				<textarea
-					class="input min-h-32"
-					bind:value={answers[s.soal_terpilih_id]}
-					readonly={locked}
-					placeholder="Tulis jawaban Anda…"
-					oninput={() => markDirty(s.soal_terpilih_id)}
-					onblur={() => saveOne(s.soal_terpilih_id)}
-				></textarea>
-			{/if}
+			{#key s.soal_terpilih_id}
+				{#if s.jenis_soal === 'coding'}
+					<CodeEditor
+						bind:value={answers[s.soal_terpilih_id]}
+						readonly={locked}
+						language="c"
+						runnable={true}
+						oninput={() => markDirty(s.soal_terpilih_id)}
+					/>
+				{:else}
+					<textarea
+						class="input min-h-32"
+						bind:value={answers[s.soal_terpilih_id]}
+						readonly={locked}
+						placeholder="Tulis jawaban Anda…"
+						oninput={() => markDirty(s.soal_terpilih_id)}
+						onblur={() => saveOne(s.soal_terpilih_id)}
+					></textarea>
+				{/if}
+			{/key}
 			{#if s.jenis_soal === 'coding' && !locked}
 				<button class="btn-outline mt-2 py-1.5 text-xs" onclick={() => saveOne(s.soal_terpilih_id)}><Save size={14} /> Simpan soal ini</button>
 			{/if}
