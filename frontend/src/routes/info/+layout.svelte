@@ -6,16 +6,23 @@
 	let { children } = $props();
 </script>
 
-<div class="flex min-h-screen flex-col">
+<!-- Latar aurora glassmorphism -->
+<div class="aurora" aria-hidden="true">
+	<div class="aurora-blob aurora-blob-1"></div>
+	<div class="aurora-blob aurora-blob-2"></div>
+	<div class="aurora-blob aurora-blob-3"></div>
+</div>
+
+<div class="relative z-10 flex min-h-screen flex-col">
 	<Navbar />
-	<main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+	<main class="mx-auto w-full max-w-6xl flex-1 px-4 py-9">
 		{#key $page.url.pathname}
 			<div in:fly={{ y: 12, duration: 280, easing: cubicOut }}>
 				{@render children()}
 			</div>
 		{/key}
 	</main>
-	<footer class="border-t border-gray-200 bg-surface-muted py-6 text-center text-sm text-ink-caption">
+	<footer class="border-t border-white/40 py-6 text-center text-sm text-ink-caption">
 		© {new Date().getFullYear()} Laboratorium Algoritma &amp; Pemrograman
 	</footer>
 </div>
