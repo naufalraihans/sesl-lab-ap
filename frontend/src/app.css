@@ -42,6 +42,94 @@
 	.glass-dark {
 		@apply bg-gray-900/80 backdrop-blur-lg border border-gray-700/50 shadow-lg;
 	}
+
+	/* Glassmorphism: frosted panel dengan highlight inset (refraksi dari aurora) */
+	.glass-card {
+		position: relative;
+		overflow: hidden;
+		border-radius: 1.5rem;
+		background: rgba(255, 255, 255, 0.55);
+		-webkit-backdrop-filter: blur(16px) saturate(160%) brightness(1.04);
+		backdrop-filter: blur(16px) saturate(160%) brightness(1.04);
+		border: 1px solid rgba(255, 255, 255, 0.7);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.6),
+			0 16px 40px rgba(148, 34, 64, 0.12);
+	}
+	.glass-card::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background: linear-gradient(150deg, rgba(255, 255, 255, 0.3), transparent 48%);
+		pointer-events: none;
+	}
+	.glass-card > * {
+		position: relative;
+	}
+	.glass-hover {
+		transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
+	}
+	.glass-hover:hover {
+		transform: translateY(-4px);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.6),
+			0 24px 55px rgba(148, 34, 64, 0.18);
+	}
+
+	/* Lapisan latar aurora yang mengambang di belakang kartu kaca */
+	.aurora {
+		position: fixed;
+		inset: 0;
+		z-index: 0;
+		overflow: hidden;
+		pointer-events: none;
+		background: linear-gradient(160deg, #fff1f4 0%, #fce7ec 45%, #f7dde4 100%);
+	}
+	.aurora-blob {
+		position: absolute;
+		border-radius: 50%;
+		filter: blur(75px);
+	}
+	.aurora-blob-1 {
+		top: -160px;
+		right: -120px;
+		width: 520px;
+		height: 520px;
+		background: rgba(208, 49, 83, 0.32);
+		animation: drift1 18s ease-in-out infinite;
+	}
+	.aurora-blob-2 {
+		bottom: -180px;
+		left: -140px;
+		width: 560px;
+		height: 560px;
+		background: rgba(244, 114, 182, 0.26);
+		animation: drift2 22s ease-in-out infinite;
+	}
+	.aurora-blob-3 {
+		top: 40%;
+		left: 45%;
+		width: 420px;
+		height: 420px;
+		background: rgba(176, 42, 71, 0.2);
+		animation: drift3 26s ease-in-out infinite;
+	}
+}
+
+@keyframes drift1 {
+	0%, 100% { transform: translate(0, 0) scale(1); }
+	33% { transform: translate(40px, -30px) scale(1.1); }
+	66% { transform: translate(-20px, 30px) scale(0.95); }
+}
+@keyframes drift2 {
+	0%, 100% { transform: translate(0, 0) scale(1); }
+	50% { transform: translate(-50px, 40px) scale(1.15); }
+}
+@keyframes drift3 {
+	0%, 100% { transform: translate(0, 0) scale(1); }
+	40% { transform: translate(30px, 40px) scale(1.08); }
+	80% { transform: translate(-30px, -20px) scale(0.92); }
 	.input {
 		@apply w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 bg-gray-50 focus:bg-white;
 	}
