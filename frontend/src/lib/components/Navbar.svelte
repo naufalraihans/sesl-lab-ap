@@ -16,7 +16,7 @@
 	}
 </script>
 
-<nav class="bg-navbar text-white">
+<nav class="relative z-10 bg-navbar text-white">
 	<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
 		<a href="/info" class="flex items-center gap-2 text-white hover:text-white">
 			<img src="/logoLab.webp" alt="Logo Lab AP" class="h-9 w-9 object-contain" />
