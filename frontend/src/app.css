@@ -115,21 +115,85 @@
 		background: rgba(176, 42, 71, 0.2);
 		animation: drift3 26s ease-in-out infinite;
 	}
-}
 
-@keyframes drift1 {
-	0%, 100% { transform: translate(0, 0) scale(1); }
-	33% { transform: translate(40px, -30px) scale(1.1); }
-	66% { transform: translate(-20px, 30px) scale(0.95); }
-}
-@keyframes drift2 {
-	0%, 100% { transform: translate(0, 0) scale(1); }
-	50% { transform: translate(-50px, 40px) scale(1.15); }
-}
-@keyframes drift3 {
-	0%, 100% { transform: translate(0, 0) scale(1); }
-	40% { transform: translate(30px, 40px) scale(1.08); }
-	80% { transform: translate(-30px, -20px) scale(0.92); }
+	/* Badge ikon gradien (mengikuti gaya referensi glassmorphism) */
+	.glass-badge {
+		position: relative;
+		display: inline-grid;
+		place-items: center;
+		border-radius: 0.95rem;
+		color: #fff;
+		background: linear-gradient(135deg, var(--accent, #d03153), var(--accent-dark, #942240));
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 18px rgba(208, 49, 83, 0.3);
+	}
+	.glass-badge-soft {
+		position: relative;
+		display: inline-grid;
+		place-items: center;
+		border-radius: 0.9rem;
+		color: var(--accent, #d03153);
+		background: rgba(208, 49, 83, 0.12);
+		border: 1px solid rgba(255, 255, 255, 0.6);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+	}
+
+	/* Hero kaca dengan sheen radial yang bergerak halus */
+	.glass-hero {
+		position: relative;
+		overflow: hidden;
+		border-radius: 1.9rem;
+		background: rgba(255, 255, 255, 0.5);
+		-webkit-backdrop-filter: blur(16px) saturate(165%) brightness(1.04);
+		backdrop-filter: blur(16px) saturate(165%) brightness(1.04);
+		border: 1px solid rgba(255, 255, 255, 0.7);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.6),
+			0 24px 60px rgba(148, 34, 64, 0.16);
+	}
+	.glass-hero::before {
+		content: '';
+		position: absolute;
+		top: -40%;
+		left: -30%;
+		width: 160%;
+		height: 160%;
+		background: radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.42), transparent 42%);
+		animation: sheen 9s ease-in-out infinite;
+		pointer-events: none;
+	}
+	.glass-hero > * {
+		position: relative;
+	}
+
+	/* CTA band gradien penuh */
+	.cta-band {
+		position: relative;
+		overflow: hidden;
+		border-radius: 1.9rem;
+		background: linear-gradient(135deg, var(--accent, #d03153), var(--accent-dark, #942240));
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.4),
+			0 24px 60px rgba(208, 49, 83, 0.4);
+	}
+	.cta-band::before {
+		content: '';
+		position: absolute;
+		top: -40%;
+		left: -20%;
+		width: 140%;
+		height: 160%;
+		background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.28), transparent 45%);
+		animation: sheen 9s ease-in-out infinite;
+		pointer-events: none;
+	}
+	.cta-band > * {
+		position: relative;
+	}
+
+	.fade-up {
+		animation: fadeUp 0.6s ease-out both;
+	}
+
 	.input {
 		@apply w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 bg-gray-50 focus:bg-white;
 	}
@@ -160,6 +224,34 @@
 	.tbl tbody tr:hover {
 		@apply bg-primary/5;
 	}
+}
+
+:root {
+	--accent: #d03153;
+	--accent-dark: #942240;
+}
+
+@keyframes drift1 {
+	0%, 100% { transform: translate(0, 0) scale(1); }
+	33% { transform: translate(40px, -30px) scale(1.1); }
+	66% { transform: translate(-20px, 30px) scale(0.95); }
+}
+@keyframes drift2 {
+	0%, 100% { transform: translate(0, 0) scale(1); }
+	50% { transform: translate(-50px, 40px) scale(1.15); }
+}
+@keyframes drift3 {
+	0%, 100% { transform: translate(0, 0) scale(1); }
+	40% { transform: translate(30px, 40px) scale(1.08); }
+	80% { transform: translate(-30px, -20px) scale(0.92); }
+}
+@keyframes sheen {
+	0%, 100% { transform: translate(0, 0); }
+	50% { transform: translate(12%, 10%); }
+}
+@keyframes fadeUp {
+	from { opacity: 0; transform: translateY(18px); }
+	to { opacity: 1; transform: translateY(0); }
 }
 
 /* Aksesibilitas: hormati pengguna yang meminta minim gerak */

@@ -1,7 +1,8 @@
-import { PUBLIC_API_BASE_URL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 import { browser } from '$app/environment';
 
-const BASE = PUBLIC_API_BASE_URL || 'http://localhost:8080';
+// Dibaca saat runtime agar aplikasi tetap boot walau var belum di-set (fallback ke localhost).
+const BASE = env.PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 export interface Envelope<T = unknown> {
 	success: boolean;
