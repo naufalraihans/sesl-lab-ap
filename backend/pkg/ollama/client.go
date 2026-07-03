@@ -38,20 +38,24 @@ type ChatMessage struct {
 	Content string `json:"content"`
 }
 
-// ChatRequest adalah payload request ke endpoint /api/chat Ollama.
-type ChatRequest struct {
-	Model    string        `json:"model"`
-	Messages []ChatMessage `json:"messages"`
-	Format   string        `json:"format,omitempty"` // "json" untuk memastikan output JSON
-	Stream   bool          `json:"stream"`
+// responseFormat memaksa output JSON (OpenAI-compatible).
+type responseFormat struct {
+	Type string `json:"type"`
 }
 
-// ChatResponse adalah response dari endpoint /api/chat.
+// ChatRequest adalah payload request ke endpoint /v1/chat/completions (OpenAI-compatible).
+type ChatRequest struct {
+	Model          string          `json:"model"`
+	Messages       []ChatMessage   `json:"messages"`
+	ResponseFormat *responseFormat `json:"response_format,omitempty"`
+	Stream         bool            `json:"stream"`
+}
+
+// ChatResponse adalah response dari /v1/chat/completions (OpenAI-compatible).
 type ChatResponse struct {
-	Model     string      `json:"model"`
-	CreatedAt time.Time   `json:"created_at"`
-	Message   ChatMessage `json:"message"`
-	Done      bool        `json:"done"`
+	Choices []struct {
+		Message ChatMessage `json:"message"`
+	} `json:"choices"`
 }
 
 // AIResult adalah struktur yang diharapkan dari balasan JSON AI.
@@ -158,16 +162,17 @@ func (c *Client) GradeAnswer(ctx context.Context, p GradeParams) (*AIResult, err
 // chat memanggil Ollama /api/chat dengan satu prompt dan mengembalikan isi balasan.
 func (c *Client) chat(ctx context.Context, prompt, model string) (string, error) {
 	reqPayload := ChatRequest{
-		Model:    model,
-		Messages: []ChatMessage{{Role: "user", Content: prompt}},
-		Format:   "json",
-		Stream:   false,
+		Model:          model,
+		Messages:       []ChatMessage{{Role: "user", Content: prompt}},
+		ResponseFormat: &responseFormat{Type: "json_object"},
+		Stream:         false,
 	}
 	payloadBytes, err := json.Marshal(reqPayload)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
-	url := strings.TrimSuffix(c.cfg.OllamaURL, "/") + "/api/chat"
+	// OllamaURL kini berisi endpoint chat-completions lengkap (OpenAI-compatible).
+	url := c.cfg.OllamaURL
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payloadBytes))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
@@ -189,5 +194,20 @@ func (c *Client) chat(ctx context.Context, prompt, model string) (string, error)
 	if err := json.NewDecoder(resp.Body).Decode(&chatResp); err != nil {
 		return "", fmt.Errorf("failed to decode response: %w", err)
 	}
-	return chatResp.Message.Content, nil
+	if len(chatResp.Choices) == 0 {
+		return "", fmt.Errorf("ollama API returned no choices")
+	}
+	return extractJSON(chatResp.Choices[0].Message.Content), nil
+}
+
+// extractJSON mengambil objek JSON dari balasan model, membuang pembungkus
+// markdown (```json ... ```) atau teks lain di luar kurung kurawal.
+// ponytail: heuristik { .. } pertama-sampai-terakhir; cukup untuk balasan grading satu-objek.
+func extractJSON(s string) string {
+	i := strings.IndexByte(s, '{')
+	j := strings.LastIndexByte(s, '}')
+	if i < 0 || j < i {
+		return s
+	}
+	return s[i : j+1]
 }
