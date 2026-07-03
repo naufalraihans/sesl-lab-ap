@@ -115,7 +115,14 @@ RUBRIK PENILAIAN untuk level "%s":
 INSTRUKSI:
 1. Bandingkan jawaban mahasiswa dengan jawaban referensi.
 2. Tentukan kategori yang PALING sesuai untuk jawaban mahasiswa.
-3. Jika jawaban mahasiswa kosong atau hanya spasi, pilih "kosong".
+3. "kosong" HANYA untuk jawaban yang benar-benar kosong, hanya spasi, atau
+   sama sekali tidak relevan dengan soal. Jangan pakai "kosong" untuk jawaban
+   yang salah tapi ada isinya.
+4. Jika jawaban SALAH namun mahasiswa menuliskan penjelasan/alasan/usaha yang
+   masih relevan dengan soal (mis. jawaban panjang tapi keliru), pilih kategori
+   "salah_penjelasan" bila tersedia di rubrik. Jika rubrik tidak punya
+   "salah_penjelasan" (mis. level easy), pilih "salah" — BUKAN "kosong".
+5. "salah" dipakai untuk jawaban salah yang singkat/tanpa penjelasan berarti.
 
 Jawab HANYA dalam format JSON (tanpa teks lain):
 {"kategori":"nama kategori dari rubrik","poin":angka_sesuai_rubrik,"feedback":"alasan singkat 1 kalimat (Indonesia)"}`,
