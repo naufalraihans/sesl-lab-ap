@@ -43,6 +43,35 @@
 		catch (e) { err = (e as Error).message; }
 	}
 
+	// --- Bulk lintas sesi: nilai AI banyak sesi/kelas sekaligus (semua course di dalamnya) ---
+	let bulkSelected = $state<Record<number, boolean>>({});
+	const bulkSelectedCount = $derived(aktivasiList.filter((a) => bulkSelected[a.id]).length);
+	function toggleAllBulk() {
+		const semua = bulkSelectedCount === aktivasiList.length;
+		const s: Record<number, boolean> = {};
+		if (!semua) for (const a of aktivasiList) s[a.id] = true;
+		bulkSelected = s;
+	}
+	async function gradeBulkSessions() {
+		const sessions = aktivasiList.filter((a) => bulkSelected[a.id]);
+		if (sessions.length === 0) { msg = 'Pilih minimal 1 sesi.'; return; }
+		if (!confirm(`Mulai penilaian AI untuk SEMUA jawaban belum dinilai di ${sessions.length} sesi terpilih (semua course)?`)) return;
+		err = ''; msg = '';
+		// Kumpulkan target lintas sesi × course, lalu serahkan ke gradeIds (spacing rate-limit sudah di sana).
+		const ids: number[] = [];
+		try {
+			for (const a of sessions) {
+				for (const ac of a.aktivasi_courses ?? []) {
+					const res = await api.get<{ jawaban_ids: number[]; total: number }>(
+						`/api/admin/penilaian/ai-grade/targets?aktivasi_sesi_id=${a.id}&course_id=${ac.course_id}`
+					);
+					ids.push(...(res?.jawaban_ids ?? []));
+				}
+			}
+		} catch (e) { err = (e as Error).message; return; }
+		await gradeIds(ids);
+	}
+
 	// Model AI grading (override). Kosong = pakai default server (env OLLAMA_MODEL).
 	let aiModel = $state('');
 	let aiModelSaving = $state(false);
@@ -240,16 +269,37 @@
 
 <div class="grid gap-4 lg:grid-cols-4">
 	<div class="card">
-		<h2 class="mb-3 text-lg">Pilih Aktivasi</h2>
+		<div class="mb-3 flex items-center justify-between">
+			<h2 class="text-lg">Pilih Aktivasi</h2>
+			{#if aktivasiList.length}
+				<button class="text-xs text-primary hover:underline" onclick={toggleAllBulk}>
+					{bulkSelectedCount === aktivasiList.length ? 'Batal semua' : 'Centang semua'}
+				</button>
+			{/if}
+		</div>
+		{#if bulkSelectedCount > 0}
+			<button class="btn-primary mb-3 w-full py-2 text-sm" onclick={gradeBulkSessions} disabled={aiRunning}>
+				Nilai AI · {bulkSelectedCount} sesi terpilih
+			</button>
+			<p class="mb-3 text-xs text-ink-caption">Menilai semua jawaban belum dinilai (semua course) di sesi tercentang.</p>
+		{/if}
 		<div class="space-y-2">
 			{#each aktivasiList as a}
-				<button
-					class="w-full rounded-lg border p-3 text-left text-sm transition hover:bg-surface-soft {selectedAktivasi?.id === a.id ? 'border-primary bg-surface-soft' : 'border-gray-200'}"
-					onclick={() => selectAktivasi(a)}
-				>
-					<p class="font-medium">{a.sesi?.judul_sesi ?? `Sesi #${a.sesi_praktikum_id}`}</p>
-					<p class="text-xs text-ink-caption">{a.kelas?.nama_kelas ?? a.kelas_id} · {labelShift(a.shift)}</p>
-				</button>
+				<div class="flex items-center gap-2">
+					<input
+						type="checkbox"
+						class="shrink-0"
+						checked={!!bulkSelected[a.id]}
+						onchange={(e) => (bulkSelected = { ...bulkSelected, [a.id]: (e.target as HTMLInputElement).checked })}
+					/>
+					<button
+						class="flex-1 rounded-lg border p-3 text-left text-sm transition hover:bg-surface-soft {selectedAktivasi?.id === a.id ? 'border-primary bg-surface-soft' : 'border-gray-200'}"
+						onclick={() => selectAktivasi(a)}
+					>
+						<p class="font-medium">{a.sesi?.judul_sesi ?? `Sesi #${a.sesi_praktikum_id}`}</p>
+						<p class="text-xs text-ink-caption">{a.kelas?.nama_kelas ?? a.kelas_id} · {labelShift(a.shift)}</p>
+					</button>
+				</div>
 			{/each}
 		</div>
 	</div>
