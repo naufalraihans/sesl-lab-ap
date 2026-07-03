@@ -103,23 +103,35 @@
 		} catch (e) { err = (e as Error).message; }
 	}
 
-	// Inti: nilai sederet jawaban_id satu per satu (dipakai "nilai semua" & "nilai terpilih").
+	// Provider grading dibatasi 60 req/menit. Luncurkan request berjarak ~1.1s
+	// (biar ≤~54/menit, ada margin) dan biarkan overlap → paralel tapi patuh limit.
+	const AI_GAP_MS = 1100;
+
+	// Inti: nilai sederet jawaban_id (dipakai "nilai semua" & "nilai terpilih").
 	async function gradeIds(ids: number[]) {
 		if (ids.length === 0) { msg = 'Tidak ada jawaban untuk dinilai.'; return; }
 		err = ''; msg = '';
 		aiProcessed = 0; aiFailed = 0; aiFailedItems = []; aiStopRequested = false;
 		aiTotal = ids.length; aiRunning = true;
+
+		const gradeOne = async (id: number) => {
+			try { await api.post('/api/admin/penilaian/ai-grade/one', { jawaban_id: id }); }
+			catch {
+				aiFailed++; // 1 jawaban gagal/timeout → lanjut yang lain, catat siapa
+				const r = rekap.find((x) => x.jawaban_id === id);
+				aiFailedItems = [...aiFailedItems, { jawaban_id: id, nama: r?.nama_mahasiswa ?? '?', nim: r?.nim ?? '-' }];
+			}
+			aiProcessed++;
+		};
+
 		try {
+			const running: Promise<void>[] = [];
 			for (const id of ids) {
 				if (aiStopRequested) break;
-				try { await api.post('/api/admin/penilaian/ai-grade/one', { jawaban_id: id }); }
-				catch {
-					aiFailed++; // 1 jawaban gagal/timeout → lanjut yang lain, catat siapa
-					const r = rekap.find((x) => x.jawaban_id === id);
-					aiFailedItems = [...aiFailedItems, { jawaban_id: id, nama: r?.nama_mahasiswa ?? '?', nim: r?.nim ?? '-' }];
-				}
-				aiProcessed++;
+				running.push(gradeOne(id)); // jalan overlap, tidak di-await di sini
+				await new Promise((r) => setTimeout(r, AI_GAP_MS)); // jarak antar-peluncuran
 			}
+			await Promise.all(running); // tunggu semua yang sudah diluncurkan selesai
 		} finally {
 			aiRunning = false;
 			const sukses = aiProcessed - aiFailed;
