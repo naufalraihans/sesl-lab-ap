@@ -166,6 +166,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 
 		// Konfigurasi (termasuk modul & gdrive jadwal URL)
 		admin.GET("/konfigurasi", h.Konfigurasi.All)
+		admin.GET("/konfigurasi/ai-model", h.Konfigurasi.AIModel)
 		admin.POST("/konfigurasi", h.Konfigurasi.Set)
 
 		// Sesi & Course

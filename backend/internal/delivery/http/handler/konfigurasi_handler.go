@@ -12,11 +12,12 @@ import (
 )
 
 type KonfigurasiHandler struct {
-	uc *usecase.KonfigurasiUsecase
+	uc             *usecase.KonfigurasiUsecase
+	defaultAIModel string // env OLLAMA_MODEL — dipakai bila override ai_model kosong
 }
 
-func NewKonfigurasiHandler(uc *usecase.KonfigurasiUsecase) *KonfigurasiHandler {
-	return &KonfigurasiHandler{uc: uc}
+func NewKonfigurasiHandler(uc *usecase.KonfigurasiUsecase, defaultAIModel string) *KonfigurasiHandler {
+	return &KonfigurasiHandler{uc: uc, defaultAIModel: defaultAIModel}
 }
 
 // All GET /api/admin/konfigurasi
@@ -57,6 +58,27 @@ func (h *KonfigurasiHandler) Set(c *gin.Context) {
 		return
 	}
 	response.OK(c, http.StatusOK, "Konfigurasi disimpan", nil)
+}
+
+// AIModel GET /api/admin/konfigurasi/ai-model
+// @Summary Model AI aktif
+// @Description Model AI grading yang sedang dipakai: override (key ai_model) jika ada, jika kosong pakai default server (env).
+// @Tags Admin - Konfigurasi
+// @Security bearerAuth
+// @Produce json
+// @Success 200 {object} response.Envelope
+// @Router /admin/konfigurasi/ai-model [get]
+func (h *KonfigurasiHandler) AIModel(c *gin.Context) {
+	override, _ := h.uc.Get(entity.KeyAIModel)
+	effective := override
+	if effective == "" {
+		effective = h.defaultAIModel
+	}
+	response.OK(c, http.StatusOK, "Model AI aktif", gin.H{
+		"effective": effective,
+		"override":  override,
+		"default":   h.defaultAIModel,
+	})
 }
 
 // ---- Publik (info) ----

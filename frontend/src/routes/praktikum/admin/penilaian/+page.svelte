@@ -46,10 +46,14 @@
 	// Model AI grading (override). Kosong = pakai default server (env OLLAMA_MODEL).
 	let aiModel = $state('');
 	let aiModelSaving = $state(false);
+	let aiModelEffective = $state('');       // model yang benar-benar dipakai saat ini
+	let aiModelDefault = $state('');         // default server (env)
 	async function loadAiModel() {
 		try {
-			const konf = (await api.get<{ key: string; value: string }[]>('/api/admin/konfigurasi')) ?? [];
-			aiModel = konf.find((k) => k.key === 'ai_model')?.value ?? '';
+			const m = await api.get<{ effective: string; override: string; default: string }>('/api/admin/konfigurasi/ai-model');
+			aiModel = m?.override ?? '';
+			aiModelEffective = m?.effective ?? '';
+			aiModelDefault = m?.default ?? '';
 		} catch { /* abaikan: biarkan default */ }
 	}
 	async function saveAiModel() {
@@ -57,6 +61,7 @@
 		try {
 			await api.post('/api/admin/konfigurasi', { key: 'ai_model', value: aiModel.trim() });
 			msg = aiModel.trim() ? `Model AI di-set ke "${aiModel.trim()}".` : 'Model AI dikembalikan ke default server.';
+			await loadAiModel(); // refresh model aktif
 		} catch (e) { err = (e as Error).message; }
 		finally { aiModelSaving = false; }
 	}
@@ -302,11 +307,17 @@
 						</div>
 						<div class="mt-3 border-t border-gray-200 pt-3">
 							<label for="aiModel" class="block text-xs font-medium text-ink-caption">Model AI (kosongkan = default server)</label>
+							{#if aiModelEffective}
+								<p class="mt-1 text-xs text-ink-caption">
+									Model AI saat ini: <span class="font-mono font-semibold text-ink-heading">{aiModelEffective}</span>
+									{#if !aiModel}<span class="text-ink-caption"> (default server)</span>{/if}
+								</p>
+							{/if}
 							<div class="mt-1 flex flex-wrap items-center gap-2">
-								<input id="aiModel" class="input flex-1 min-w-[220px] font-mono text-sm" placeholder="mis. gpt-oss:120b, qwen3:235b, deepseek-v3" bind:value={aiModel} />
+								<input id="aiModel" class="input flex-1 min-w-[220px] font-mono text-sm" placeholder={aiModelDefault ? `default: ${aiModelDefault}` : 'mis. mimo-v2.5-pro-hermes'} bind:value={aiModel} />
 								<button class="btn-outline py-2" onclick={saveAiModel} disabled={aiModelSaving}>{aiModelSaving ? 'Menyimpan…' : 'Simpan Model'}</button>
 							</div>
-							<p class="mt-1 text-xs text-ink-caption">Berlaku untuk semua grading AI berikutnya. Nama harus persis yang dikenali server Ollama.</p>
+							<p class="mt-1 text-xs text-ink-caption">Berlaku untuk semua grading AI berikutnya. Nama harus persis yang dikenali server AI.</p>
 						</div>
 					</div>
 				{/if}

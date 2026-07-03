@@ -91,7 +91,7 @@ func Build(cfg *config.Config) (*gin.Engine, *Deps, error) {
 		Soal:         handler.NewSoalHandler(soalUC),
 		Jawaban:      handler.NewJawabanHandler(jawabanUC),
 		Penilaian:    handler.NewPenilaianHandler(penilaianUC),
-		Konfigurasi:  handler.NewKonfigurasiHandler(konfUC),
+		Konfigurasi:  handler.NewKonfigurasiHandler(konfUC, cfg.OllamaModel),
 		Profile:      handler.NewProfileHandler(profileUC),
 		Jadwal:       handler.NewJadwalHandler(jadwalUC),
 		User:         handler.NewUserHandler(userUC),
