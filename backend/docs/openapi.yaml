@@ -3,7 +3,7 @@ info:
   title: Laboratorium Algoritma dan Pemrograman API
   description: >
     REST API untuk sistem praktikum Lab Algoritma & Pemrograman.
-    Backend Go (Clean Architecture) + GORM/MySQL, JWT auth, server stateful
+    Backend Go (Clean Architecture) + GORM/PostgreSQL, JWT auth, server stateful
     (online registry in-memory + background auto-submit).
   version: 1.0.0
 servers:

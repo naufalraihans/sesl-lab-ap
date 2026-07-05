@@ -76,7 +76,7 @@ func (r *aktivasiRepository) FindSesiByComposite(sesiID, kelasID, shift int, gel
 
 func (r *aktivasiRepository) ListSesi() ([]entity.AktivasiSesi, error) {
 	var as []entity.AktivasiSesi
-	err := r.db.Preload("Sesi").Preload("Kelas").Preload("AktivasiCourses").
+	err := r.db.Preload("Sesi").Preload("Kelas").Preload("AktivasiCourses").Preload("AktivasiCourses.Course").
 		Order("activated_at desc").Find(&as).Error
 	return as, err
 }

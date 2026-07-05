@@ -103,10 +103,24 @@ func (h *KonfigurasiHandler) PublicModul(c *gin.Context) {
 // @Success 200 {object} response.Envelope
 // @Router /info/jadwal/config [get]
 func (h *KonfigurasiHandler) PublicJadwalConfig(c *gin.Context) {
-	mode, _ := h.uc.Get(entity.KeyJadwalMode)
 	gdrive, _ := h.uc.Get(entity.KeyGDriveJadwalURL)
+	mode, _ := h.uc.Get(entity.KeyJadwalMode)
 	if mode == "" {
 		mode = "internal"
 	}
 	response.OK(c, http.StatusOK, "Konfigurasi jadwal", gin.H{"mode": mode, "gdrive_url": gdrive})
+}
+
+// PublicAnnouncements GET /api/info/announcements
+func (h *KonfigurasiHandler) PublicAnnouncements(c *gin.Context) {
+	reschedules, _ := h.uc.Get("ann_reschedules")
+	recruit, _ := h.uc.Get("ann_recruit")
+	susulan, _ := h.uc.Get("ann_susulan")
+	plagiarism, _ := h.uc.Get("ann_plagiarism")
+	response.OK(c, http.StatusOK, "Announcements", gin.H{
+		"reschedules": reschedules,
+		"recruit":     recruit,
+		"susulan":     susulan,
+		"plagiarism":  plagiarism,
+	})
 }

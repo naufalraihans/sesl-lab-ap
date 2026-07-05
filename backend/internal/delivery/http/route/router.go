@@ -98,6 +98,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 		info.GET("/jadwal", h.Jadwal.List)
 		info.GET("/jadwal/config", h.Konfigurasi.PublicJadwalConfig)
 		info.GET("/kelas/:id/mahasiswa", h.Ampuan.PublicKelasMahasiswa)
+		info.GET("/announcements", h.Konfigurasi.PublicAnnouncements)
 	}
 
 	authmw := middleware.Auth(jm)

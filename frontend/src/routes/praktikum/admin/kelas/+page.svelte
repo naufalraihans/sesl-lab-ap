@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
+	import { Edit, Trash2 } from 'lucide-svelte';
+	import { confirmAction } from '$lib/stores/confirm';
 	import type { Kelas } from '$lib/types';
 
 	let list = $state<Kelas[]>([]);
@@ -26,7 +28,10 @@
 		} catch (e) { err = (e as Error).message; }
 	}
 	async function del(id: number) {
-		if (!confirm('Hapus kelas?')) return;
+		if (!await confirmAction({
+			title: 'Hapus Kelas?',
+			message: 'Apakah Anda yakin ingin menghapus kelas ini? Seluruh data mahasiswa di kelas ini akan kehilangan asosiasi kelasnya.'
+		})) return;
 		try { await api.del(`/api/admin/kelas/${id}`); await load(); }
 		catch (e) { err = (e as Error).message; }
 	}
@@ -37,8 +42,8 @@
 {#if err}<p class="mb-3 rounded-lg bg-state-error-bg p-3 text-sm text-state-error">{err}</p>{/if}
 
 <div class="grid gap-4 lg:grid-cols-3">
-	<div class="card">
-		<h2 class="mb-3 text-lg">{editId ? 'Edit' : 'Tambah'} Kelas</h2>
+	<div class="card bg-white border border-slate-200">
+		<h2 class="mb-3 text-lg font-bold text-slate-800">{editId ? 'Edit' : 'Tambah'} Kelas</h2>
 		<label class="label" for="n">Nama Kelas</label>
 		<input id="n" class="input" bind:value={nama} placeholder="mis. TTL A" />
 		<div class="mt-3 flex gap-2">
@@ -53,11 +58,19 @@
 				<tbody>
 					{#each list as k}
 						<tr>
-							<td>{k.nama_kelas}</td>
-							<td>{k.is_register_open ? 'Dibuka' : 'Ditutup'}</td>
-							<td class="space-x-2">
-								<button class="text-primary hover:underline" onclick={() => edit(k)}>Edit</button>
-								<button class="text-state-error hover:underline" onclick={() => del(k.id)}>Hapus</button>
+							<td class="font-bold text-slate-800">{k.nama_kelas}</td>
+							<td>
+								<span class="badge {k.is_register_open ? 'bg-state-success-bg text-state-success' : 'bg-slate-100 text-slate-500'}">
+									{k.is_register_open ? 'Dibuka' : 'Ditutup'}
+								</span>
+							</td>
+							<td class="flex items-center gap-1.5 whitespace-nowrap py-3">
+								<button class="inline-flex items-center gap-1 bg-primary/10 hover:bg-primary hover:text-white text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95" onclick={() => edit(k)}>
+									<Edit size={12} /> Edit
+								</button>
+								<button class="inline-flex items-center gap-1 bg-red-50 hover:bg-red-650 hover:text-white text-red-650 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 border border-red-100" onclick={() => del(k.id)}>
+									<Trash2 size={12} /> Hapus
+								</button>
 							</td>
 						</tr>
 					{/each}

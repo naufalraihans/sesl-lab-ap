@@ -5,10 +5,13 @@
 	import { cubicOut } from 'svelte/easing';
 	import { api } from '$lib/api';
 	import { user, clearAuth } from '$lib/stores/auth';
+	import { onMount } from 'svelte';
+	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
 	import { 
 		Home, BookOpen, User, BarChart2, Users, GraduationCap, School, 
-		Calendar, FileText, Book, Puzzle, Zap, CheckCircle, ClipboardList, Trophy 
+		Calendar, FileText, Book, Puzzle, Zap, CheckCircle, ClipboardList, Trophy,
+		LogOut, Menu, X, ArrowUp, Settings
 	} from 'lucide-svelte';
 
 	let { children } = $props();
@@ -32,7 +35,8 @@
 		{ href: '/praktikum/admin/aktivasi', label: 'Aktivasi Sesi', icon: Zap },
 		{ href: '/praktikum/admin/penilaian', label: 'Penilaian', icon: CheckCircle },
 		{ href: '/praktikum/admin/rekap-jawaban', label: 'Rekap Jawaban', icon: ClipboardList },
-		{ href: '/praktikum/admin/rekap-nilai', label: 'Rekap Nilai', icon: Trophy }
+		{ href: '/praktikum/admin/rekap-nilai', label: 'Rekap Nilai', icon: Trophy },
+		{ href: '/praktikum/admin/pengaturan', label: 'Pengaturan Lobby', icon: Settings }
 	];
 
 	let links = $derived($user?.role === 'admin' ? adminLinks : userLinks);
@@ -44,6 +48,9 @@
 	);
 
 	function active(href: string): boolean {
+		if (href === '/praktikum/admin' || href === '/praktikum/dashboard') {
+			return $page.url.pathname === href;
+		}
 		return $page.url.pathname === href || $page.url.pathname.startsWith(href + '/');
 	}
 
@@ -54,58 +61,83 @@
 	}
 </script>
 
-<div class="flex min-h-screen bg-surface-muted">
+<div class="flex min-h-screen bg-slate-50/50 selection:bg-maroon-100 selection:text-primary">
 	<!-- Sidebar (hidden saat sesi pengerjaan) -->
 	{#if !inSession}
-	<aside class="fixed inset-y-0 left-0 z-30 w-64 -translate-x-full bg-sidebar/95 backdrop-blur-xl border-r border-white/10 text-white transition-all duration-300 md:static md:translate-x-0 {open ? 'translate-x-0' : ''} shadow-2xl md:shadow-none">
-		<div class="flex items-center gap-3 px-6 py-5">
-			<span class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 shadow-inner border border-white/20"><img src="/logoLab.webp" alt="Logo Lab AP" class="h-7 w-7 object-contain" /></span>
-			<span class="font-bold tracking-wide text-lg text-white/90">Lab AP</span>
+	<aside class="fixed inset-y-0 left-0 z-35 w-64 -translate-x-full bg-white border-r border-slate-200 text-slate-800 transition-all duration-300 md:static md:translate-x-0 {open ? 'translate-x-0' : ''} shadow-[4px_0_24px_rgba(0,0,0,0.02)] flex flex-col shrink-0">
+		<!-- Logo Area -->
+		<div class="h-16 flex items-center px-6 border-b border-slate-100 shrink-0 justify-between">
+			<a href="/praktikum/dashboard" class="flex items-center">
+				<img src="/logo_new.png" alt="Logo Lab AP" class="h-9 object-contain" />
+			</a>
+			<!-- Close button for mobile -->
+			<button class="text-slate-400 hover:text-slate-650 md:hidden" onclick={() => (open = false)} aria-label="Tutup Menu">
+				<X size={18} />
+			</button>
 		</div>
-		<nav class="px-4 py-2 flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-5rem)]">
+
+		<!-- Scrollable Navigation -->
+		<nav class="flex-1 overflow-y-auto py-5 px-3 space-y-1 custom-scrollbar">
 			{#each links as l}
 				{@const Icon = l.icon}
+				{@const isActive = active(l.href)}
 				<a
 					href={l.href}
 					onclick={() => (open = false)}
-					class="group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300
-					{active(l.href) ? 'bg-primary/80 text-white shadow-lg shadow-black/20' : 'text-white/70 hover:bg-white/10 hover:text-white'}"
+					class="flex items-center px-4 py-2.5 rounded-xl group relative transition-all duration-300 overflow-hidden text-sm font-semibold
+					{isActive ? 'bg-maroon-bg text-primary border border-primary/10 shadow-sm font-bold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}"
 				>
-					<Icon size={18} class="transition-transform duration-300 group-hover:scale-110 {active(l.href) ? 'text-white' : 'text-white/60 group-hover:text-white'}" />
-					{l.label}
+					{#if isActive}
+						<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full"></div>
+					{/if}
+					<Icon size={16} class="mr-3 transition-colors shrink-0 {isActive ? 'text-primary' : 'text-slate-400 group-hover:text-primary'}" />
+					<span class="transition-transform duration-300 {isActive ? '' : 'group-hover:translate-x-1'}">{l.label}</span>
 				</a>
 			{/each}
 		</nav>
+
 	</aside>
 
 	{#if open}
-		<button class="fixed inset-0 z-20 bg-black/40 md:hidden" onclick={() => (open = false)} aria-label="Tutup"></button>
+		<button class="fixed inset-0 z-20 bg-slate-900/50 backdrop-blur-sm md:hidden" onclick={() => (open = false)} aria-label="Tutup"></button>
 	{/if}
 	{/if}
 
 	<!-- Main -->
-	<div class="flex min-w-0 flex-1 flex-col">
-		<header class="sticky top-0 z-20 flex items-center justify-between glass border-b px-6 py-4 transition-all">
+	<div class="flex min-w-0 flex-1 flex-col overflow-hidden h-screen">
+		<header class="bg-white/95 backdrop-blur-md border-b border-slate-200 h-16 flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
 			{#if !inSession}
-			<button class="md:hidden rounded-lg p-2 hover:bg-surface-soft transition-colors" onclick={() => (open = true)} aria-label="Menu">
-				<svg class="h-6 w-6 text-ink-body" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+			<button class="md:hidden text-slate-500 hover:text-primary transition-colors focus:outline-none p-1" onclick={() => (open = true)} aria-label="Menu">
+				<Menu size={20} />
 			</button>
 			{/if}
-			<div class="ml-auto flex items-center gap-4">
-				<div class="flex flex-col items-end">
-					<span class="text-sm font-semibold text-ink-heading leading-tight">{$user?.nama}</span>
-					<span class="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full mt-1 uppercase tracking-wide">{$user?.role}</span>
-				</div>
-				<div class="h-8 w-px bg-gray-200"></div>
-				<button class="btn-outline border-transparent hover:border-gray-200 px-3 py-1.5 text-sm font-semibold" onclick={logout}>Logout</button>
+			
+			<div class="ml-auto flex items-center gap-4 shrink-0">
+				<!-- Profile Capsule -->
+				<a href="/praktikum/profil" class="flex items-center gap-3 bg-white pl-1.5 pr-4 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-primary/20 hover:shadow-md transition-all cursor-pointer group">
+					<img src={`https://ui-avatars.com/api/?name=${encodeURIComponent($user?.nama ?? '')}&background=FBE5E9&color=8A1538&bold=true`} alt="Avatar" class="w-8 h-8 rounded-full border border-white shadow-sm group-hover:scale-105 transition-transform shrink-0">
+					<div class="text-right hidden sm:block">
+						<p class="text-sm font-extrabold text-slate-900 leading-none group-hover:text-primary transition-colors">{$user?.nama}</p>
+						<p class="text-[10px] font-black text-primary uppercase tracking-widest mt-1">{$user?.role}</p>
+					</div>
+				</a>
+
+				<!-- Divider -->
+				<div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+
+				<!-- Logout Button (Prominent Red Pill) -->
+				<button class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-extrabold text-red-650 hover:text-white bg-red-50 hover:bg-red-600 border border-red-200 hover:border-transparent rounded-full shadow-sm transition-all active:scale-95 focus:outline-none shrink-0" onclick={logout} title="Logout">
+					<LogOut size={13} /> Logout
+				</button>
 			</div>
 		</header>
-		<main class="min-w-0 flex-1 p-4 md:p-6">
+		<main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50/30 p-4 md:p-6 lg:p-8">
 			{#key $page.url.pathname}
-				<div in:fly={{ y: 12, duration: 280, easing: cubicOut }}>
+				<div in:fly={{ y: 8, duration: 240, easing: cubicOut }}>
 					{@render children()}
 				</div>
 			{/key}
 		</main>
 	</div>
+	<ConfirmModal />
 </div>

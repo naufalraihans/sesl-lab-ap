@@ -2,13 +2,18 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis, renderMath } from '$lib/utils';
-	import { X } from 'lucide-svelte';
+	import { X, Search, ArrowUp, Edit, Trash2, Eye } from 'lucide-svelte';
+	import { confirmAction } from '$lib/stores/confirm';
 	import type { Sesi, Course, Soal, Kelas } from '$lib/types';
 	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 
 	let sesiList = $state<Sesi[]>([]);
 	let kelas = $state<Kelas[]>([]);
 	let err = $state(''); let msg = $state('');
+
+	// Search filters
+	let sesiSearch = $state('');
+	let soalSearch = $state('');
 
 	let sesiForm = $state({ judul_sesi: '', deskripsi: '', urutan: 1, is_ujian_praktik: false });
 	let editSesiId = $state<number | null>(null);
@@ -39,7 +44,21 @@
 		try { kelas = (await api.get<Kelas[]>('/api/admin/kelas')) ?? []; }
 		catch (e) { /* ignore */ }
 	}
-	onMount(() => { loadSesi(); loadKelas(); });
+	let showScrollTop = $state(false);
+
+	function scrollToTop() {
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
+	onMount(() => {
+		loadSesi();
+		loadKelas();
+		const handleScroll = () => {
+			showScrollTop = window.scrollY > 300;
+		};
+		window.addEventListener('scroll', handleScroll);
+		return () => window.removeEventListener('scroll', handleScroll);
+	});
 
 	function resetSesiForm() { editSesiId = null; sesiForm = { judul_sesi: '', deskripsi: '', urutan: 1, is_ujian_praktik: false }; }
 	function editSesi(s: Sesi) {
@@ -56,7 +75,10 @@
 		} catch (e) { err = (e as Error).message; }
 	}
 	async function delSesi(id: number) {
-		if (!confirm('Hapus sesi ini beserta course dan soal-nya?')) return;
+		if (!await confirmAction({
+			title: 'Hapus Sesi Praktikum?',
+			message: 'Apakah Anda yakin ingin menghapus sesi ini? Tindakan ini juga akan `menghapus seluruh course dan soal` di dalamnya.'
+		})) return;
 		try { await api.del(`/api/admin/sesi/${id}`); if (selectedSesi?.id === id) { selectedSesi = null; courses = []; } await loadSesi(); }
 		catch (e) { err = (e as Error).message; }
 	}
@@ -89,7 +111,10 @@
 		} catch (e) { err = (e as Error).message; }
 	}
 	async function delCourse(id: number) {
-		if (!confirm('Hapus course ini?')) return;
+		if (!await confirmAction({
+			title: 'Hapus Course?',
+			message: 'Apakah Anda yakin ingin menghapus course ini? Semua soal di dalamnya akan ikut terhapus.'
+		})) return;
 		try { await api.del(`/api/admin/course/${id}`); if (selectedCourse?.id === id) { selectedCourse = null; soalList = []; } if (selectedSesi) await selectSesi(selectedSesi); }
 		catch (e) { err = (e as Error).message; }
 	}
@@ -97,7 +122,12 @@
 	async function selectCourse(c: Course) {
 		selectedCourse = c;
 		soalForm.course_id = c.id;
-		try { soalList = (await api.get<Soal[]>(`/api/admin/soal?course_id=${c.id}`)) ?? []; }
+		try {
+			soalList = (await api.get<Soal[]>(`/api/admin/soal?course_id=${c.id}`)) ?? [];
+			setTimeout(() => {
+				document.getElementById('pool-soal-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 80);
+		}
 		catch (e) { err = (e as Error).message; }
 	}
 
@@ -162,7 +192,10 @@
 		} catch (e) { err = (e as Error).message; }
 	}
 	async function delSoal(id: number) {
-		if (!confirm('Hapus soal ini?')) return;
+		if (!await confirmAction({
+			title: 'Hapus Soal?',
+			message: 'Apakah Anda yakin ingin menghapus soal ini dari course?'
+		})) return;
 		try { await api.del(`/api/admin/soal/${id}`); if (selectedCourse) await selectCourse(selectedCourse); }
 		catch (e) { err = (e as Error).message; }
 	}
@@ -192,19 +225,31 @@
 	</div>
 
 	<div class="lg:col-span-2">
+		<div class="mb-3">
+			<div class="relative max-w-xs">
+				<Search size={14} class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-caption" />
+				<input type="text" placeholder="Cari sesi..." bind:value={sesiSearch} class="input pl-9 w-full text-sm" />
+			</div>
+		</div>
 		<div class="table-wrap">
 			<table class="tbl">
 				<thead><tr><th>#</th><th>Judul</th><th>Tipe</th><th>Aksi</th></tr></thead>
 				<tbody>
-					{#each sesiList as s}
+					{#each sesiList.filter((s) => sesiSearch === '' || s.judul_sesi.toLowerCase().includes(sesiSearch.toLowerCase())) as s}
 						<tr class={selectedSesi?.id === s.id ? 'ring-2 ring-primary' : ''}>
 							<td>{s.urutan}</td>
 							<td>{s.judul_sesi}</td>
 							<td>{s.is_ujian_praktik ? 'Ujian Praktik' : 'Modul'}</td>
-							<td class="space-x-1 whitespace-nowrap">
-								<button class="text-state-info hover:underline" onclick={() => selectSesi(s)}>Pilih</button>
-								<button class="text-primary hover:underline" onclick={() => editSesi(s)}>Edit</button>
-								<button class="text-state-error hover:underline" onclick={() => delSesi(s.id)}>Hapus</button>
+							<td class="flex items-center gap-1.5 whitespace-nowrap">
+								<button class="inline-flex items-center gap-1 bg-blue-50 hover:bg-blue-650 hover:text-white text-blue-600 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 border border-blue-100" onclick={() => selectSesi(s)}>
+									<Eye size={12} /> Pilih
+								</button>
+								<button class="inline-flex items-center gap-1 bg-primary/10 hover:bg-primary hover:text-white text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95" onclick={() => editSesi(s)}>
+									<Edit size={12} /> Edit
+								</button>
+								<button class="inline-flex items-center gap-1 bg-red-50 hover:bg-red-650 hover:text-white text-red-650 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 border border-red-100" onclick={() => delSesi(s.id)}>
+									<Trash2 size={12} /> Hapus
+								</button>
 							</td>
 						</tr>
 					{/each}
@@ -268,10 +313,16 @@
 								<td>{labelJenis(c.jenis)}</td>
 								<td>{c.judul}</td>
 								<td>{c.durasi_menit} min</td>
-								<td class="space-x-1 whitespace-nowrap">
-									<button class="text-state-info hover:underline" onclick={() => selectCourse(c)}>Soal</button>
-									<button class="text-primary hover:underline" onclick={() => editCourse(c)}>Edit</button>
-									<button class="text-state-error hover:underline" onclick={() => delCourse(c.id)}>Hapus</button>
+								<td class="flex items-center gap-1.5 whitespace-nowrap">
+									<button class="inline-flex items-center gap-1 bg-blue-50 hover:bg-blue-650 hover:text-white text-blue-600 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 border border-blue-100" onclick={() => selectCourse(c)}>
+										<Eye size={12} /> Soal
+									</button>
+									<button class="inline-flex items-center gap-1 bg-primary/10 hover:bg-primary hover:text-white text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95" onclick={() => editCourse(c)}>
+										<Edit size={12} /> Edit
+									</button>
+									<button class="inline-flex items-center gap-1 bg-red-50 hover:bg-red-650 hover:text-white text-red-650 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 border border-red-100" onclick={() => delCourse(c.id)}>
+										<Trash2 size={12} /> Hapus
+									</button>
 								</td>
 							</tr>
 						{/each}
@@ -283,10 +334,17 @@
 {/if}
 
 {#if selectedCourse}
-	<hr class="my-6 border-gray-200" />
+	<div id="pool-soal-section" class="scroll-mt-20">
+		<hr class="my-6 border-gray-200" />
 	<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
 		<h2 class="text-xl">Pool Soal — {labelJenis(selectedCourse.jenis)} ({soalList.length} soal)</h2>
-		<button class="btn-primary" onclick={openNewSoal}>+ Tambah Soal</button>
+		<div class="flex items-center gap-2">
+			<div class="relative">
+				<Search size={14} class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-caption" />
+				<input type="text" placeholder="Cari soal..." bind:value={soalSearch} class="input pl-9 w-48 text-sm" />
+			</div>
+			<button class="btn-primary" onclick={openNewSoal}>+ Tambah Soal</button>
+		</div>
 	</div>
 
 	{#if soalList.length === 0}
@@ -295,7 +353,7 @@
 		</div>
 	{:else}
 		<div class="space-y-3">
-			{#each soalList as s, i}
+			{#each soalList.filter((s) => soalSearch === '' || s.teks_soal.toLowerCase().includes(soalSearch.toLowerCase())) as s, i}
 				<div class="card">
 					<div class="flex items-start justify-between gap-3">
 						<div class="flex-1">
@@ -311,15 +369,20 @@
 							</div>
 							{#if s.gambar_url}<img src={s.gambar_url} alt="flowchart" class="mt-2 max-h-32 rounded-lg border" />{/if}
 						</div>
-						<div class="flex gap-2 whitespace-nowrap text-sm">
-							<button class="text-primary hover:underline" onclick={() => editSoal(s)}>Edit</button>
-							<button class="text-state-error hover:underline" onclick={() => delSoal(s.id)}>Hapus</button>
+						<div class="flex items-center gap-1.5 whitespace-nowrap">
+							<button class="inline-flex items-center gap-1 bg-primary/10 hover:bg-primary hover:text-white text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95" onclick={() => editSoal(s)}>
+								<Edit size={12} /> Edit
+							</button>
+							<button class="inline-flex items-center gap-1 bg-red-50 hover:bg-red-650 hover:text-white text-red-650 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 border border-red-100" onclick={() => delSoal(s.id)}>
+								<Trash2 size={12} /> Hapus
+							</button>
 						</div>
-					</div>
 				</div>
-			{/each}
+			</div>
+		{/each}
 		</div>
 	{/if}
+	</div>
 {/if}
 
 <!-- Modal Tambah/Edit Soal -->
@@ -382,4 +445,14 @@
 			</div>
 		</div>
 	</div>
+{/if}
+
+{#if showScrollTop}
+	<button
+		onclick={scrollToTop}
+		class="fixed bottom-6 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all hover:bg-primary-hover hover:-translate-y-0.5 focus:outline-none"
+		aria-label="Kembali ke atas"
+	>
+		<ArrowUp size={18} />
+	</button>
 {/if}

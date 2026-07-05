@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { LogIn } from 'lucide-svelte';
 
 	let open = $state(false);
 
@@ -7,7 +8,7 @@
 		{ href: '/info', label: 'Beranda' },
 		{ href: '/info/jadwal', label: 'Jadwal' },
 		{ href: '/info/asisten', label: 'Asisten Lab' },
-		{ href: '/info/laporan', label: 'Pedoman Laporan' },
+		{ href: '/info/laporan', label: 'Pedoman' },
 		{ href: '/info/modul', label: 'Modul' }
 	];
 
@@ -16,36 +17,52 @@
 	}
 </script>
 
-<nav class="relative z-10 bg-navbar text-white">
-	<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-		<a href="/info" class="flex items-center gap-2 text-white hover:text-white">
-			<img src="/logoLab.webp" alt="Logo Lab AP" class="h-9 w-9 object-contain" />
-			<span class="font-semibold">Lab Algoritma &amp; Pemrograman</span>
+<header class="fixed top-4 left-0 right-0 z-50 px-4 flex justify-center">
+	<nav class="bg-white/90 border border-slate-200/80 shadow-md rounded-2xl px-5 py-2 flex items-center justify-between w-full max-w-6xl transition-all duration-300 backdrop-blur-md">
+		
+		<!-- Logo — wider, taller -->
+		<a href="/info" class="flex items-center gap-3 group text-primary shrink-0">
+			<img src="/logo_new.png" alt="Logo Lab AP" class="h-11 w-auto object-contain" style="max-width: 160px;" />
 		</a>
 
-		<button class="md:hidden" onclick={() => (open = !open)} aria-label="Menu">
-			<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+		<!-- Mobile Menu Button -->
+		<button class="md:hidden w-9 h-9 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors focus:outline-none" onclick={() => (open = !open)} aria-label="Menu">
+			<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
 			</svg>
 		</button>
 
-		<div class="hidden items-center gap-1 md:flex">
+		<!-- Desktop Links -->
+		<div class="hidden md:flex items-center gap-1">
 			{#each links as l}
-				<a
-					href={l.href}
-					class="rounded-lg px-3 py-2 text-sm text-white hover:bg-primary-hover {active(l.href) ? 'bg-primary' : ''}"
-				>{l.label}</a>
+				{#if active(l.href)}
+					<a href={l.href} class="px-4 py-2 rounded-xl text-sm font-bold text-primary bg-primary/10 border border-primary/20 shadow-sm transition-all">{l.label}</a>
+				{:else}
+					<a href={l.href} class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all">{l.label}</a>
+				{/if}
 			{/each}
-			<a href="/praktikum/login" class="ml-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-primary hover:bg-surface-soft">Login Praktikum</a>
+			
+			<div class="w-px h-5 bg-slate-200 mx-2"></div>
+			
+			<a href="/praktikum/login" class="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all">
+				Login Praktikum <LogIn size={14} />
+			</a>
+		</div>
+	</nav>
+</header>
+
+{#if open}
+	<div class="fixed top-20 left-4 right-4 z-50 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg md:hidden">
+		<div class="flex flex-col gap-1.5 text-left">
+			{#each links as l}
+				{#if active(l.href)}
+					<a href={l.href} class="block rounded-lg px-4 py-2 text-sm font-bold text-primary bg-primary/10 transition-colors" onclick={() => (open = false)}>{l.label}</a>
+				{:else}
+					<a href={l.href} class="block rounded-lg px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 hover:text-slate-900 transition-colors" onclick={() => (open = false)}>{l.label}</a>
+				{/if}
+			{/each}
+			<hr class="border-slate-100 my-1.5" />
+			<a href="/praktikum/login" class="block text-center rounded-lg bg-primary hover:bg-primary-hover text-white px-4 py-2.5 text-sm font-bold shadow-sm" onclick={() => (open = false)}>Login Praktikum</a>
 		</div>
 	</div>
-
-	{#if open}
-		<div class="border-t border-white/20 px-4 pb-3 md:hidden">
-			{#each links as l}
-				<a href={l.href} class="block rounded-lg px-3 py-2 text-sm text-white hover:bg-primary-hover" onclick={() => (open = false)}>{l.label}</a>
-			{/each}
-			<a href="/praktikum/login" class="mt-1 block rounded-lg bg-white px-3 py-2 text-sm font-medium text-primary">Login Praktikum</a>
-		</div>
-	{/if}
-</nav>
+{/if}

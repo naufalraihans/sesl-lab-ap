@@ -5,6 +5,8 @@
 	import { hasToken, user } from '$lib/stores/auth';
 	import AppShell from '$lib/components/AppShell.svelte';
 
+	import { initRunner } from '$lib/stores/runner';
+
 	let { children } = $props();
 
 	let isLogin = $derived($page.url.pathname === '/praktikum/login');
@@ -15,6 +17,7 @@
 			goto('/praktikum/login');
 			return;
 		}
+		initRunner();
 		ready = true;
 	});
 </script>

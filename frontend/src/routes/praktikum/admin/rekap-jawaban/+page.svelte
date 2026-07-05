@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis, renderMath } from '$lib/utils';
+	import { confirmAction } from '$lib/stores/confirm';
 	import { RotateCcw, Trash2, X, LockOpen, Syringe } from 'lucide-svelte';
 	import type { Kelas, User } from '$lib/types';
 
@@ -127,7 +128,10 @@
 			? `Buka kunci pengerjaan untuk ${selectedIds.size} jawaban terpilih? Mahasiswa terkait bisa mengerjakan & submit ulang (selama course masih dibuka).`
 			: `Reset nilai (jadi null) untuk ${selectedIds.size} jawaban terpilih?`;
 
-		if (!confirm(msgConfirm)) return;
+		if (!await confirmAction({
+			title: action === 'delete' ? 'Hapus Jawaban?' : action === 'buka_kunci' ? 'Buka Kunci?' : 'Reset Nilai?',
+			message: msgConfirm
+		})) return;
 
 		errorMsg = '';
 		successMsg = '';

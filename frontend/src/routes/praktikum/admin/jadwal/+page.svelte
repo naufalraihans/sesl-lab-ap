@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { labelJenis } from '$lib/utils';
+	import { Edit, Trash2 } from 'lucide-svelte';
+	import { confirmAction } from '$lib/stores/confirm';
 	import type { Jadwal, Kelas } from '$lib/types';
 
 	let list = $state<Jadwal[]>([]);
@@ -42,7 +44,10 @@
 		} catch (e) { err = (e as Error).message; }
 	}
 	async function del(id: number) {
-		if (!confirm('Hapus jadwal?')) return;
+		if (!await confirmAction({
+			title: 'Hapus Jadwal?',
+			message: 'Apakah Anda yakin ingin menghapus jadwal praktikum ini?'
+		})) return;
 		try { await api.del(`/api/admin/jadwal/${id}`); await load(); } catch (e) { err = (e as Error).message; }
 	}
 
@@ -59,8 +64,8 @@
 {#if msg}<p class="mb-3 rounded-lg bg-state-success-bg p-3 text-sm text-state-success">{msg}</p>{/if}
 {#if err}<p class="mb-3 rounded-lg bg-state-error-bg p-3 text-sm text-state-error">{err}</p>{/if}
 
-<div class="card mb-6 max-w-2xl">
-	<h2 class="mb-2 text-lg">Mode Tampilan Jadwal Publik</h2>
+<div class="card mb-6 max-w-2xl bg-white border border-slate-200">
+	<h2 class="mb-2 text-lg font-bold text-slate-800">Mode Tampilan Jadwal Publik</h2>
 	<div class="flex flex-wrap items-end gap-3">
 		<div>
 			<label class="label" for="mode">Mode</label>
@@ -78,8 +83,8 @@
 </div>
 
 <div class="grid gap-4 lg:grid-cols-3">
-	<div class="card">
-		<h2 class="mb-3 text-lg">{editId ? 'Edit' : 'Tambah'} Jadwal</h2>
+	<div class="card bg-white border border-slate-200">
+		<h2 class="mb-3 text-lg font-bold text-slate-800">{editId ? 'Edit' : 'Tambah'} Jadwal</h2>
 		<label class="label" for="k">Kelas</label>
 		<select id="k" class="input" bind:value={form.kelas_id}>{#each kelas as k}<option value={k.id}>{k.nama_kelas}</option>{/each}</select>
 		<label class="label mt-2" for="s">Shift</label>
@@ -105,14 +110,18 @@
 				<tbody>
 					{#each list as j}
 						<tr>
-							<td>{j.kelas?.nama_kelas ?? j.kelas_id}</td>
-							<td>{j.shift}</td>
-							<td>{j.hari}</td>
-							<td>{j.jam_mulai?.slice(0,5)}–{j.jam_selesai?.slice(0,5)}</td>
-							<td>{j.keterangan}</td>
-							<td class="space-x-2">
-								<button class="text-primary hover:underline" onclick={() => edit(j)}>Edit</button>
-								<button class="text-state-error hover:underline" onclick={() => del(j.id)}>Hapus</button>
+							<td class="font-bold text-slate-800">{j.kelas?.nama_kelas ?? j.kelas_id}</td>
+							<td><span class="badge bg-slate-100 text-slate-700">{j.shift}</span></td>
+							<td class="font-semibold text-slate-700">{j.hari}</td>
+							<td class="font-mono text-xs">{j.jam_mulai?.slice(0,5)}–{j.jam_selesai?.slice(0,5)}</td>
+							<td class="text-slate-500 text-xs">{j.keterangan || '-'}</td>
+							<td class="flex items-center gap-1.5 whitespace-nowrap py-3">
+								<button class="inline-flex items-center gap-1 bg-primary/10 hover:bg-primary hover:text-white text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95" onclick={() => edit(j)}>
+									<Edit size={12} /> Edit
+								</button>
+								<button class="inline-flex items-center gap-1 bg-red-50 hover:bg-red-650 hover:text-white text-red-650 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 border border-red-100" onclick={() => del(j.id)}>
+									<Trash2 size={12} /> Hapus
+								</button>
 							</td>
 						</tr>
 					{/each}

@@ -4,257 +4,138 @@
 
 @layer base {
 	body {
-		@apply bg-surface-base text-ink-body antialiased;
+		@apply bg-slate-50 text-slate-800 antialiased font-sans;
 	}
-	h1, h2, h3, h4 {
-		@apply font-display text-ink-heading font-semibold tracking-tight;
+	h1, h2, h3, h4, h5, h6 {
+		@apply font-display text-slate-900 font-bold tracking-tight;
 	}
 	a {
-		@apply text-primary hover:text-primary-hover;
+		@apply text-primary hover:text-primary-hover transition-colors;
 	}
 }
 
 @layer components {
+	/* Formal Sleek Buttons */
 	.btn {
-		@apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300 ease-spring active:scale-[0.97];
+		@apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
 	}
 	.btn-primary {
-		@apply btn bg-primary text-white hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/30 active:translate-y-0 active:bg-primary-active disabled:bg-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none;
-	}
-	.btn-glow {
-		@apply animate-pulse-glow;
+		@apply btn bg-primary text-white border-transparent hover:bg-primary-hover active:bg-primary-active shadow-sm;
 	}
 	.btn-outline {
-		@apply btn border-2 border-gray-200 text-ink-body hover:border-primary/50 hover:bg-surface-soft hover:text-primary;
+		@apply btn bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-slate-200 shadow-sm;
 	}
 	.btn-danger {
-		@apply btn bg-state-error text-white hover:-translate-y-0.5 hover:bg-red-600 hover:shadow-lg hover:shadow-red-500/30;
+		@apply btn bg-red-600 text-white border-transparent hover:bg-red-700 active:bg-red-800 shadow-sm;
 	}
+	.btn-bubbly {
+		@apply btn-outline;
+	}
+
+	/* Formal Sleek Cards */
 	.card {
-		@apply rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 ease-smooth-out hover:shadow-md hover:border-primary/20;
+		@apply rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 ease-smooth-out;
 	}
 	.hover-card {
-		@apply hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5;
+		@apply hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300/80;
 	}
 	.glass {
-		@apply bg-white/70 backdrop-blur-md border border-white/40 shadow-sm;
+		@apply bg-white/80 backdrop-blur-md border border-slate-200/60 shadow-sm;
 	}
 	.glass-dark {
-		@apply bg-gray-900/80 backdrop-blur-lg border border-gray-700/50 shadow-lg;
+		@apply bg-slate-900/90 backdrop-blur-lg border border-slate-800 shadow-lg;
 	}
 
-	/* Glassmorphism: frosted panel dengan highlight inset (refraksi dari aurora) */
+	/* Mapping of previous glass-card custom classes to formal styles */
 	.glass-card {
-		position: relative;
-		overflow: hidden;
-		border-radius: 1.5rem;
-		background: rgba(255, 255, 255, 0.55);
-		-webkit-backdrop-filter: blur(16px) saturate(160%) brightness(1.04);
-		backdrop-filter: blur(16px) saturate(160%) brightness(1.04);
-		border: 1px solid rgba(255, 255, 255, 0.7);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.6),
-			0 16px 40px rgba(148, 34, 64, 0.12);
-	}
-	.glass-card::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		background: linear-gradient(150deg, rgba(255, 255, 255, 0.3), transparent 48%);
-		pointer-events: none;
-	}
-	.glass-card > * {
-		position: relative;
+		@apply card;
 	}
 	.glass-hover {
-		transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
-	}
-	.glass-hover:hover {
-		transform: translateY(-4px);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.6),
-			0 24px 55px rgba(148, 34, 64, 0.18);
+		@apply hover-card;
 	}
 
-	/* Lapisan latar aurora yang mengambang di belakang kartu kaca */
-	.aurora {
-		position: fixed;
-		inset: 0;
-		z-index: 0;
-		overflow: hidden;
-		pointer-events: none;
-		background: linear-gradient(160deg, #fff1f4 0%, #fce7ec 45%, #f7dde4 100%);
-	}
-	.aurora-blob {
-		position: absolute;
-		border-radius: 50%;
-		filter: blur(75px);
-	}
-	.aurora-blob-1 {
-		top: -160px;
-		right: -120px;
-		width: 520px;
-		height: 520px;
-		background: rgba(208, 49, 83, 0.32);
-		animation: drift1 18s ease-in-out infinite;
-	}
-	.aurora-blob-2 {
-		bottom: -180px;
-		left: -140px;
-		width: 560px;
-		height: 560px;
-		background: rgba(244, 114, 182, 0.26);
-		animation: drift2 22s ease-in-out infinite;
-	}
-	.aurora-blob-3 {
-		top: 40%;
-		left: 45%;
-		width: 420px;
-		height: 420px;
-		background: rgba(176, 42, 71, 0.2);
-		animation: drift3 26s ease-in-out infinite;
-	}
-
-	/* Badge ikon gradien (mengikuti gaya referensi glassmorphism) */
 	.glass-badge {
-		position: relative;
 		display: inline-grid;
 		place-items: center;
-		border-radius: 0.95rem;
-		color: #fff;
-		background: linear-gradient(135deg, var(--accent, #d03153), var(--accent-dark, #942240));
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 18px rgba(208, 49, 83, 0.3);
+		@apply rounded-lg border border-primary/20 bg-primary/5 text-primary px-3 py-1 font-semibold text-xs;
 	}
 	.glass-badge-soft {
-		position: relative;
 		display: inline-grid;
 		place-items: center;
-		border-radius: 0.9rem;
-		color: var(--accent, #d03153);
-		background: rgba(208, 49, 83, 0.12);
-		border: 1px solid rgba(255, 255, 255, 0.6);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+		@apply rounded-lg border border-slate-200 bg-slate-50 text-slate-700 px-3 py-1 font-semibold text-xs;
 	}
 
-	/* Hero kaca dengan sheen radial yang bergerak halus */
 	.glass-hero {
-		position: relative;
-		overflow: hidden;
-		border-radius: 1.9rem;
-		background: rgba(255, 255, 255, 0.5);
-		-webkit-backdrop-filter: blur(16px) saturate(165%) brightness(1.04);
-		backdrop-filter: blur(16px) saturate(165%) brightness(1.04);
-		border: 1px solid rgba(255, 255, 255, 0.7);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.6),
-			0 24px 60px rgba(148, 34, 64, 0.16);
-	}
-	.glass-hero::before {
-		content: '';
-		position: absolute;
-		top: -40%;
-		left: -30%;
-		width: 160%;
-		height: 160%;
-		background: radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.42), transparent 42%);
-		animation: sheen 9s ease-in-out infinite;
-		pointer-events: none;
-	}
-	.glass-hero > * {
-		position: relative;
+		@apply card bg-gradient-to-br from-white to-slate-50 p-8 md:p-12;
 	}
 
-	/* CTA band gradien penuh */
 	.cta-band {
-		position: relative;
-		overflow: hidden;
-		border-radius: 1.9rem;
-		background: linear-gradient(135deg, var(--accent, #d03153), var(--accent-dark, #942240));
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.4),
-			0 24px 60px rgba(208, 49, 83, 0.4);
-	}
-	.cta-band::before {
-		content: '';
-		position: absolute;
-		top: -40%;
-		left: -20%;
-		width: 140%;
-		height: 160%;
-		background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.28), transparent 45%);
-		animation: sheen 9s ease-in-out infinite;
-		pointer-events: none;
-	}
-	.cta-band > * {
-		position: relative;
+		@apply rounded-2xl border border-primary/10 bg-primary text-white p-6 sm:p-8 shadow-md relative overflow-hidden;
 	}
 
 	.fade-up {
-		animation: fadeUp 0.6s ease-out both;
+		animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 
+	/* Input fields */
 	.input {
-		@apply w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 bg-gray-50 focus:bg-white;
+		@apply w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition-all focus:border-primary/50 focus:ring-4 focus:ring-primary/5 bg-white;
 	}
 	.label {
-		@apply mb-1.5 block text-sm font-semibold text-ink-body;
+		@apply mb-1.5 block text-sm font-semibold text-slate-700;
 	}
 	.badge {
-		@apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider;
+		@apply inline-flex items-center rounded-full border border-slate-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider bg-slate-50 text-slate-700;
 	}
+	
+	/* Tables */
 	.table-wrap {
-		@apply w-full overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm;
+		@apply w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm;
 	}
 	.tbl {
-		@apply w-full text-left text-sm;
+		@apply w-full text-left text-sm border-collapse;
 	}
 	.tbl thead th {
-		@apply bg-gray-50/80 px-5 py-4 font-bold text-ink-body border-b border-gray-200 uppercase tracking-wider text-xs;
+		@apply bg-slate-50 px-5 py-3.5 font-bold text-slate-600 border-b border-slate-200 uppercase tracking-wider text-xs;
 	}
 	.tbl tbody td {
-		@apply px-5 py-4 border-b border-gray-50 transition-colors;
+		@apply px-5 py-3.5 border-b border-slate-100 transition-colors text-slate-600;
 	}
 	.tbl tbody tr:last-child td {
 		@apply border-0;
 	}
-	.tbl tbody tr:nth-child(even) {
-		@apply bg-gray-50/30;
-	}
 	.tbl tbody tr:hover {
-		@apply bg-primary/5;
+		@apply bg-slate-50/50;
 	}
 }
 
 :root {
-	--accent: #d03153;
-	--accent-dark: #942240;
+	--accent: #8A1538;
+	--accent-dark: #5C0E25;
 }
 
-@keyframes drift1 {
-	0%, 100% { transform: translate(0, 0) scale(1); }
-	33% { transform: translate(40px, -30px) scale(1.1); }
-	66% { transform: translate(-20px, 30px) scale(0.95); }
-}
-@keyframes drift2 {
-	0%, 100% { transform: translate(0, 0) scale(1); }
-	50% { transform: translate(-50px, 40px) scale(1.15); }
-}
-@keyframes drift3 {
-	0%, 100% { transform: translate(0, 0) scale(1); }
-	40% { transform: translate(30px, 40px) scale(1.08); }
-	80% { transform: translate(-30px, -20px) scale(0.92); }
-}
-@keyframes sheen {
-	0%, 100% { transform: translate(0, 0); }
-	50% { transform: translate(12%, 10%); }
-}
 @keyframes fadeUp {
-	from { opacity: 0; transform: translateY(18px); }
+	from { opacity: 0; transform: translateY(12px); }
 	to { opacity: 1; transform: translateY(0); }
 }
 
-/* Aksesibilitas: hormati pengguna yang meminta minim gerak */
+/* Scroll Reveal Animation System */
+.reveal {
+	opacity: 0;
+	transform: translateY(24px);
+	transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	will-change: opacity, transform;
+}
+.reveal.active {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.delay-100 { transition-delay: 100ms; }
+.delay-200 { transition-delay: 200ms; }
+.delay-300 { transition-delay: 300ms; }
+.delay-400 { transition-delay: 400ms; }
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
@@ -264,4 +145,31 @@
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
 	}
+}
+
+/* Custom Scrollbar styled globally (thin, rounded, fades when not active) */
+html, body, * {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(138, 21, 56, 0.1) transparent;
+}
+
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(138, 21, 56, 0.08); /* Faded / almost invisible maroon when not active */
+	border-radius: 9999px;
+	transition: background-color 0.3s ease;
+}
+
+/* Transitions to rich maroon when the scroll container or scrollbar itself is hovered */
+*:hover::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(138, 21, 56, 0.85); /* Solid maroon matching the user's reference image */
 }

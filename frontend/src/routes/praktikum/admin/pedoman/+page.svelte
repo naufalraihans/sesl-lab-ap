@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import { Check } from 'lucide-svelte';
+	import { confirmAction } from '$lib/stores/confirm';
 
 	interface Pedoman { id: number; nama_dokumen: string; file_url: string; }
 
@@ -44,7 +45,10 @@
 	}
 
 	async function del(id: number) {
-		if (!confirm('Hapus pedoman ini?')) return;
+		if (!await confirmAction({
+			title: 'Hapus Pedoman?',
+			message: 'Apakah Anda yakin ingin menghapus pedoman laporan ini?'
+		})) return;
 		try { await api.del(`/api/admin/pedoman/${id}`); await load(); }
 		catch (e) { err = (e as Error).message; }
 	}

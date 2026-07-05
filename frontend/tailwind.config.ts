@@ -8,38 +8,45 @@ export default {
 		extend: {
 			fontFamily: {
 				sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-				display: ['"Plus Jakarta Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				display: ['Inter', '"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
 				mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace']
 			},
 			colors: {
 				primary: {
-					DEFAULT: '#D03153',
-					hover: '#E03A60',
-					active: '#B02A47',
-					dark: '#942240'
+					DEFAULT: '#8A1538',
+					hover: '#B21F47',
+					active: '#5C0E25',
+					dark: '#5C0E25'
 				},
-				navbar: '#B02A47',
-				sidebar: '#942240',
+				navbar: '#8A1538',
+				sidebar: '#5C0E25',
 				surface: {
-					base: '#FDFCFB',
-					soft: '#FDF2F4',
-					muted: '#FAF9F8'
+					base: '#F8FAFC',
+					soft: '#F1F5F9',
+					muted: '#F8FAFC'
 				},
 				ink: {
-					heading: '#1C1917',
-					body: '#44403C',
-					caption: '#78716C'
+					heading: '#1E293B',
+					body: '#475569',
+					caption: '#64748B'
 				},
 				state: {
-					success: '#10B981',
+					success: '#06D6A0',
 					'success-bg': '#D1FAE5',
-					warning: '#F59E0B',
+					warning: '#FFC300',
 					'warning-bg': '#FEF3C7',
 					error: '#EF4444',
 					'error-bg': '#FEE2E2',
-					info: '#3B82F6',
+					info: '#48CAE4',
 					'info-bg': '#DBEAFE'
-				}
+				},
+				'neo-maroon': '#5C0E25',
+				'maroon-bg': '#FDF2F4',
+				'fun-yellow': '#FFC300',
+				'fun-blue': '#48CAE4',
+				'fun-green': '#06D6A0',
+				'fun-purple': '#9D4EDD',
+				'fun-pink': '#F472B6'
 			},
 			borderRadius: {
 				DEFAULT: '0.5rem'

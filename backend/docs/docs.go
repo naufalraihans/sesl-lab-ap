@@ -207,6 +207,72 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "Menghapus satu aktivasi sesi + cascade: jawaban mahasiswa, nilai, soal terpilih, susulan, aktivasi_course.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Aktivasi"
+                ],
+                "summary": "Hapus Aktivasi (beserta semua jawaban \u0026 nilai di bawahnya)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID Aktivasi",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/aktivasi/{id}/peserta": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "Peserta yang sudah join/mengerjakan aktivasi ini beserta status per course.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Aktivasi"
+                ],
+                "summary": "Daftar peserta + status pengerjaan (live monitoring)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID Aktivasi",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Envelope"
+                        }
+                    }
+                }
             }
         },
         "/admin/aktivasi/{id}/susulan": {
@@ -787,43 +853,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/dashboard/online": {
-            "get": {
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "description": "Mengambil jumlah user online real-time dari in-memory registry",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin - Dashboard"
-                ],
-                "summary": "Status User Online",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Envelope"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/dto.OnlineCountResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/admin/jadwal": {
             "get": {
                 "description": "Mengambil daftar jadwal praktikum laboratorium",
@@ -999,47 +1028,79 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/jobs/{id}": {
-            "get": {
+        "/admin/jawaban/inject": {
+            "post": {
                 "security": [
                     {
                         "bearerAuth": []
                     }
                 ],
-                "description": "Mengambil status pengerjaan job AI Grading yang berjalan di latar belakang",
+                "description": "Admin menginject jawaban baru atau mengedit jawaban existing untuk mahasiswa tertentu",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Admin - Penilaian"
+                    "Admin - Jawaban"
                 ],
-                "summary": "Status AI Grading Job",
+                "summary": "Admin Inject/Edit Jawaban",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Job ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
+                        "description": "Payload Inject",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.AdminInjectJawabanRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Envelope"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/dto.AIGradingJobResponse"
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/keaktifan": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "Set nilai keaktifan (partisipasi) per pengerjaan pretest/posttest, massal.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Penilaian"
+                ],
+                "summary": "Set Keaktifan",
+                "parameters": [
+                    {
+                        "description": "Payload Keaktifan",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.KeaktifanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Envelope"
                         }
                     }
                 }
@@ -1340,6 +1401,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/konfigurasi/ai-model": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "Model AI grading yang sedang dipakai: override (key ai_model) jika ada, jika kosong pakai default server (env).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Konfigurasi"
+                ],
+                "summary": "Model AI aktif",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/pedoman": {
             "get": {
                 "description": "Mengambil daftar pedoman laporan (Admin dan Publik)",
@@ -1554,14 +1640,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/penilaian/ai-grade/bulk": {
+        "/admin/penilaian/ai-grade/one": {
             "post": {
                 "security": [
                     {
                         "bearerAuth": []
                     }
                 ],
-                "description": "Memulai proses penilaian otomatis menggunakan AI di latar belakang (Job Queue)",
+                "description": "Menilai SATU jawaban memakai AI lalu menyimpan hasilnya. Frontend memanggil ini berulang.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1571,21 +1657,21 @@ const docTemplate = `{
                 "tags": [
                     "Admin - Penilaian"
                 ],
-                "summary": "AI Grading Massal",
+                "summary": "Nilai satu jawaban dengan AI (sinkron)",
                 "parameters": [
                     {
-                        "description": "Daftar Mahasiswa ID dan Course ID",
+                        "description": "ID Jawaban",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.AIGradingBulkRequest"
+                            "$ref": "#/definitions/dto.AIGradeOneRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "202": {
-                        "description": "Accepted",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "allOf": [
                                 {
@@ -1595,7 +1681,44 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.AIGradingJobResponse"
+                                            "$ref": "#/definitions/dto.AIGradeOneResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/penilaian/ai-grade/targets": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "Mengembalikan daftar jawaban_id (submitted, belum dinilai) untuk satu course",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Penilaian"
+                ],
+                "summary": "Daftar jawaban yang perlu dinilai AI",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.AIGradeTargetsResponse"
                                         }
                                     }
                                 }
@@ -2799,6 +2922,26 @@ const docTemplate = `{
                 }
             }
         },
+        "/cron/auto-submit": {
+            "post": {
+                "description": "Dipicu cron eksternal tiap ~1 menit. Wajib header X-Cron-Secret.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cron"
+                ],
+                "summary": "Auto-submit pengerjaan kedaluwarsa (cron)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Envelope"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Mengecek status service backend",
@@ -3043,6 +3186,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/praktikum/compile-c": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "Mengompilasi sumber C menjadi wasm untuk dijalankan interaktif di browser. Gagal kompilasi dikembalikan sebagai data (stderr), bukan HTTP error.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Praktikum - Pengerjaan"
+                ],
+                "summary": "Kompilasi kode C ke WebAssembly (wasm32-wasi)",
+                "parameters": [
+                    {
+                        "description": "Payload Compile",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.CompileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/praktikum/dashboard": {
             "get": {
                 "security": [
@@ -3163,6 +3357,57 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/dto.RuangCourseResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/praktikum/run": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "Menjalankan kode mahasiswa di sandbox eksternal (Glot.io) dan mengembalikan output.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Praktikum - Pengerjaan"
+                ],
+                "summary": "Jalankan kode (C/Python)",
+                "parameters": [
+                    {
+                        "description": "Payload Run",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RunRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.RunResponse"
                                         }
                                     }
                                 }
@@ -3339,38 +3584,63 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.AIGradingBulkRequest": {
+        "dto.AIGradeOneRequest": {
             "type": "object",
             "required": [
-                "aktivasi_sesi_id",
-                "course_id"
+                "jawaban_id"
             ],
             "properties": {
-                "aktivasi_sesi_id": {
-                    "type": "integer"
-                },
-                "course_id": {
+                "jawaban_id": {
                     "type": "integer"
                 }
             }
         },
-        "dto.AIGradingJobResponse": {
+        "dto.AIGradeOneResponse": {
             "type": "object",
             "properties": {
-                "job_id": {
+                "feedback": {
                     "type": "string"
                 },
-                "message": {
-                    "type": "string"
-                },
-                "processed": {
+                "jawaban_id": {
                     "type": "integer"
                 },
-                "status": {
-                    "description": "queued, processing, completed, failed",
-                    "type": "string"
+                "nilai": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.AIGradeTargetsResponse": {
+            "type": "object",
+            "properties": {
+                "jawaban_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.AdminInjectJawabanRequest": {
+            "type": "object",
+            "required": [
+                "mahasiswa_id",
+                "soal_terpilih_id"
+            ],
+            "properties": {
+                "auto_submit": {
+                    "description": "true = langsung mark is_submitted",
+                    "type": "boolean"
+                },
+                "jawaban_teks": {
+                    "type": "string"
+                },
+                "mahasiswa_id": {
+                    "type": "integer"
+                },
+                "soal_terpilih_id": {
                     "type": "integer"
                 }
             }
@@ -3389,6 +3659,14 @@ const docTemplate = `{
                     "enum": [
                         "pretest",
                         "posttest"
+                    ]
+                },
+                "gelombang": {
+                    "description": "Gelombang: 1 atau 2, hanya untuk sesi ujian praktik. Diabaikan untuk sesi normal.",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
                     ]
                 },
                 "kelas_id": {
@@ -3503,7 +3781,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "delete",
-                        "reset_nilai"
+                        "reset_nilai",
+                        "buka_kunci"
                     ]
                 },
                 "jawaban_ids": {
@@ -3563,6 +3842,28 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CompileRequest": {
+            "type": "object",
+            "required": [
+                "source"
+            ],
+            "properties": {
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CompileResponse": {
+            "type": "object",
+            "properties": {
+                "stderr": {
+                    "type": "string"
+                },
+                "wasm": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CourseProgressInfo": {
             "type": "object",
             "properties": {
@@ -3611,6 +3912,19 @@ const docTemplate = `{
                 },
                 "judul": {
                     "type": "string"
+                },
+                "kuota_easy": {
+                    "description": "Kuota gacha per difficulty (pretest/posttest). Kosong = default per jenis.",
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "kuota_hard": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "kuota_medium": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -3717,6 +4031,36 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.KeaktifanItem": {
+            "type": "object",
+            "required": [
+                "pengerjaan_id"
+            ],
+            "properties": {
+                "nilai": {
+                    "type": "number",
+                    "maximum": 100,
+                    "minimum": 0
+                },
+                "pengerjaan_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.KeaktifanRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.KeaktifanItem"
+                    }
+                }
+            }
+        },
         "dto.KelasRequest": {
             "type": "object",
             "required": [
@@ -3810,20 +4154,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.OnlineCountResponse": {
-            "type": "object",
-            "properties": {
-                "admin": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "user": {
-                    "type": "integer"
-                }
-            }
-        },
         "dto.PedomanRequest": {
             "type": "object",
             "required": [
@@ -3884,6 +4214,9 @@ const docTemplate = `{
                 "jawaban_teks": {
                     "type": "string"
                 },
+                "jenis_soal": {
+                    "type": "string"
+                },
                 "mahasiswa_id": {
                     "type": "integer"
                 },
@@ -3902,8 +4235,14 @@ const docTemplate = `{
                 "soal_id": {
                     "type": "integer"
                 },
+                "soal_terpilih_id": {
+                    "type": "integer"
+                },
                 "teks_soal": {
                     "type": "string"
+                },
+                "urutan": {
+                    "type": "integer"
                 }
             }
         },
@@ -3975,6 +4314,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/dto.RekapJawabanItem"
                     }
                 },
+                "limited": {
+                    "description": "true = hasil dipotong; gunakan Cari untuk data lain",
+                    "type": "boolean"
+                },
                 "total": {
                     "type": "integer"
                 }
@@ -4020,11 +4363,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "scores": {
-                    "description": "Key: course_id, Value: total nilai",
+                    "description": "Key: \"course_\u003cid\u003e\"",
                     "type": "object",
                     "additionalProperties": {
-                        "type": "number",
-                        "format": "float64"
+                        "$ref": "#/definitions/dto.RekapSel"
                     }
                 },
                 "total_score": {
@@ -4046,6 +4388,33 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.RekapItem"
                     }
+                }
+            }
+        },
+        "dto.RekapSel": {
+            "type": "object",
+            "properties": {
+                "edit_keaktifan": {
+                    "description": "true bila pretest/posttest",
+                    "type": "boolean"
+                },
+                "keaktifan": {
+                    "description": "null bila bukan pretest/posttest",
+                    "type": "number"
+                },
+                "murni": {
+                    "type": "number"
+                },
+                "nilai_akhir": {
+                    "description": "konversi 0-100 (murni/max*100), khusus ujian praktik",
+                    "type": "number"
+                },
+                "pengerjaan_id": {
+                    "type": "integer"
+                },
+                "total": {
+                    "description": "murni + (keaktifan||0)",
+                    "type": "number"
                 }
             }
         },
@@ -4083,6 +4452,42 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "waktu_mulai": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RunRequest": {
+            "type": "object",
+            "required": [
+                "language",
+                "source"
+            ],
+            "properties": {
+                "language": {
+                    "type": "string",
+                    "enum": [
+                        "c",
+                        "python"
+                    ]
+                },
+                "source": {
+                    "type": "string"
+                },
+                "stdin": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RunResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "stderr": {
+                    "type": "string"
+                },
+                "stdout": {
                     "type": "string"
                 }
             }
@@ -4255,9 +4660,6 @@ const docTemplate = `{
                 "belum_register": {
                     "type": "integer"
                 },
-                "online_sekarang": {
-                    "type": "integer"
-                },
                 "per_kelas_shift": {
                     "type": "array",
                     "items": {
@@ -4358,6 +4760,13 @@ const docTemplate = `{
                 "nim"
             ],
             "properties": {
+                "gelombang": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
                 "kelas_id": {
                     "type": "integer"
                 },
@@ -4438,6 +4847,10 @@ const docTemplate = `{
                 "opened_at": {
                     "type": "string"
                 },
+                "started_at": {
+                    "description": "StartedAt: anchor timer global, di-set sekali oleh peserta pertama yang mulai.",
+                    "type": "string"
+                },
                 "urutan": {
                     "type": "integer"
                 }
@@ -4454,6 +4867,10 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/entity.AktivasiCourse"
                     }
+                },
+                "gelombang": {
+                    "description": "nullable; diisi hanya untuk ujian praktik",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
@@ -4521,6 +4938,16 @@ const docTemplate = `{
                 },
                 "judul": {
                     "type": "string"
+                },
+                "kuota_easy": {
+                    "description": "Kuota gacha per difficulty (pretest/posttest). Nil = pakai default per jenis.",
+                    "type": "integer"
+                },
+                "kuota_hard": {
+                    "type": "integer"
+                },
+                "kuota_medium": {
+                    "type": "integer"
                 },
                 "sesi_praktikum_id": {
                     "type": "integer"
@@ -4752,6 +5179,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "is_arsip": {
+                    "type": "boolean"
+                },
                 "jenis_soal": {
                     "$ref": "#/definitions/entity.JenisSoal"
                 },
@@ -4777,6 +5207,10 @@ const docTemplate = `{
                 },
                 "foto_url": {
                     "type": "string"
+                },
+                "gelombang": {
+                    "description": "hanya dipakai saat ujian praktik",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
