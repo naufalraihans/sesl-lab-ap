@@ -82,7 +82,7 @@
 </script>
 
 <div class="relative flex min-h-screen items-center justify-center p-4 overflow-hidden"
-	style="background: url('/bg_login.png') no-repeat center center; background-size: cover;">
+	style="background: url('/bg_login.jpg') no-repeat center center; background-size: cover;">
 	
 	<!-- Cinematic overlay to make the background photo subtle and text readable -->
 	<div class="absolute inset-0 bg-slate-950/65 backdrop-blur-[2px] z-0"></div>
