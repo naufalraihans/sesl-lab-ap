@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
+	"lab-ap/internal/delivery/http/middleware"
 	"lab-ap/internal/dto"
 	"lab-ap/internal/entity"
 	"lab-ap/internal/usecase"
@@ -14,10 +16,11 @@ import (
 type KonfigurasiHandler struct {
 	uc             *usecase.KonfigurasiUsecase
 	defaultAIModel string // env OLLAMA_MODEL — dipakai bila override ai_model kosong
+	auditLog       *usecase.AuditLogUsecase
 }
 
-func NewKonfigurasiHandler(uc *usecase.KonfigurasiUsecase, defaultAIModel string) *KonfigurasiHandler {
-	return &KonfigurasiHandler{uc: uc, defaultAIModel: defaultAIModel}
+func NewKonfigurasiHandler(uc *usecase.KonfigurasiUsecase, defaultAIModel string, al *usecase.AuditLogUsecase) *KonfigurasiHandler {
+	return &KonfigurasiHandler{uc: uc, defaultAIModel: defaultAIModel, auditLog: al}
 }
 
 // All GET /api/admin/konfigurasi
@@ -57,6 +60,7 @@ func (h *KonfigurasiHandler) Set(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_KONFIGURASI", fmt.Sprintf("Mengubah konfigurasi '%s' menjadi '%s'", req.Key, req.Value), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Konfigurasi disimpan", nil)
 }
 

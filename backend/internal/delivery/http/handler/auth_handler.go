@@ -12,12 +12,13 @@ import (
 )
 
 type AuthHandler struct {
-	auth    *usecase.AuthUsecase
-	profile *usecase.ProfileUsecase
+	auth     *usecase.AuthUsecase
+	profile  *usecase.ProfileUsecase
+	auditLog *usecase.AuditLogUsecase
 }
 
-func NewAuthHandler(a *usecase.AuthUsecase, p *usecase.ProfileUsecase) *AuthHandler {
-	return &AuthHandler{auth: a, profile: p}
+func NewAuthHandler(a *usecase.AuthUsecase, p *usecase.ProfileUsecase, al *usecase.AuditLogUsecase) *AuthHandler {
+	return &AuthHandler{auth: a, profile: p, auditLog: al}
 }
 
 // CekNIM POST /api/auth/cek-nim
@@ -62,9 +63,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	res, err := h.auth.Login(req)
 	if err != nil {
+		_ = h.auditLog.LogAction(0, req.NIM, "LOGIN_FAILED", "Gagal login: "+err.Error(), c.ClientIP(), c.Request.UserAgent())
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(0, req.NIM, "LOGIN", "Login berhasil", c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Login berhasil", res)
 }
 
@@ -86,15 +89,19 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 	res, err := h.auth.Register(req)
 	if err != nil {
+		_ = h.auditLog.LogAction(0, req.NIM, "REGISTER_FAILED", "Gagal registrasi: "+err.Error(), c.ClientIP(), c.Request.UserAgent())
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(0, req.NIM, "REGISTER", "Registrasi akun berhasil", c.ClientIP(), c.Request.UserAgent())
 	response.Created(c, "Registrasi berhasil", res)
 }
 
 // Logout POST /api/auth/logout
 func (h *AuthHandler) Logout(c *gin.Context) {
-	h.auth.Logout(middleware.UserID(c))
+	userID := middleware.UserID(c)
+	_ = h.auditLog.LogAction(userID, "", "LOGOUT", "Logout berhasil", c.ClientIP(), c.Request.UserAgent())
+	h.auth.Logout(userID)
 	response.OK(c, http.StatusOK, "Logout berhasil", nil)
 }
 

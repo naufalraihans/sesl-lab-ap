@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
+	"lab-ap/internal/delivery/http/middleware"
 	"lab-ap/internal/dto"
 	_ "lab-ap/internal/entity"
 	"lab-ap/internal/usecase"
@@ -12,10 +14,13 @@ import (
 )
 
 type UserHandler struct {
-	uc *usecase.UserUsecase
+	uc       *usecase.UserUsecase
+	auditLog *usecase.AuditLogUsecase
 }
 
-func NewUserHandler(uc *usecase.UserUsecase) *UserHandler { return &UserHandler{uc: uc} }
+func NewUserHandler(uc *usecase.UserUsecase, al *usecase.AuditLogUsecase) *UserHandler {
+	return &UserHandler{uc: uc, auditLog: al}
+}
 
 // ---- Mahasiswa ----
 
@@ -59,6 +64,7 @@ func (h *UserHandler) CreateMahasiswa(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_USER", "Membuat mahasiswa baru: "+res.Nama+" (NIM: "+res.NIM+")", c.ClientIP(), c.Request.UserAgent())
 	response.Created(c, "Mahasiswa dibuat", res)
 }
 
@@ -83,6 +89,7 @@ func (h *UserHandler) BulkUpsertMahasiswa(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "IMPORT_USER", fmt.Sprintf("Mengimpor %d mahasiswa secara bulk", len(req.Users)), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Import mahasiswa berhasil diproses", res)
 }
 
@@ -112,6 +119,7 @@ func (h *UserHandler) UpdateMahasiswa(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_USER", "Memperbarui data mahasiswa: "+res.Nama+" (NIM: "+res.NIM+")", c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Mahasiswa diperbarui", res)
 }
 
@@ -133,6 +141,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "DELETE_USER", fmt.Sprintf("Menghapus user dengan ID %d", id), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "User dihapus", nil)
 }
 
@@ -154,6 +163,7 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "RESET_PASSWORD", fmt.Sprintf("Mereset password mahasiswa dengan ID %d", id), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Password direset (mahasiswa harus register ulang)", nil)
 }
 
@@ -221,6 +231,7 @@ func (h *UserHandler) CreateAsisten(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_USER", "Membuat asisten baru: "+res.Nama+" (NIM: "+res.NIM+")", c.ClientIP(), c.Request.UserAgent())
 	response.Created(c, "Asisten dibuat", res)
 }
 
@@ -250,5 +261,6 @@ func (h *UserHandler) UpdateAsisten(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_USER", "Memperbarui data asisten: "+res.Nama+" (NIM: "+res.NIM+")", c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Asisten diperbarui", res)
 }

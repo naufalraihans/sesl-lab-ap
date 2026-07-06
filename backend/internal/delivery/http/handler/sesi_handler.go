@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
+	"lab-ap/internal/delivery/http/middleware"
 	"lab-ap/internal/dto"
 	_ "lab-ap/internal/entity"
 	"lab-ap/internal/usecase"
@@ -12,10 +14,13 @@ import (
 )
 
 type SesiHandler struct {
-	uc *usecase.SesiUsecase
+	uc       *usecase.SesiUsecase
+	auditLog *usecase.AuditLogUsecase
 }
 
-func NewSesiHandler(uc *usecase.SesiUsecase) *SesiHandler { return &SesiHandler{uc: uc} }
+func NewSesiHandler(uc *usecase.SesiUsecase, al *usecase.AuditLogUsecase) *SesiHandler {
+	return &SesiHandler{uc: uc, auditLog: al}
+}
 
 // List GET /api/admin/sesi
 // @Summary Daftar Master Sesi
@@ -77,6 +82,7 @@ func (h *SesiHandler) Create(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_SESI", "Membuat sesi praktikum baru: '"+res.JudulSesi+"'", c.ClientIP(), c.Request.UserAgent())
 	response.Created(c, "Sesi dibuat", res)
 }
 
@@ -106,6 +112,7 @@ func (h *SesiHandler) Update(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_SESI", fmt.Sprintf("Memperbarui sesi praktikum: '%s' (ID: %d)", res.JudulSesi, res.ID), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Sesi diperbarui", res)
 }
 
@@ -127,6 +134,7 @@ func (h *SesiHandler) Delete(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "DELETE_SESI", fmt.Sprintf("Menghapus sesi praktikum dengan ID %d", id), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Sesi dihapus", nil)
 }
 
@@ -180,6 +188,7 @@ func (h *SesiHandler) CreateCourse(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_COURSE", fmt.Sprintf("Membuat course baru '%s' untuk sesi ID %d", res.Judul, id), c.ClientIP(), c.Request.UserAgent())
 	response.Created(c, "Course dibuat", res)
 }
 
@@ -209,6 +218,7 @@ func (h *SesiHandler) UpdateCourse(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_COURSE", fmt.Sprintf("Memperbarui course: '%s' (ID: %d)", res.Judul, res.ID), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Course diperbarui", res)
 }
 
@@ -230,5 +240,6 @@ func (h *SesiHandler) DeleteCourse(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "DELETE_COURSE", fmt.Sprintf("Menghapus course dengan ID %d", cid), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Course dihapus", nil)
 }

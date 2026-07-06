@@ -40,6 +40,7 @@ type Handlers struct {
 	Cron         *handler.CronHandler
 	Run          *handler.RunHandler
 	Compile      *handler.CompileHandler
+	AuditLog     *handler.AuditLogHandler
 }
 
 // HealthCheck GET /api/health
@@ -221,6 +222,9 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 		admin.GET("/ampuan", h.Ampuan.List)
 		admin.POST("/ampuan", h.Ampuan.Create)
 		admin.DELETE("/ampuan/:id", h.Ampuan.Delete)
+
+		// Audit Log
+		admin.GET("/audit-logs", h.AuditLog.GetLogs)
 	}
 
 	return r

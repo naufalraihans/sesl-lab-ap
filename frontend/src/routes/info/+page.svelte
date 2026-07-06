@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { 
 		Calendar, Users, FileText, Book, ArrowRight, Bell, Code,
 		Terminal, Clock, Download, ArrowDown, ExternalLink,
@@ -8,6 +9,103 @@
 	} from 'lucide-svelte';
 	import { api } from '$lib/api';
 	import type { User, Jadwal } from '$lib/types';
+
+	// ─── Import Gallery Photos dynamically at build time ───
+	const modules = import.meta.glob('$lib/galeri/*.{png,jpg,jpeg,webp,gif,PNG,JPG,JPEG,WEBP,GIF}', { eager: true, import: 'default' });
+	
+	interface PhotoItem {
+		filename: string;
+		src: string;
+		title: string;
+	}
+
+	const photos = Object.keys(modules)
+		.map(key => {
+			const filename = key.split('/').pop() || '';
+			// Naming convention: YYYYMMDD_[index]_title.ext (e.g. "20260705_1_foto-asisten.png")
+			const match = filename.match(/^(\d{8})(?:_(\d+))?_(.*)\.[^/.]+$/);
+			
+			let dateStr = filename.slice(0, 8);
+			let index = 999; // default high index for unindexed photos (placed last on the same day)
+			let cleanName = filename.replace(/^\d+_/ , '').replace(/\.[^/.]+$/, '');
+
+			if (match) {
+				dateStr = match[1];
+				if (match[2]) {
+					index = parseInt(match[2], 10);
+				}
+				cleanName = match[3];
+			}
+
+			const title = cleanName
+				.split(/[-_]/)
+				.map(word => word.charAt(0).toUpperCase() + word.slice(1))
+				.join(' ');
+
+			return {
+				filename,
+				dateStr,
+				index,
+				src: modules[key] as string,
+				title: title || 'Kegiatan Lab'
+			};
+		})
+		.sort((a, b) => {
+			// 1. Sort by date descending (newest first)
+			if (a.dateStr !== b.dateStr) {
+				return b.dateStr.localeCompare(a.dateStr);
+			}
+			// 2. If same date, sort by index ascending (lower index first, e.g. 1 shows before 2)
+			if (a.index !== b.index) {
+				return a.index - b.index;
+			}
+			// 3. Fallback to alphabetical sorting of filename
+			return a.filename.localeCompare(b.filename);
+		});
+
+	let activePhotoIndex = $state(0);
+	let autoplayInterval: any;
+	let isHovered = false;
+
+	function startAutoplay(delay = 5000) {
+		if (autoplayInterval) {
+			clearInterval(autoplayInterval);
+		}
+		if (photos.length > 1 && !isHovered) {
+			autoplayInterval = setInterval(() => {
+				nextPhoto();
+			}, delay);
+		}
+	}
+
+	function resetAutoplay() {
+		// When user clicks manually, give them 15 seconds of peace before resuming 5s auto-sliding
+		startAutoplay(15000);
+	}
+
+	function prevPhoto() {
+		if (photos.length === 0) return;
+		activePhotoIndex = (activePhotoIndex - 1 + photos.length) % photos.length;
+		resetAutoplay();
+	}
+
+	function nextPhoto() {
+		if (photos.length === 0) return;
+		activePhotoIndex = (activePhotoIndex + 1) % photos.length;
+		resetAutoplay();
+	}
+
+	function handleMouseEnter() {
+		isHovered = true;
+		if (autoplayInterval) {
+			clearInterval(autoplayInterval);
+		}
+	}
+
+	function handleMouseLeave() {
+		isHovered = false;
+		startAutoplay(5000); // Resume normal 5s autoplay
+	}
 
 	// ─── Announcements loaded from localStorage (managed via /info/pengaturan) ───
 	interface RescheduleCard {
@@ -82,6 +180,9 @@
 		// Tick clock every minute
 		const ticker = setInterval(() => { now = new Date(); }, 60_000);
 
+		// Autoplay gallery if there are multiple photos
+		startAutoplay(5000);
+
 		// Scroll reveal
 		const observer = new IntersectionObserver((entries) => {
 			entries.forEach(e => {
@@ -93,6 +194,9 @@
 
 		return () => {
 			clearInterval(ticker);
+			if (autoplayInterval) {
+				clearInterval(autoplayInterval);
+			}
 			document.querySelectorAll('.reveal').forEach(el => observer.unobserve(el));
 		};
 	});
@@ -129,9 +233,50 @@
 			&amp; <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70">Pemrograman.</span>
 		</h1>
 
-		<p class="text-base md:text-lg text-slate-700 leading-relaxed font-medium mb-10 max-w-2xl">
-			Sistem informasi terpadu Laboratorium Algoritma &amp; Pemrograman. Unduh modul terbaru, cek jadwal shift kamu, atau sapa kakak-abang asisten pembimbing di sini!
-		</p>
+		<!-- Dynamic aspect-ratio photo gallery of lab assistants (supports mixed landscape/portrait via blurred background technique) -->
+		{#if photos.length > 0}
+			<div class="w-full max-w-4xl mx-auto mt-6 mb-8 rounded-[2rem] overflow-hidden shadow-md border border-rose-100/40 aspect-[1.77/1] relative group" onmouseenter={handleMouseEnter} onmouseleave={handleMouseLeave}>
+				{#each photos as photo, idx}
+					{#if idx === activePhotoIndex}
+						<div class="absolute inset-0" transition:fade={{ duration: 400 }}>
+							<!-- Blurred background replica for portrait/unfitted images -->
+							<img src={photo.src} alt="" class="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-30 select-none pointer-events-none" />
+							
+							<!-- Main centered image (object-contain ensures the entire photo is visible without cropping) -->
+							<img src={photo.src} alt={photo.title} class="absolute inset-0 w-full h-full object-contain z-10" />
+							
+							<!-- Soft overlay at the bottom for caption readability -->
+							<div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/5 to-transparent z-20"></div>
+							
+							<!-- Caption overlay -->
+							<div class="absolute bottom-6 left-6 right-6 text-left text-white drop-shadow-sm pointer-events-none z-30">
+								<span class="bg-[#8A1538]/90 text-rose-100 text-[10px] font-black px-2.5 py-1 rounded-md border border-rose-800/40 uppercase tracking-widest">
+									{photo.dateStr.slice(0, 4)}-{photo.dateStr.slice(4, 6)}-{photo.dateStr.slice(6, 8)}
+								</span>
+								<h3 class="text-sm md:text-xl font-black mt-1.5">{photo.title}</h3>
+							</div>
+						</div>
+					{/if}
+				{/each}
+
+				<!-- Navigation Buttons (show only if there are multiple photos) -->
+				{#if photos.length > 1}
+					<button class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 border border-white/10 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 active:scale-95 z-40" onclick={prevPhoto} aria-label="Previous photo">
+						<ArrowRight class="rotate-180" size={18} />
+					</button>
+					<button class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 border border-white/10 text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 active:scale-95 z-40" onclick={nextPhoto} aria-label="Next photo">
+						<ArrowRight size={18} />
+					</button>
+
+					<!-- Dots Indicator -->
+					<div class="absolute bottom-4 right-6 flex gap-1.5 z-40">
+						{#each photos as _, idx}
+							<button class="w-1.5 h-1.5 rounded-full transition-all {idx === activePhotoIndex ? 'bg-white w-4' : 'bg-white/40'}" onclick={() => activePhotoIndex = idx} aria-label="Go to photo {idx + 1}"></button>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		{/if}
 
 		<div class="flex flex-wrap justify-center gap-4">
 			<a href="https://ap-learn.web.id" target="_blank" rel="noopener"
@@ -316,7 +461,7 @@
 					</span>
 					<h3 class="text-2xl font-extrabold tracking-tight mb-2 text-white group-hover:text-cyan-400 transition-colors">Interactive Terminal</h3>
 					<p class="text-slate-300 text-xs font-semibold leading-relaxed mb-4">
-						Jalankan program secara instan menggunakan terminal interaktif xterm.js berbasis compiler client-side WASM.
+						Jalankan program secara instan menggunakan terminal interaktif berbasis compiler client-side WASM.
 					</p>
 					<div class="inline-flex items-center gap-1 text-xs font-bold text-cyan-400 group-hover:gap-2 transition-all">
 						Uji Kode Anda <ArrowRight size={12} />

@@ -11,7 +11,7 @@
 	import { 
 		Home, BookOpen, User, BarChart2, Users, GraduationCap, School, 
 		Calendar, FileText, Book, Puzzle, Zap, CheckCircle, ClipboardList, Trophy,
-		LogOut, Menu, X, ArrowUp, Settings
+		LogOut, Menu, X, ArrowUp, Settings, Terminal
 	} from 'lucide-svelte';
 
 	let { children } = $props();
@@ -36,6 +36,7 @@
 		{ href: '/praktikum/admin/penilaian', label: 'Penilaian', icon: CheckCircle },
 		{ href: '/praktikum/admin/rekap-jawaban', label: 'Rekap Jawaban', icon: ClipboardList },
 		{ href: '/praktikum/admin/rekap-nilai', label: 'Rekap Nilai', icon: Trophy },
+		{ href: '/praktikum/admin/log', label: 'Log Aktivitas', icon: Terminal },
 		{ href: '/praktikum/admin/pengaturan', label: 'Pengaturan Lobby', icon: Settings }
 	];
 

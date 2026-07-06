@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
+	"lab-ap/internal/delivery/http/middleware"
 	"lab-ap/internal/dto"
 	"lab-ap/internal/usecase"
 	"lab-ap/pkg/response"
@@ -11,11 +13,12 @@ import (
 )
 
 type PenilaianHandler struct {
-	uc *usecase.PenilaianUsecase
+	uc       *usecase.PenilaianUsecase
+	auditLog *usecase.AuditLogUsecase
 }
 
-func NewPenilaianHandler(uc *usecase.PenilaianUsecase) *PenilaianHandler {
-	return &PenilaianHandler{uc: uc}
+func NewPenilaianHandler(uc *usecase.PenilaianUsecase, al *usecase.AuditLogUsecase) *PenilaianHandler {
+	return &PenilaianHandler{uc: uc, auditLog: al}
 }
 
 // Rekap GET /api/admin/penilaian/rekap
@@ -64,6 +67,7 @@ func (h *PenilaianHandler) SetNilai(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_NILAI", fmt.Sprintf("Menilai jawaban ID %d dengan skor %.1f", req.JawabanID, req.Nilai), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Nilai disimpan", res)
 }
 
@@ -87,5 +91,6 @@ func (h *PenilaianHandler) SetKeaktifan(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_KEAKTIFAN", fmt.Sprintf("Mengubah status keaktifan bulk untuk %d item pengerjaan", len(req.Items)), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Keaktifan disimpan", nil)
 }

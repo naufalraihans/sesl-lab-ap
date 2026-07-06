@@ -82,19 +82,13 @@
 </script>
 
 <div class="relative flex min-h-screen items-center justify-center p-4 overflow-hidden"
-	style="background: linear-gradient(135deg, #fff5f5 0%, #fffbfb 50%, #fff5f5 100%);">
+	style="background: url('/bg_login.png') no-repeat center center; background-size: cover;">
 	
-	<!-- Tech background Grid Pattern (very soft rose using logo RGB 138, 21, 56) -->
-	<div class="absolute inset-0 opacity-[0.02] pointer-events-none z-0" 
-		style="background-size: 30px 30px; background-image: linear-gradient(to right, rgba(138, 21, 56, 0.3) 1px, transparent 1px), linear-gradient(to bottom, rgba(138, 21, 56, 0.3) 1px, transparent 1px);">
-	</div>
-
-	<!-- Glowing Mesh Gradients (soft rose/maroon) -->
-	<div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-[#8A1538]/5 blur-[80px] pointer-events-none z-0"></div>
-	<div class="absolute bottom-10 right-10 w-72 h-72 rounded-full bg-rose-200/20 blur-[80px] pointer-events-none z-0"></div>
+	<!-- Cinematic overlay to make the background photo subtle and text readable -->
+	<div class="absolute inset-0 bg-slate-950/65 backdrop-blur-[2px] z-0"></div>
 
 	<!-- Login Card Container (Centered Light Mode Premium Card) -->
-	<div class="relative z-10 w-full max-w-md bg-white border border-rose-100/80 rounded-[2.5rem] p-8 sm:p-10 shadow-[0_20px_50px_rgba(138,21,56,0.06)] text-center">
+	<div class="relative z-10 w-full max-w-md bg-white border border-rose-100/30 rounded-[2.5rem] p-8 sm:p-10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.4)] text-center">
 		
 		<!-- Top border gradient highlight matching the logo maroon -->
 		<div class="absolute top-0 left-12 right-12 h-1 bg-gradient-to-r from-transparent via-[#8A1538] to-transparent rounded-t-[2.5rem]"></div>
@@ -123,7 +117,7 @@
 						<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
 							<User size={15} />
 						</div>
-						<input id="nim" class="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={nim} placeholder="Contoh: 202431001" required />
+						<input id="nim" class="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={nim} placeholder="Masukkan NIM Anda (contoh: 202431001)" required />
 					</div>
 				</div>
 				<button class="w-full h-12 bg-[#8A1538] hover:bg-[#730d2d] text-white rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-[#8A1538]/10 transition-all active:scale-[0.99]" disabled={loading}>

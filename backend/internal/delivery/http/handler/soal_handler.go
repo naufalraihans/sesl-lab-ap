@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
+	"lab-ap/internal/delivery/http/middleware"
 	"lab-ap/internal/dto"
 	_ "lab-ap/internal/entity"
 	"lab-ap/internal/usecase"
@@ -12,10 +14,13 @@ import (
 )
 
 type SoalHandler struct {
-	uc *usecase.SoalUsecase
+	uc       *usecase.SoalUsecase
+	auditLog *usecase.AuditLogUsecase
 }
 
-func NewSoalHandler(uc *usecase.SoalUsecase) *SoalHandler { return &SoalHandler{uc: uc} }
+func NewSoalHandler(uc *usecase.SoalUsecase, al *usecase.AuditLogUsecase) *SoalHandler {
+	return &SoalHandler{uc: uc, auditLog: al}
+}
 
 // ListByCourse GET /api/admin/soal
 // @Summary Daftar Soal
@@ -61,6 +66,12 @@ func (h *SoalHandler) Create(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	teksRunes := []rune(res.TeksSoal)
+	shortTeks := string(teksRunes)
+	if len(teksRunes) > 30 {
+		shortTeks = string(teksRunes[:30]) + "..."
+	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_SOAL", "Membuat soal baru: '"+shortTeks+"'", c.ClientIP(), c.Request.UserAgent())
 	response.Created(c, "Soal dibuat", res)
 }
 
@@ -90,6 +101,12 @@ func (h *SoalHandler) Update(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	teksRunes := []rune(res.TeksSoal)
+	shortTeks := string(teksRunes)
+	if len(teksRunes) > 30 {
+		shortTeks = string(teksRunes[:30]) + "..."
+	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_SOAL", fmt.Sprintf("Memperbarui soal: '%s' (ID: %d)", shortTeks, res.ID), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Soal diperbarui", res)
 }
 
@@ -111,5 +128,6 @@ func (h *SoalHandler) Delete(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "DELETE_SOAL", fmt.Sprintf("Menghapus soal dengan ID %d", id), c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Soal dihapus", nil)
 }

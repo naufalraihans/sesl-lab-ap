@@ -57,6 +57,7 @@ func Build(cfg *config.Config) (*gin.Engine, *Deps, error) {
 	rekapRepo := repository.NewRekapRepository(db)
 	penilaianTxRepo := repository.NewPenilaianTxRepo(db)
 	aktivasiTxRepo := repository.NewAktivasiTxRepo(db)
+	auditLogRepo := repository.NewAuditLogRepository(db)
 
 	// ---- Usecase ----
 	authUC := usecase.NewAuthUsecase(userRepo, kelasRepo, jm, hash.FbScryptConfig{
@@ -81,20 +82,21 @@ func Build(cfg *config.Config) (*gin.Engine, *Deps, error) {
 	ampuanUC := usecase.NewAmpuanUsecase(ampuanRepo)
 	rekapUC := usecase.NewRekapUsecase(rekapRepo, kelasRepo)
 	aiGradingUC := usecase.NewAIGradingUsecase(jawabanRepo, penilaianUC, oc, konfRepo)
+	auditLogUC := usecase.NewAuditLogUsecase(auditLogRepo, userRepo)
 
 	// ---- Handler ----
 	h := route.Handlers{
-		Auth:         handler.NewAuthHandler(authUC, profileUC),
+		Auth:         handler.NewAuthHandler(authUC, profileUC, auditLogUC),
 		Dashboard:    handler.NewDashboardHandler(dashboardUC),
-		Sesi:         handler.NewSesiHandler(sesiUC),
+		Sesi:         handler.NewSesiHandler(sesiUC, auditLogUC),
 		Aktivasi:     handler.NewAktivasiHandler(aktivasiUC),
-		Soal:         handler.NewSoalHandler(soalUC),
+		Soal:         handler.NewSoalHandler(soalUC, auditLogUC),
 		Jawaban:      handler.NewJawabanHandler(jawabanUC),
-		Penilaian:    handler.NewPenilaianHandler(penilaianUC),
-		Konfigurasi:  handler.NewKonfigurasiHandler(konfUC, cfg.OllamaModel),
+		Penilaian:    handler.NewPenilaianHandler(penilaianUC, auditLogUC),
+		Konfigurasi:  handler.NewKonfigurasiHandler(konfUC, cfg.OllamaModel, auditLogUC),
 		Profile:      handler.NewProfileHandler(profileUC),
 		Jadwal:       handler.NewJadwalHandler(jadwalUC),
-		User:         handler.NewUserHandler(userUC),
+		User:         handler.NewUserHandler(userUC, auditLogUC),
 		Kelas:        handler.NewKelasHandler(kelasUC),
 		Pedoman:      handler.NewPedomanHandler(pedomanUC),
 		Praktikum:    handler.NewPraktikumHandler(praktikumUC),
@@ -106,6 +108,7 @@ func Build(cfg *config.Config) (*gin.Engine, *Deps, error) {
 		Cron:         handler.NewCronHandler(jawabanUC, cfg.CronSecret),
 		Run:          handler.NewRunHandler(glotClient),
 		Compile:      handler.NewCompileHandler(cwasmCompiler),
+		AuditLog:     handler.NewAuditLogHandler(auditLogUC),
 	}
 
 	r := route.Setup(cfg, jm, h)
