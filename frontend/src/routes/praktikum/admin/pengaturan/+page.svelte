@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { api } from '$lib/api';
 	import {
 		Calendar, UserCheck, Copy, AlertTriangle, Plus, Trash2,
 		Download, Upload, Save

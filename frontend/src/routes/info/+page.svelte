@@ -152,7 +152,7 @@
 
 	onMount(() => {
 		// Load announcements from backend database API
-		api.get<{ reschedules?: string; recruit?: string; susulan?: string; plagiarism?: string }>('/api/info/announcements')
+		api.get<{ reschedules?: string; recruit?: string; susulan?: string; plagiarism?: string }>(`/api/info/announcements?t=${Date.now()}`)
 			.then(d => {
 				if (d) {
 					if (d.reschedules) reschedules = JSON.parse(d.reschedules);
