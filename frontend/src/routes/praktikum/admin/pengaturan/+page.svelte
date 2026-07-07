@@ -7,10 +7,8 @@
 	} from 'lucide-svelte';
 
 	// ─── Types ────────────────────────────────────────────────────────────────
-	interface RescheduleCard { id: string; kelas: string; hari: string; jam: string; catatan: string; }
-	interface RecruitCard    { id: string; judul: string; deskripsi: string; link?: string; }
 	interface SusulanCard    { id: string; kelas: string; deskripsi: string; }
-	interface PlagiarismRow  { nim: string; nama: string; keterangan: string; }
+	interface PlagiarismRow  { nim: string; nama: string; keterangan: string; hari?: string; jam?: string; }
 	interface PlagiarismData { rows: PlagiarismRow[]; updatedAt: string; catatan?: string; }
 
 	let reschedules  = $state<RescheduleCard[]>([]);
@@ -22,7 +20,7 @@
 	let newRs = $state<Omit<RescheduleCard,'id'>>({ kelas:'', hari:'', jam:'', catatan:'' });
 	let newRc = $state<Omit<RecruitCard,'id'>>({ judul:'', deskripsi:'', link:'' });
 	let newSu = $state<Omit<SusulanCard,'id'>>({ kelas:'', deskripsi:'' });
-	let newPl = $state<PlagiarismRow>({ nim:'', nama:'', keterangan:'' });
+	let newPl = $state<PlagiarismRow>({ nim:'', nama:'', keterangan:'', hari: '', jam: '' });
 	let importCsv = $state('');
 
 	function uid() { return Math.random().toString(36).slice(2); }
@@ -89,7 +87,7 @@
 	function addPlagiarismRow() {
 		if (!newPl.nim || !newPl.nama) return;
 		plagiarismData = { ...plagiarismData, rows: [...plagiarismData.rows, { ...newPl }], updatedAt: new Date().toLocaleDateString('id-ID') };
-		newPl = { nim:'', nama:'', keterangan:'' };
+		newPl = { nim:'', nama:'', keterangan:'', hari: '', jam: '' };
 	}
 	function removePlagiarismRow(nim: string) {
 		plagiarismData = { ...plagiarismData, rows: plagiarismData.rows.filter(r => r.nim !== nim), updatedAt: new Date().toLocaleDateString('id-ID') };
@@ -97,15 +95,15 @@
 	function importFromCsv() {
 		try {
 			const rows: PlagiarismRow[] = importCsv.trim().split('\n').filter(Boolean).map(l => {
-				const [nim, nama, keterangan] = l.split(',').map(s => s.trim());
-				return { nim, nama, keterangan: keterangan || '' };
+				const [nim, nama, keterangan, hari, jam] = l.split(',').map(s => s.trim());
+				return { nim, nama, keterangan: keterangan || '', hari: hari || '', jam: jam || '' };
 			});
 			plagiarismData = { ...plagiarismData, rows, updatedAt: new Date().toLocaleDateString('id-ID') };
 			importCsv = '';
 		} catch { /* ignore */ }
 	}
 	function exportCsv() {
-		const csv = plagiarismData.rows.map(r => `${r.nim},${r.nama},${r.keterangan}`).join('\n');
+		const csv = plagiarismData.rows.map(r => `${r.nim},${r.nama},${r.keterangan},${r.hari || ''},${r.jam || ''}`).join('\n');
 		const a = Object.assign(document.createElement('a'), {
 			href: URL.createObjectURL(new Blob([csv], { type:'text/csv' })),
 			download: 'plagiarisme.csv'
@@ -242,9 +240,9 @@
 		<div class="p-6 space-y-5">
 			<div class="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-4 space-y-3">
 				<h3 class="text-sm font-extrabold text-slate-800 flex items-center gap-2"><Upload size={14}/> Import dari CSV</h3>
-				<p class="text-xs text-slate-600 font-semibold">Format: <code class="bg-white border border-slate-200 px-1.5 py-0.5 rounded text-xs font-mono">NIM,Nama,Keterangan</code> — satu baris per mahasiswa.</p>
+				<p class="text-xs text-slate-600 font-semibold">Format: <code class="bg-white border border-slate-200 px-1.5 py-0.5 rounded text-xs font-mono">NIM,Nama,Persentase,Hari/Tanggal,Jam</code> — satu baris per mahasiswa.</p>
 				<textarea class="input h-24 resize-none font-mono text-xs" bind:value={importCsv}
-					placeholder="2211001,Budi Santoso,Posttest Modul 3&#10;2211002,Ani Wati,Jurnal Modul 2"></textarea>
+					placeholder="2211001,Budi Santoso,95%,Rabu (08 Jul),08:00 WIB&#10;2211002,Ani Wati,80%,Kamis (09 Jul),10:00 WIB"></textarea>
 				<button onclick={importFromCsv} class="btn-primary text-sm flex items-center gap-1.5"><Upload size={14}/> Terapkan Import</button>
 			</div>
 
@@ -262,14 +260,17 @@
 				</div>
 				<div class="table-wrap">
 					<table class="tbl">
-						<thead><tr><th>NIM</th><th>Nama</th><th>Keterangan</th><th></th></tr></thead>
+						<thead><tr><th>NIM</th><th>Nama</th><th>Persentase</th><th>Hari/Tanggal</th><th>Jam</th><th></th></tr></thead>
 						<tbody>
-							{#each plagiarismData.rows as row}
+							{#each plagiarismData.rows as row, i}
+								{@const pct = parseInt((plagiarismData.rows[i].keterangan || '').replace(/[^0-9]/g, ''), 10)}
 								<tr>
-									<td class="font-mono font-bold text-slate-900">{row.nim}</td>
-									<td class="font-semibold text-slate-800">{row.nama}</td>
-									<td class="text-slate-700">{row.keterangan}</td>
-									<td><button onclick={() => removePlagiarismRow(row.nim)} class="p-1.5 rounded text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={13}/></button></td>
+									<td><input type="text" class="input font-mono font-bold text-xs text-slate-900 bg-transparent border-0 hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary py-1 px-2 rounded w-full" bind:value={plagiarismData.rows[i].nim} /></td>
+									<td><input type="text" class="input font-semibold text-xs text-slate-800 bg-transparent border-0 hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary py-1 px-2 rounded w-full" bind:value={plagiarismData.rows[i].nama} /></td>
+									<td><input type="text" class="input text-xs font-extrabold bg-transparent border-0 hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary py-1 px-2 rounded w-full {isNaN(pct) ? 'text-slate-700' : pct >= 70 ? 'text-red-650' : pct >= 50 ? 'text-amber-500' : 'text-emerald-600'}" bind:value={plagiarismData.rows[i].keterangan} placeholder="95%" /></td>
+									<td><input type="text" class="input text-xs font-semibold text-slate-750 bg-transparent border-0 hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary py-1 px-2 rounded w-full" bind:value={plagiarismData.rows[i].hari} placeholder="Rabu (08 Jul)" /></td>
+									<td><input type="text" class="input text-xs font-semibold text-slate-750 bg-transparent border-0 hover:bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary py-1 px-2 rounded w-full" bind:value={plagiarismData.rows[i].jam} placeholder="08:00 WIB" /></td>
+									<td class="text-right"><button onclick={() => removePlagiarismRow(row.nim)} class="p-1.5 rounded text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={13}/></button></td>
 								</tr>
 							{/each}
 						</tbody>
@@ -279,10 +280,12 @@
 
 			<div class="border border-dashed border-slate-300 rounded-xl p-4 space-y-3 bg-slate-50">
 				<p class="text-xs font-extrabold text-slate-600 uppercase tracking-wider">+ Tambah Baris Manual</p>
-				<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+				<div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
 					<div><label class="label text-xs">NIM</label><input type="text" class="input font-mono" bind:value={newPl.nim} placeholder="2211001"/></div>
 					<div><label class="label text-xs">Nama</label><input type="text" class="input" bind:value={newPl.nama} placeholder="Nama Mahasiswa"/></div>
-					<div><label class="label text-xs">Keterangan</label><input type="text" class="input" bind:value={newPl.keterangan} placeholder="Posttest Modul 3"/></div>
+					<div><label class="label text-xs">Persentase</label><input type="text" class="input text-red-650 font-bold" bind:value={newPl.keterangan} placeholder="95%"/></div>
+					<div><label class="label text-xs">Hari/Tanggal</label><input type="text" class="input" bind:value={newPl.hari} placeholder="Rabu (08 Jul)"/></div>
+					<div><label class="label text-xs">Jam Kehadiran</label><input type="text" class="input" bind:value={newPl.jam} placeholder="08:00 WIB"/></div>
 				</div>
 				<button onclick={addPlagiarismRow} class="btn-primary text-sm flex items-center gap-1.5"><Plus size={14}/> Tambah Baris</button>
 			</div>

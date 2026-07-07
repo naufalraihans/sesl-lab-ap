@@ -118,7 +118,7 @@
 		id: string; kelas: string; deskripsi: string;
 	}
 	interface PlagiarismRow {
-		nim: string; nama: string; keterangan: string;
+		nim: string; nama: string; keterangan: string; hari?: string; jam?: string;
 	}
 	interface PlagiarismData {
 		rows: PlagiarismRow[]; updatedAt: string;
@@ -801,15 +801,32 @@
 							<tr class="border-b border-slate-200 text-[10px] font-black uppercase text-slate-400 tracking-wider">
 								<th class="pb-3 pr-4">NIM</th>
 								<th class="pb-3 pr-4">Nama</th>
-								<th class="pb-3">Keterangan</th>
+								<th class="pb-3 pr-4">Persentase</th>
+								<th class="pb-3 pr-4">Hari/Tanggal</th>
+								<th class="pb-3">Jam</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
 							{#each plagiarismData.rows as row}
+								{@const pct = parseInt((row.keterangan || '').replace(/[^0-9]/g, ''), 10)}
 								<tr>
 									<td class="py-3.5 pr-4 font-mono text-slate-500">{row.nim}</td>
 									<td class="py-3.5 pr-4 text-slate-900 font-extrabold">{row.nama}</td>
-									<td class="py-3.5 text-red-600">{row.keterangan}</td>
+									<td class="py-3.5 pr-4 {isNaN(pct) ? 'text-slate-700 font-semibold' : pct >= 70 ? 'text-red-600 font-extrabold' : pct >= 50 ? 'text-amber-500 font-extrabold' : 'text-emerald-600 font-semibold'}">{row.keterangan || '—'}</td>
+									<td class="py-3.5 pr-4">
+										{#if row.hari}
+											<span class="px-2.5 py-0.5 bg-slate-100 text-slate-800 border border-slate-200/80 rounded-md font-semibold text-[11px] inline-block shadow-sm">{row.hari}</span>
+										{:else}
+											<span class="text-slate-400">—</span>
+										{/if}
+									</td>
+									<td class="py-3.5">
+										{#if row.jam}
+											<span class="px-2.5 py-0.5 bg-rose-50 text-rose-800 border border-rose-100 rounded-md font-semibold text-[11px] inline-block shadow-sm">{row.jam}</span>
+										{:else}
+											<span class="text-slate-400">—</span>
+										{/if}
+									</td>
 								</tr>
 							{/each}
 						</tbody>
