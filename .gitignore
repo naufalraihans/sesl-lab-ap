@@ -27,3 +27,4 @@ frontend/build_out.txt
 frontend/check_out.txt
 frontend/test-results/
 frontend/playwright-report/
+backups/
