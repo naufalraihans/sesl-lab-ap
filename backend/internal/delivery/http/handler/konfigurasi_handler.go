@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -127,4 +128,33 @@ func (h *KonfigurasiHandler) PublicAnnouncements(c *gin.Context) {
 		"susulan":     susulan,
 		"plagiarism":  plagiarism,
 	})
+}
+
+// GetRolePermissions GET /api/superadmin/permissions
+func (h *KonfigurasiHandler) GetRolePermissions(c *gin.Context) {
+	raw, _ := h.uc.Get("role_permissions")
+	if raw == "" {
+		raw = "{}"
+	}
+	var m map[string]map[string]bool
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		m = map[string]map[string]bool{}
+	}
+	response.OK(c, http.StatusOK, "Role permissions", m)
+}
+
+// SetRolePermissions PUT /api/superadmin/permissions
+func (h *KonfigurasiHandler) SetRolePermissions(c *gin.Context) {
+	var perms map[string]map[string]bool
+	if err := c.ShouldBindJSON(&perms); err != nil {
+		response.Fail(c, http.StatusBadRequest, "Input tidak valid", err.Error())
+		return
+	}
+	b, _ := json.Marshal(perms)
+	if err := h.uc.Set("role_permissions", string(b)); err != nil {
+		mapError(c, err)
+		return
+	}
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_ROLE_PERMISSIONS", "Update role_permissions", c.ClientIP(), c.Request.UserAgent())
+	response.OK(c, http.StatusOK, "Permissions disimpan", perms)
 }

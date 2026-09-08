@@ -4,8 +4,11 @@ import (
 	"net/http"
 	"strings"
 
+	"lab-ap/config"
+	"lab-ap/internal/repository"
 	"lab-ap/pkg/jwt"
 	"lab-ap/pkg/response"
+	supajwt "lab-ap/pkg/supabasejwt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,8 +19,13 @@ const (
 	CtxRole   = "role"
 )
 
-// Auth memverifikasi JWT dan menyetel identitas user di context.
-func Auth(jm *jwt.Manager) gin.HandlerFunc {
+// Auth memverifikasi JWT dual-mode: legacy HS256 lokal dan/atau Supabase RS256/ES256.
+// Role untuk Supabase SELALU resolve dari DB via supabase_user_id (tidak dari claim).
+func Auth(cfg *config.Config, jm *jwt.Manager, userRepo repository.UserRepository) gin.HandlerFunc {
+	mode := strings.ToLower(strings.TrimSpace(cfg.AuthMode))
+	if mode == "" {
+		mode = "legacy"
+	}
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
 		if header == "" || !strings.HasPrefix(header, "Bearer ") {
@@ -25,21 +33,65 @@ func Auth(jm *jwt.Manager) gin.HandlerFunc {
 			return
 		}
 		tokenStr := strings.TrimPrefix(header, "Bearer ")
-		claims, err := jm.Verify(tokenStr)
-		if err != nil {
-			response.Fail(c, http.StatusUnauthorized, "Token tidak valid / kedaluwarsa", err.Error())
+		if mode == "legacy" {
+			if legacyAuth(c, jm, tokenStr) {
+				c.Next()
+				return
+			}
+			response.Fail(c, http.StatusUnauthorized, "Token tidak valid / kedaluwarsa", nil)
 			return
 		}
-
-		c.Set(CtxUserID, claims.UserID)
-		c.Set(CtxNIM, claims.NIM)
-		c.Set(CtxRole, claims.Role)
-
-		c.Next()
+		if mode == "supabase" {
+			if supabaseAuth(c, cfg, userRepo, tokenStr) {
+				c.Next()
+				return
+			}
+			response.Fail(c, http.StatusUnauthorized, "Token tidak valid / kedaluwarsa", nil)
+			return
+		}
+		// dual: coba Supabase dulu lalu legacy
+		if supabaseAuth(c, cfg, userRepo, tokenStr) {
+			c.Next()
+			return
+		}
+		if legacyAuth(c, jm, tokenStr) {
+			c.Next()
+			return
+		}
+		response.Fail(c, http.StatusUnauthorized, "Token tidak valid / kedaluwarsa", nil)
 	}
 }
 
-// UserID helper mengambil user id dari context.
+func legacyAuth(c *gin.Context, jm *jwt.Manager, tokenStr string) bool {
+	claims, err := jm.Verify(tokenStr)
+	if err != nil {
+		return false
+	}
+	c.Set(CtxUserID, claims.UserID)
+	c.Set(CtxNIM, claims.NIM)
+	c.Set(CtxRole, claims.Role)
+	return true
+}
+
+func supabaseAuth(c *gin.Context, cfg *config.Config, userRepo repository.UserRepository, tokenStr string) bool {
+	claims, err := supajwt.VerifySupabaseToken(tokenStr, cfg.SupabaseJWKSURL, cfg.SupabaseJWTIssuer, cfg.SupabaseJWTAud)
+	if err != nil {
+		return false
+	}
+	if userRepo == nil {
+		return false
+	}
+	u, err := userRepo.FindBySupabaseUserID(claims.Subject)
+	if err != nil || u == nil {
+		return false
+	}
+	c.Set(CtxUserID, u.ID)
+	c.Set(CtxNIM, u.NIM)
+	c.Set(CtxRole, string(u.Role))
+	return true
+}
+
+// UserID helper
 func UserID(c *gin.Context) int {
 	if v, ok := c.Get(CtxUserID); ok {
 		if id, ok := v.(int); ok {
@@ -49,7 +101,6 @@ func UserID(c *gin.Context) int {
 	return 0
 }
 
-// Role helper.
 func Role(c *gin.Context) string {
 	if v, ok := c.Get(CtxRole); ok {
 		if r, ok := v.(string); ok {

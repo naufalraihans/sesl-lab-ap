@@ -2,13 +2,15 @@ package entity
 
 import "time"
 
-// User: role admin = asisten lab, role user = mahasiswa.
+// User: role admin = asisten lab, role superadmin = koordinator (ninja, hidden), role user = mahasiswa.
 type User struct {
-	ID           int        `gorm:"primaryKey;autoIncrement" json:"id"`
-	Role         RoleType   `gorm:"type:varchar(10);not null;index" json:"role"`
-	NIM          string     `gorm:"type:varchar(32);uniqueIndex;not null" json:"nim"`
-	Nama         string     `gorm:"type:varchar(150);not null" json:"nama"`
-	PasswordHash *string    `gorm:"type:varchar(255)" json:"-"`
+	ID              int        `gorm:"primaryKey;autoIncrement" json:"id"`
+	Role            RoleType   `gorm:"type:varchar(10);not null;index" json:"role"`
+	NIM             string     `gorm:"type:varchar(32);uniqueIndex;not null" json:"nim"`
+	Nama            string     `gorm:"type:varchar(150);not null" json:"nama"`
+	Email           *string    `gorm:"type:varchar(150);uniqueIndex" json:"email,omitempty"`
+	SupabaseUserID  *string    `gorm:"type:uuid;uniqueIndex" json:"-"`
+	PasswordHash    *string    `gorm:"type:varchar(255)" json:"-"`
 	// Hash+salt password lama dari Firebase Auth (scrypt). Diisi saat migrasi,
 	// dikosongkan setelah login pertama (di-rehash ke bcrypt di PasswordHash).
 	FbPasswordHash *string  `gorm:"type:varchar(255)" json:"-"`

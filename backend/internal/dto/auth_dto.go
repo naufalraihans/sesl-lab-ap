@@ -15,15 +15,27 @@ type CekNIMResponse struct {
 	Pesan          string `json:"pesan"`
 }
 
-// LoginRequest: login normal (NIM + password).
+// LoginRequest: login via NIM atau Email + password.
 type LoginRequest struct {
-	NIM      string `json:"nim" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Identifier string `json:"identifier" binding:"required"`
+	Password   string `json:"password" binding:"required"`
 }
 
-// RegisterRequest: first-time register (set password).
+// RegisterRequest: first-time register (set password) — roster-gated.
 type RegisterRequest struct {
 	NIM      string `json:"nim" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+// ForgotPasswordRequest / ResetPasswordRequest: OTP via Supabase (email only).
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type ResetPasswordViaOTPRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Token    string `json:"token" binding:"required"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 

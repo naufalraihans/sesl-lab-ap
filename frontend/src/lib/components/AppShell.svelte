@@ -40,7 +40,7 @@
 		{ href: '/praktikum/admin/pengaturan', label: 'Pengaturan Lobby', icon: Settings }
 	];
 
-	let links = $derived($user?.role === 'admin' ? adminLinks : userLinks);
+	let links = $derived($user?.role === 'admin' || $user?.role === 'superadmin' ? adminLinks : userLinks);
 	let open = $state(false);
 
 	// Saat user di halaman pengerjaan soal, sembunyikan sidebar agar fokus.

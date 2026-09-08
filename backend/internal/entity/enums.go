@@ -5,9 +5,19 @@ package entity
 type RoleType string
 
 const (
-	RoleUser  RoleType = "user"
-	RoleAdmin RoleType = "admin"
+	RoleUser       RoleType = "user"
+	RoleAdmin      RoleType = "admin"
+	RoleSuperAdmin RoleType = "superadmin"
 )
+
+// AllowedEmailDomains: domain populer yang diizinkan untuk register.
+// itpln.ac.id bersifat template: hanya diizinkan bila config EmailAllowItpln = true.
+var AllowedEmailDomains = map[string]bool{
+	"gmail.com":    true,
+	"yahoo.com":    true,
+	"outlook.com":  true,
+	"hotmail.com":  true,
+}
 
 type JenisCourse string
 

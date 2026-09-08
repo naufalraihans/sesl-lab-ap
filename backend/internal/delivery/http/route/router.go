@@ -8,6 +8,7 @@ import (
 	"lab-ap/internal/delivery/http/handler"
 	"lab-ap/internal/delivery/http/middleware"
 	"lab-ap/internal/entity"
+	"lab-ap/internal/repository"
 	"lab-ap/pkg/jwt"
 
 	"github.com/gin-contrib/cors"
@@ -55,11 +56,12 @@ func HealthCheck(c *gin.Context) {
 }
 
 // Setup membangun engine Gin + seluruh route & middleware.
-func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
+func Setup(cfg *config.Config, jm *jwt.Manager, userRepo repository.UserRepository, konfRepo repository.KonfigurasiRepository, h Handlers) *gin.Engine {
 	if cfg.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
+	r.SetTrustedProxies(nil)
 	r.MaxMultipartMemory = 10 << 20 // 10 MiB: batasi buffer multipart di memori
 	r.Use(gin.Logger(), gin.Recovery())
 
@@ -88,6 +90,8 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 		auth.POST("/cek-nim", h.Auth.CekNIM)
 		auth.POST("/login", h.Auth.Login)
 		auth.POST("/register", h.Auth.Register)
+		auth.POST("/forgot-password", h.Auth.ForgotPassword)
+		auth.POST("/reset-password", h.Auth.ResetPassword)
 	}
 
 	// ---- Info (publik) ----
@@ -102,7 +106,7 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 		info.GET("/announcements", h.Konfigurasi.PublicAnnouncements)
 	}
 
-	authmw := middleware.Auth(jm)
+	authmw := middleware.Auth(cfg, jm, userRepo)
 
 	// ---- Terautentikasi (semua role) ----
 	authed := api.Group("")
@@ -128,9 +132,9 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 		prak.POST("/compile-c", h.Compile.CompileC)
 	}
 
-	// ---- Admin (role admin) ----
+	// ---- Admin (role admin + superadmin) ----
 	admin := api.Group("/admin")
-	admin.Use(authmw, middleware.RequireRole(string(entity.RoleAdmin)))
+	admin.Use(authmw, middleware.RequireRole(string(entity.RoleAdmin), string(entity.RoleSuperAdmin)))
 	{
 		admin.GET("/dashboard", h.Dashboard.Statistik)
 
@@ -225,6 +229,14 @@ func Setup(cfg *config.Config, jm *jwt.Manager, h Handlers) *gin.Engine {
 
 		// Audit Log
 		admin.GET("/audit-logs", h.AuditLog.GetLogs)
+	}
+
+	// ---- Superadmin (role superadmin only, hidden ninja) ----
+	superadmin := api.Group("/superadmin")
+	superadmin.Use(authmw, middleware.RequireRole(string(entity.RoleSuperAdmin)))
+	{
+		superadmin.GET("/permissions", h.Konfigurasi.GetRolePermissions)
+		superadmin.PUT("/permissions", h.Konfigurasi.SetRolePermissions)
 	}
 
 	return r

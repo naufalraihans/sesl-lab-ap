@@ -60,7 +60,7 @@ func Build(cfg *config.Config) (*gin.Engine, *Deps, error) {
 	auditLogRepo := repository.NewAuditLogRepository(db)
 
 	// ---- Usecase ----
-	authUC := usecase.NewAuthUsecase(userRepo, kelasRepo, jm, hash.FbScryptConfig{
+	authUC := usecase.NewAuthUsecase(userRepo, kelasRepo, jm, cfg, hash.FbScryptConfig{
 		SignerKey:     cfg.FbScryptSignerKey,
 		SaltSeparator: cfg.FbScryptSaltSeparator,
 		Rounds:        cfg.FbScryptRounds,
@@ -111,6 +111,6 @@ func Build(cfg *config.Config) (*gin.Engine, *Deps, error) {
 		AuditLog:     handler.NewAuditLogHandler(auditLogUC),
 	}
 
-	r := route.Setup(cfg, jm, h)
+	r := route.Setup(cfg, jm, userRepo, konfRepo, h)
 	return r, &Deps{JawabanUC: jawabanUC}, nil
 }

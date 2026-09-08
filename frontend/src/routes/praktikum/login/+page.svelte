@@ -7,6 +7,7 @@
 
 	let step = $state<'nim' | 'login' | 'register' | 'blocked'>('nim');
 	let nim = $state('');
+	let email = $state('');
 	let password = $state('');
 	let passwordConfirm = $state('');
 	let nama = $state('');
@@ -17,6 +18,22 @@
 	async function cekNim() {
 		err = '';
 		loading = true;
+		const identifier = nim.trim();
+		// Email login: skip cekNIM, langsung ke step login pakai email
+		if (identifier.includes('@')) {
+			const v = identifier.toLowerCase();
+			const [local, domain] = v.split('@');
+			if (!local || !domain) { err = 'Email tidak valid.'; loading = false; return; }
+			if (local.includes('+')) { err = "Karakter '+' tidak diizinkan pada email."; loading = false; return; }
+			if (domain === 'gmail.com' && local.includes('.')) { err = "Karakter '.' tidak diizinkan pada email Gmail."; loading = false; return; }
+			const allowed = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'itpln.ac.id'];
+			if (!allowed.includes(domain)) { err = 'Domain email tidak diizinkan.'; loading = false; return; }
+			nama = identifier;
+			pesan = 'Login dengan Email';
+			step = 'login';
+			loading = false;
+			return;
+		}
 		try {
 			const res = await api.post<CekNIMResponse>('/api/auth/cek-nim', { nim });
 			nama = res.nama ?? '';
@@ -38,14 +55,27 @@
 	}
 
 	function redirectByRole(role: string) {
-		goto(role === 'admin' ? '/praktikum/admin' : '/praktikum/dashboard');
+		goto(role === 'admin' || role === 'superadmin' ? '/praktikum/admin' : '/praktikum/dashboard');
+	}
+
+	function validateEmail(): string | null {
+		const e = email.trim().toLowerCase();
+		if (!e.includes('@')) return 'Email tidak valid.';
+		const [local, domain] = e.split('@');
+		if (!local || !domain) return 'Email tidak valid.';
+		if (local.includes('+')) return "Karakter '+' tidak diizinkan pada email.";
+		if (domain === 'gmail.com' && local.includes('.')) return "Karakter '.' tidak diizinkan pada email Gmail.";
+		const allowed = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'itpln.ac.id'];
+		if (!allowed.includes(domain)) return 'Domain email tidak diizinkan.';
+		return null;
 	}
 
 	async function doLogin() {
 		err = '';
 		loading = true;
 		try {
-			const res = await api.post<AuthResponse>('/api/auth/login', { nim, password });
+			const loginIdent = nim.trim();
+			const res = await api.post<AuthResponse>('/api/auth/login', { identifier: loginIdent, password });
 			setAuth(res.token, res.user);
 			redirectByRole(res.user.role);
 		} catch (e) {
@@ -61,9 +91,11 @@
 			err = 'Konfirmasi password tidak cocok.';
 			return;
 		}
+		const v = validateEmail();
+		if (v) { err = v; return; }
 		loading = true;
 		try {
-			const res = await api.post<AuthResponse>('/api/auth/register', { nim, password });
+			const res = await api.post<AuthResponse>('/api/auth/register', { nim, email: email.trim().toLowerCase(), password });
 			setAuth(res.token, res.user);
 			redirectByRole(res.user.role);
 		} catch (e) {
@@ -77,6 +109,7 @@
 		step = 'nim';
 		password = '';
 		passwordConfirm = '';
+		email = '';
 		err = '';
 	}
 </script>
@@ -112,13 +145,14 @@
 		{#if step === 'nim'}
 			<form onsubmit={(e) => { e.preventDefault(); cekNim(); }} class="space-y-5 text-left">
 				<div>
-					<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="nim">Nomor Induk Mahasiswa (NIM)</label>
+					<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="nim">Nomor Induk Mahasiswa / Email</label>
 					<div class="relative">
 						<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
 							<User size={15} />
 						</div>
-						<input id="nim" class="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={nim} placeholder="Masukkan NIM Anda (contoh: 202431001)" required />
+						<input id="nim" class="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={nim} placeholder="Masukkan NIM atau Email" required />
 					</div>
+					<p class="mt-1.5 text-[10px] text-slate-400">Email login: gmail.com, yahoo.com, outlook.com, hotmail.com, itpln.ac.id</p>
 				</div>
 				<button class="w-full h-12 bg-[#8A1538] hover:bg-[#730d2d] text-white rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-[#8A1538]/10 transition-all active:scale-[0.99]" disabled={loading}>
 					{loading ? 'Memeriksa…' : 'Lanjutkan'} 
@@ -152,6 +186,11 @@
 			<form onsubmit={(e) => { e.preventDefault(); doRegister(); }} class="space-y-4 animate-fade-in text-left">
 				<div class="rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-xs font-medium text-blue-800 leading-relaxed">
 					{pesan}
+				</div>
+				<div>
+					<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="email">Email</label>
+					<input id="email" type="email" class="w-full h-12 px-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white" bind:value={email} placeholder="nama@gmail.com" required />
+					<p class="mt-1 text-[10px] text-slate-400">Hanya gmail.com, yahoo.com, outlook.com, hotmail.com, itpln.ac.id — tanpa '+' atau '.' di Gmail.</p>
 				</div>
 				<div>
 					<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="pw1">Buat Password Baru</label>

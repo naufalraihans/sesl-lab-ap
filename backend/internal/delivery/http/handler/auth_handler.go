@@ -63,11 +63,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	res, err := h.auth.Login(req)
 	if err != nil {
-		_ = h.auditLog.LogAction(0, req.NIM, "LOGIN_FAILED", "Gagal login: "+err.Error(), c.ClientIP(), c.Request.UserAgent())
+		_ = h.auditLog.LogAction(0, req.Identifier, "LOGIN_FAILED", "Gagal login: "+err.Error(), c.ClientIP(), c.Request.UserAgent())
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(0, req.NIM, "LOGIN", "Login berhasil", c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(0, req.Identifier, "LOGIN", "Login berhasil", c.ClientIP(), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Login berhasil", res)
 }
 
@@ -103,6 +103,31 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	_ = h.auditLog.LogAction(userID, "", "LOGOUT", "Logout berhasil", c.ClientIP(), c.Request.UserAgent())
 	h.auth.Logout(userID)
 	response.OK(c, http.StatusOK, "Logout berhasil", nil)
+}
+
+// ForgotPassword POST /api/auth/forgot-password (selalu 200 generik)
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req dto.ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "Email tidak valid", err.Error())
+		return
+	}
+	_ = h.auth.ForgotPassword(req.Email)
+	response.OK(c, http.StatusOK, "Jika email terdaftar, kode OTP telah dikirim. Cek inbox Anda.", nil)
+}
+
+// ResetPassword POST /api/auth/reset-password
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req dto.ResetPasswordViaOTPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "Input tidak valid", err.Error())
+		return
+	}
+	if err := h.auth.ResetPassword(req); err != nil {
+		mapError(c, err)
+		return
+	}
+	response.OK(c, http.StatusOK, "Password berhasil direset. Silakan login.", nil)
 }
 
 // Me GET /api/auth/me

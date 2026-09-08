@@ -27,6 +27,13 @@ type Config struct {
 	JWTSecret      string
 	JWTExpireHours int
 
+	// AuthMode: legacy (HS256 lokal saja), dual (Supabase RS256 atau HS256), supabase (hanya RS256)
+	AuthMode          string
+	SupabaseJWKSURL   string
+	SupabaseJWTIssuer string
+	SupabaseJWTAud    string
+	EmailAllowItpln   bool
+
 	// CronSecret: rahasia header pemicu endpoint cron (auto-submit) dari cron-job.org.
 	CronSecret string
 
@@ -75,6 +82,11 @@ func Load() *Config {
 		DBParams:           getEnv("DB_PARAMS", "sslmode=disable TimeZone=Asia/Jakarta"),
 		JWTSecret:          getEnv("JWT_SECRET", "dev-secret-change-me"),
 		JWTExpireHours:     getEnvInt("JWT_EXPIRE_HOURS", 12),
+		AuthMode:          getEnv("AUTH_MODE", "legacy"),
+		SupabaseJWKSURL:   getEnv("SUPABASE_JWKS_URL", ""),
+		SupabaseJWTIssuer: getEnv("SUPABASE_JWT_ISSUER", ""),
+		SupabaseJWTAud:    getEnv("SUPABASE_JWT_AUD", "authenticated"),
+		EmailAllowItpln:   getEnv("ALLOW_ITPLN_DOMAIN", "false") == "true",
 		CronSecret:         getEnv("CRON_SECRET", ""),
 		OnlineTTL:          time.Duration(getEnvInt("ONLINE_TTL_SECONDS", 120)) * time.Second,
 		SweeperInterval:    time.Duration(getEnvInt("SWEEPER_INTERVAL_SECONDS", 30)) * time.Second,

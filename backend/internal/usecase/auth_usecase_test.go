@@ -3,6 +3,7 @@ package usecase_test
 import (
 	"testing"
 
+	"lab-ap/config"
 	"lab-ap/internal/dto"
 	"lab-ap/internal/entity"
 	"lab-ap/internal/repository/mocks"
@@ -19,7 +20,7 @@ func setupAuthUsecase(t *testing.T) (*usecase.AuthUsecase, *mocks.UserRepository
 	mockKelasRepo := mocks.NewKelasRepository(t)
 	jwtManager := jwt.NewManager("secret", 24)
 
-	uc := usecase.NewAuthUsecase(mockUserRepo, mockKelasRepo, jwtManager, hash.FbScryptConfig{})
+	uc := usecase.NewAuthUsecase(mockUserRepo, mockKelasRepo, jwtManager, &config.Config{}, hash.FbScryptConfig{})
 	return uc, mockUserRepo, mockKelasRepo
 }
 
@@ -41,7 +42,7 @@ func TestAuthUsecase_Login_Success(t *testing.T) {
 	mockUserRepo.On("Update", mock.AnythingOfType("*entity.User")).Return(nil)
 
 	req := dto.LoginRequest{
-		NIM:      "123456",
+		Identifier: "123456",
 		Password: "password123",
 	}
 
@@ -70,7 +71,7 @@ func TestAuthUsecase_Login_WrongPassword(t *testing.T) {
 	mockUserRepo.On("FindByNIM", "123456").Return(mockUser, nil)
 
 	req := dto.LoginRequest{
-		NIM:      "123456",
+		Identifier: "123456",
 		Password: "wrongpassword",
 	}
 

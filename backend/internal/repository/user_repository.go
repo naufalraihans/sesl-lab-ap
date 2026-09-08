@@ -1,11 +1,15 @@
 package repository
 
 import (
+	"errors"
 	"lab-ap/internal/entity"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+// ErrRosterClaimed: baris sudah diklaim (supabase_user_id non-null)
+var ErrRosterClaimed = errors.New("roster sudah diklaim")
 
 type UserRepository interface {
 	Create(u *entity.User) error
@@ -13,6 +17,10 @@ type UserRepository interface {
 	Delete(id int) error
 	FindByID(id int) (*entity.User, error)
 	FindByNIM(nim string) (*entity.User, error)
+	FindByEmail(email string) (*entity.User, error)
+	FindBySupabaseUserID(uid string) (*entity.User, error)
+	ClaimRoster(userID int, supabaseUID string, email *string) error
+	UpdatePasswordByEmail(email, hash string) (int64, error)
 	List(role string, kelasID *int, shift *int) ([]entity.User, error)
 	BulkUpsert(users []entity.User) error
 	ListAsisten() ([]entity.User, error)
@@ -60,6 +68,39 @@ func (r *userRepository) FindByNIM(nim string) (*entity.User, error) {
 		return nil, err
 	}
 	return &u, nil
+}
+
+func (r *userRepository) FindByEmail(email string) (*entity.User, error) {
+	var u entity.User
+	if err := r.db.Where("LOWER(email) = LOWER(?)", email).First(&u).Error; err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (r *userRepository) FindBySupabaseUserID(uid string) (*entity.User, error) {
+	var u entity.User
+	if err := r.db.Where("supabase_user_id = ?", uid).First(&u).Error; err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (r *userRepository) ClaimRoster(userID int, supabaseUID string, email *string) error {
+	res := r.db.Model(&entity.User{}).Where("id = ? AND supabase_user_id IS NULL", userID).
+		Updates(map[string]interface{}{"supabase_user_id": supabaseUID, "email": email, "is_registered": true})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrRosterClaimed
+	}
+	return nil
+}
+
+func (r *userRepository) UpdatePasswordByEmail(email, hash string) (int64, error) {
+	res := r.db.Model(&entity.User{}).Where("LOWER(email) = LOWER(?)", email).Update("password_hash", hash)
+	return res.RowsAffected, res.Error
 }
 
 func (r *userRepository) List(role string, kelasID *int, shift *int) ([]entity.User, error) {
