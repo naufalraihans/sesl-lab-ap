@@ -1,6 +1,3 @@
 {
-  "regions": ["sin1"],
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index?__path=$1" }
-  ]
+  "regions": ["sin1"]
 }
