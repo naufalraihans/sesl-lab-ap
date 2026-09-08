@@ -1,4 +1,4 @@
-// Package handler adalah entrypoint serverless untuk Vercel.
+// Package handler adalah entrypoint serverless untuk Vercel — bust cache 2026-09-08-2.
 // Berbeda dari cmd/server/main.go (server persisten dengan sweeper goroutine),
 // file ini hanya membungkus engine Gin jadi satu fungsi serverless yang
 // dipanggil Vercel tiap request. TIDAK menjalankan goroutine latar belakang —
