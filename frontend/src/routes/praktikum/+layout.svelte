@@ -9,10 +9,14 @@
 
 	let { children } = $props();
 
-	// Login & register = halaman publik, lewati guard token.
-	let isAuthPage = $derived(
-		$page.url.pathname === '/praktikum/login' || $page.url.pathname === '/praktikum/register'
-	);
+	// Halaman publik (tanpa token): login, register, lupa/reset password.
+	const PUBLIC_PATHS = [
+		'/praktikum/login',
+		'/praktikum/register',
+		'/praktikum/lupa-password',
+		'/praktikum/reset-password'
+	];
+	let isAuthPage = $derived(PUBLIC_PATHS.includes($page.url.pathname));
 	let ready = $state(false);
 
 	onMount(() => {

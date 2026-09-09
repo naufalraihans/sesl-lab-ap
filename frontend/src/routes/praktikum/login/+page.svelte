@@ -3,10 +3,11 @@
 	import { api } from '$lib/api';
 	import { setAuth } from '$lib/stores/auth';
 	import type { AuthResponse } from '$lib/types';
-	import { User, Lock, AlertCircle, ArrowRight, ArrowLeft } from 'lucide-svelte';
+	import { User, Lock, AlertCircle, ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-svelte';
 
 	let identifier = $state('');
 	let password = $state('');
+	let showPassword = $state(false);
 	let err = $state('');
 	let loading = $state(false);
 
@@ -69,18 +70,23 @@
 						<User size={15} />
 					</div>
 					<input id="identifier" class="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={identifier} placeholder="Masukkan NIM atau Email" required />
-				</div>
-				<p class="mt-1.5 text-[10px] text-slate-400">Login NIM atau email: gmail.com, yahoo.com, outlook.com, hotmail.com, itpln.ac.id</p>
-			</div>
-			<div>
-				<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="pw">Password</label>
-				<div class="relative">
-					<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
-						<Lock size={15} />
 					</div>
-					<input id="pw" type="password" class="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={password} placeholder="Masukkan password Anda" required />
-				</div>
-			</div>
+					</div>
+					<div>
+					<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="pw">Password</label>
+					<div class="relative">
+						<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+							<Lock size={15} />
+						</div>
+						<input id="pw" type={showPassword ? 'text' : 'password'} class="w-full h-12 pl-10 pr-11 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={password} placeholder="Masukkan password Anda" required />
+						<button type="button" onclick={() => (showPassword = !showPassword)} class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 hover:text-slate-600 transition-colors" aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}>
+							{#if showPassword}<EyeOff size={15} />{:else}<Eye size={15} />{/if}
+						</button>
+					</div>
+					<div class="mt-2 text-right">
+						<a href="/praktikum/lupa-password" class="text-[11px] font-bold text-[#8A1538] hover:text-[#610a24] transition-colors">Lupa password?</a>
+					</div>
+					</div>
 			<button class="w-full h-12 bg-[#8A1538] hover:bg-[#730d2d] text-white rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-[#8A1538]/10 transition-all active:scale-[0.99]" disabled={loading}>
 				{loading ? 'Autentikasi…' : 'Masuk ke Portal'}
 				{#if !loading}<ArrowRight size={14} />{/if}
