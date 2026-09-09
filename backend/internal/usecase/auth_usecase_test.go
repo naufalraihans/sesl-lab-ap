@@ -2,6 +2,8 @@ package usecase_test
 
 import (
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"lab-ap/config"
@@ -315,6 +317,42 @@ func TestForgotPassword_TanpaSupabase_NoOp(t *testing.T) {
 	err := uc.ForgotPassword("budi@gmail.com")
 
 	assert.NoError(t, err)
+	mockUserRepo.AssertExpectations(t)
+}
+
+// Regresi: jalur register via Supabase WAJIB menyimpan password_hash lokal lewat
+// ClaimRoster. Kalau hash tidak diteruskan, mahasiswa terdaftar tapi password_hash
+// NULL -> login berikutnya (bcrypt lokal) ditolak permanen. Test mengunci fix itu:
+// ClaimRoster harus menerima hash bcrypt yang valid untuk password user.
+func TestRegister_Supabase_MenyimpanPasswordHashLokal(t *testing.T) {
+	mockUserRepo := mocks.NewUserRepository(t)
+	mockKelasRepo := mocks.NewKelasRepository(t)
+	jwtManager := jwt.NewManager("secret", 24)
+
+	// Supabase Admin API palsu: CreateAuthUser -> balas uid; endpoint lain -> 200.
+	supa := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"id":"supa-uid-xyz"}`))
+	}))
+	defer supa.Close()
+
+	cfg := &config.Config{SupabaseURL: supa.URL, SupabaseServiceKey: "svc-key"}
+	uc := usecase.NewAuthUsecase(mockUserRepo, mockKelasRepo, jwtManager, cfg, hash.FbScryptConfig{})
+
+	mockUserRepo.On("FindByNIM", "123456").Return(rosterUser(), nil)
+	mockUserRepo.On("FindByEmail", "budi@gmail.com").Return(nil, gorm.ErrRecordNotFound)
+	// Inti assertion: passwordHash yang diteruskan HARUS hash bcrypt valid utk "password123".
+	mockUserRepo.On("ClaimRoster", 1, "supa-uid-xyz", mock.AnythingOfType("*string"),
+		mock.MatchedBy(func(ph string) bool { return ph != "" && hash.Verify(ph, "password123") }),
+	).Return(nil)
+	mockUserRepo.On("FindByID", 1).Return(registeredUser(entity.RoleUser), nil)
+	mockUserRepo.On("Update", mock.AnythingOfType("*entity.User")).Return(nil)
+
+	resp, err := uc.Register(dto.RegisterRequest{NIM: "123456", Email: "budi@gmail.com", Password: "password123"})
+
+	assert.NoError(t, err)
+	assert.NotEmpty(t, resp.Token)
 	mockUserRepo.AssertExpectations(t)
 }
 

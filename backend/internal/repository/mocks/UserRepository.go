@@ -33,17 +33,17 @@ func (_m *UserRepository) BulkUpsert(users []entity.User) error {
 	return r0
 }
 
-// ClaimRoster provides a mock function with given fields: userID, supabaseUID, email
-func (_m *UserRepository) ClaimRoster(userID int, supabaseUID string, email *string) error {
-	ret := _m.Called(userID, supabaseUID, email)
+// ClaimRoster provides a mock function with given fields: userID, supabaseUID, email, passwordHash
+func (_m *UserRepository) ClaimRoster(userID int, supabaseUID string, email *string, passwordHash string) error {
+	ret := _m.Called(userID, supabaseUID, email, passwordHash)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ClaimRoster")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, string, *string) error); ok {
-		r0 = rf(userID, supabaseUID, email)
+	if rf, ok := ret.Get(0).(func(int, string, *string, string) error); ok {
+		r0 = rf(userID, supabaseUID, email, passwordHash)
 	} else {
 		r0 = ret.Error(0)
 	}

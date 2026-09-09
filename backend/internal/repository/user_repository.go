@@ -19,7 +19,7 @@ type UserRepository interface {
 	FindByNIM(nim string) (*entity.User, error)
 	FindByEmail(email string) (*entity.User, error)
 	FindBySupabaseUserID(uid string) (*entity.User, error)
-	ClaimRoster(userID int, supabaseUID string, email *string) error
+	ClaimRoster(userID int, supabaseUID string, email *string, passwordHash string) error
 	UpdatePasswordByEmail(email, hash string) (int64, error)
 	List(role string, kelasID *int, shift *int) ([]entity.User, error)
 	BulkUpsert(users []entity.User) error
@@ -86,9 +86,9 @@ func (r *userRepository) FindBySupabaseUserID(uid string) (*entity.User, error) 
 	return &u, nil
 }
 
-func (r *userRepository) ClaimRoster(userID int, supabaseUID string, email *string) error {
+func (r *userRepository) ClaimRoster(userID int, supabaseUID string, email *string, passwordHash string) error {
 	res := r.db.Model(&entity.User{}).Where("id = ? AND supabase_user_id IS NULL", userID).
-		Updates(map[string]interface{}{"supabase_user_id": supabaseUID, "email": email, "is_registered": true})
+		Updates(map[string]interface{}{"supabase_user_id": supabaseUID, "email": email, "is_registered": true, "password_hash": passwordHash})
 	if res.Error != nil {
 		return res.Error
 	}

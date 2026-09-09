@@ -154,7 +154,7 @@ func (uc *AuthUsecase) Register(req dto.RegisterRequest) (*dto.AuthResponse, err
 
 	// Klaim roster
 	if supaUID != "" {
-		if err := uc.users.ClaimRoster(u.ID, supaUID, &emailNorm); err != nil {
+		if err := uc.users.ClaimRoster(u.ID, supaUID, &emailNorm, hashed); err != nil {
 			if errors.Is(err, repository.ErrRosterClaimed) {
 				if supaUID != "" {
 					_ = supabase.NewAdmin(uc.cfg.SupabaseURL, uc.cfg.SupabaseServiceKey).DeleteAuthUser(supaUID)
