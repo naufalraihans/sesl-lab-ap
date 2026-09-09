@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"lab-ap/internal/delivery/http/middleware"
 	"lab-ap/internal/usecase"
 	"lab-ap/pkg/response"
 
@@ -50,7 +51,7 @@ func (h *AuditLogHandler) GetLogs(c *gin.Context) {
 		}
 	}
 
-	logs, total, err := h.uc.GetLogs(search, role, action, page, limit)
+	logs, total, err := h.uc.GetLogs(search, role, action, page, limit, middleware.Role(c))
 	if err != nil {
 		mapError(c, err)
 		return

@@ -50,12 +50,19 @@ func (uc *AuditLogUsecase) LogAction(userID int, customNIM string, action string
 	return uc.repo.Create(log)
 }
 
-func (uc *AuditLogUsecase) GetLogs(search string, role string, action string, page int, limit int) ([]entity.AuditLog, int64, error) {
+// GetLogs mengambil log. viewerRole menentukan visibilitas: hanya superadmin yang
+// boleh melihat jejak akun superadmin (ninja, hidden).
+func (uc *AuditLogUsecase) GetLogs(search string, role string, action string, page int, limit int, viewerRole string) ([]entity.AuditLog, int64, error) {
 	if page <= 0 {
 		page = 1
 	}
 	if limit <= 0 {
 		limit = 20
 	}
-	return uc.repo.FindAll(search, role, action, page, limit)
+	hideSuperadmin := viewerRole != string(entity.RoleSuperAdmin)
+	// Non-superadmin yang memfilter role=superadmin harus dapat hasil kosong, bukan bocor.
+	if hideSuperadmin && role == string(entity.RoleSuperAdmin) {
+		return []entity.AuditLog{}, 0, nil
+	}
+	return uc.repo.FindAll(search, role, action, page, limit, hideSuperadmin)
 }

@@ -3,7 +3,11 @@
 	import { api } from '$lib/api';
 	import { UserPlus, Plus, X, Trash2, Edit, Search, ArrowUp } from 'lucide-svelte';
 	import { confirmAction } from '$lib/stores/confirm';
+	import { user } from '$lib/stores/auth';
 	import type { User, Kelas, AmpuanKelompok } from '$lib/types';
+
+	// Hapus akun asisten hanya untuk superadmin (backend juga menolak role lain).
+	let canDeleteAsisten = $derived($user?.role === 'superadmin');
 
 	let list = $state<User[]>([]);
 	let kelasList = $state<Kelas[]>([]);
@@ -111,6 +115,16 @@
 		try { await api.del(`/api/admin/ampuan/${id}`); await load(); }
 		catch (e) { err = (e as Error).message; }
 	}
+
+	async function delAsisten(a: User) {
+		if (!await confirmAction({
+			title: 'Hapus Akun Asisten?',
+			message: `Akun asisten ${a.nama} (${a.nim}) akan dihapus permanen, beserta seluruh data Ampuan Kelompok miliknya. Tindakan ini tidak bisa dibatalkan.`
+		})) return;
+		err = ''; msg = '';
+		try { await api.del(`/api/admin/users/${a.id}`); msg = `Akun asisten ${a.nama} dihapus.`; await load(); }
+		catch (e) { err = (e as Error).message; }
+	}
 </script>
 
 <div class="space-y-6 text-left">
@@ -162,9 +176,16 @@
 								{/if}
 							</td>
 							<td>
-								<button class="inline-flex items-center gap-1 bg-primary/10 hover:bg-primary hover:text-white text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95" onclick={() => edit(a)}>
-									<Edit size={12} /> Edit
-								</button>
+								<div class="flex flex-wrap items-center gap-1.5">
+									<button class="inline-flex items-center gap-1 bg-primary/10 hover:bg-primary hover:text-white text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95" onclick={() => edit(a)}>
+										<Edit size={12} /> Edit
+									</button>
+									{#if canDeleteAsisten}
+										<button class="inline-flex items-center gap-1 bg-red-50 hover:bg-red-650 hover:text-white text-red-650 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 border border-red-100" onclick={() => delAsisten(a)}>
+											<Trash2 size={12} /> Hapus Akun Asisten
+										</button>
+									{/if}
+								</div>
 							</td>
 						</tr>
 					{/each}

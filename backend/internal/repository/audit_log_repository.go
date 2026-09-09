@@ -8,7 +8,9 @@ import (
 
 type AuditLogRepository interface {
 	Create(log *entity.AuditLog) error
-	FindAll(search string, role string, action string, page int, limit int) ([]entity.AuditLog, int64, error)
+	// hideSuperadmin menyembunyikan baris milik role superadmin (akun ninja) dari
+	// penonton non-superadmin. Baris tetap tersimpan, hanya tidak ditampilkan.
+	FindAll(search string, role string, action string, page int, limit int, hideSuperadmin bool) ([]entity.AuditLog, int64, error)
 }
 
 type auditLogRepository struct {
@@ -23,11 +25,15 @@ func (r *auditLogRepository) Create(log *entity.AuditLog) error {
 	return r.db.Create(log).Error
 }
 
-func (r *auditLogRepository) FindAll(search string, role string, action string, page int, limit int) ([]entity.AuditLog, int64, error) {
+func (r *auditLogRepository) FindAll(search string, role string, action string, page int, limit int, hideSuperadmin bool) ([]entity.AuditLog, int64, error) {
 	var logs []entity.AuditLog
 	var total int64
 
 	query := r.db.Model(&entity.AuditLog{})
+
+	if hideSuperadmin {
+		query = query.Where("role <> ?", string(entity.RoleSuperAdmin))
+	}
 
 	if search != "" {
 		s := "%" + search + "%"

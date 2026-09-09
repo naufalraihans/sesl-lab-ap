@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"errors"
+
 	"lab-ap/internal/dto"
 	"lab-ap/internal/entity"
 	"lab-ap/internal/repository"
@@ -88,7 +90,26 @@ func (uc *UserUsecase) UpdateMahasiswa(id int, req dto.UserRequest) (*entity.Use
 	return u, nil
 }
 
-func (uc *UserUsecase) Delete(id int) error { return mapDeleteErr(uc.users.Delete(id)) }
+// Delete menghapus user. actorID/actorRole dipakai untuk guard:
+//   - akun staf (admin/superadmin) hanya boleh dihapus oleh superadmin
+//   - superadmin tidak bisa dihapus siapa pun (termasuk superadmin lain)
+//   - tidak bisa menghapus akun sendiri
+func (uc *UserUsecase) Delete(id, actorID int, actorRole string) error {
+	target, err := uc.users.FindByID(id)
+	if err != nil {
+		return ErrNotFound
+	}
+	if id == actorID {
+		return errors.Join(ErrForbidden, errors.New("tidak bisa menghapus akun sendiri"))
+	}
+	if target.Role == entity.RoleSuperAdmin {
+		return errors.Join(ErrForbidden, errors.New("akun superadmin tidak bisa dihapus"))
+	}
+	if target.Role == entity.RoleAdmin && actorRole != string(entity.RoleSuperAdmin) {
+		return errors.Join(ErrForbidden, errors.New("hanya superadmin yang boleh menghapus akun asisten"))
+	}
+	return mapDeleteErr(uc.users.Delete(id))
+}
 
 // ResetPassword mengosongkan password & menandai belum register (mahasiswa register ulang).
 func (uc *UserUsecase) ResetPassword(id int) error {

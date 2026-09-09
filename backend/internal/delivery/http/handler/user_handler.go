@@ -137,7 +137,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if err := h.uc.Delete(id); err != nil {
+	if err := h.uc.Delete(id, middleware.UserID(c), middleware.Role(c)); err != nil {
 		mapError(c, err)
 		return
 	}

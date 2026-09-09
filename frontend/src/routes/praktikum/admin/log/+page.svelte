@@ -199,6 +199,7 @@
 					class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white appearance-none cursor-pointer"
 				>
 					<option value="">Semua Peran (Roles)</option>
+					<option value="superadmin">Superadmin (superadmin)</option>
 					<option value="admin">Asisten / Admin (admin)</option>
 					<option value="user">Mahasiswa (user)</option>
 					<option value="guest">Tamu (guest)</option>
@@ -293,7 +294,11 @@
 							</td>
 							<!-- Role badge -->
 							<td class="px-6 py-3.5">
-								{#if log.role === 'admin'}
+								{#if log.role === 'superadmin'}
+								<span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase bg-violet-50 text-violet-700 border border-violet-200/50">
+									Superadmin
+								</span>
+							{:else if log.role === 'admin'}
 									<span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase bg-primary/10 text-[#8A1538] border border-rose-100/50">
 										Asisten
 									</span>

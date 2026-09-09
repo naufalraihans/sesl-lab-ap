@@ -31,9 +31,9 @@ func (_m *AuditLogRepository) Create(log *entity.AuditLog) error {
 	return r0
 }
 
-// FindAll provides a mock function with given fields: search, role, action, page, limit
-func (_m *AuditLogRepository) FindAll(search string, role string, action string, page int, limit int) ([]entity.AuditLog, int64, error) {
-	ret := _m.Called(search, role, action, page, limit)
+// FindAll provides a mock function with given fields: search, role, action, page, limit, hideSuperadmin
+func (_m *AuditLogRepository) FindAll(search string, role string, action string, page int, limit int, hideSuperadmin bool) ([]entity.AuditLog, int64, error) {
+	ret := _m.Called(search, role, action, page, limit, hideSuperadmin)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FindAll")
@@ -42,25 +42,25 @@ func (_m *AuditLogRepository) FindAll(search string, role string, action string,
 	var r0 []entity.AuditLog
 	var r1 int64
 	var r2 error
-	if rf, ok := ret.Get(0).(func(string, string, string, int, int) ([]entity.AuditLog, int64, error)); ok {
-		return rf(search, role, action, page, limit)
+	if rf, ok := ret.Get(0).(func(string, string, string, int, int, bool) ([]entity.AuditLog, int64, error)); ok {
+		return rf(search, role, action, page, limit, hideSuperadmin)
 	}
-	if rf, ok := ret.Get(0).(func(string, string, string, int, int) []entity.AuditLog); ok {
-		r0 = rf(search, role, action, page, limit)
+	if rf, ok := ret.Get(0).(func(string, string, string, int, int, bool) []entity.AuditLog); ok {
+		r0 = rf(search, role, action, page, limit, hideSuperadmin)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]entity.AuditLog)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string, string, int, int) int64); ok {
-		r1 = rf(search, role, action, page, limit)
+	if rf, ok := ret.Get(1).(func(string, string, string, int, int, bool) int64); ok {
+		r1 = rf(search, role, action, page, limit, hideSuperadmin)
 	} else {
 		r1 = ret.Get(1).(int64)
 	}
 
-	if rf, ok := ret.Get(2).(func(string, string, string, int, int) error); ok {
-		r2 = rf(search, role, action, page, limit)
+	if rf, ok := ret.Get(2).(func(string, string, string, int, int, bool) error); ok {
+		r2 = rf(search, role, action, page, limit, hideSuperadmin)
 	} else {
 		r2 = ret.Error(2)
 	}
