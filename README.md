@@ -198,11 +198,31 @@ Perintah lain (dari root repo):
 | `make tidy` | `go mod tidy` |
 | `make fe-build` | Build frontend |
 
-**Cek sebelum push** (sesuai CI `.github/workflows/ci.yml`):
+> ### ⚠️ KITA TIDAK PAKAI npm — PAKAI bun
+>
+> Package manager frontend proyek ini **bun**. Lockfile resmi: `frontend/bun.lock`.
+>
+> ```bash
+> cd frontend && bun install      # bukan npm install
+> cd frontend && bun run dev      # bukan npm run dev
+> ```
+>
+> Jangan jalankan `npm install`: dia bikin `package-lock.json` liar (±7 ribu baris) yang
+> menduplikasi resolusi dependensi dan bentrok dengan `bun.lock`. Kalau file itu muncul,
+> hapus lalu `bun install` ulang:
+>
+> ```bash
+> cd frontend && rm -f package-lock.json && rm -rf node_modules && bun install
+> ```
+>
+> `make fe-install` / `fe-dev` / `fe-build` / `fe-check` sudah memakai bun.
+
+**Cek sebelum push:**
 ```bash
 cd backend && go build ./... && go test ./...
-cd frontend && npm ci && npm run check && npm run build
+cd frontend && bun install && bun run check && bun run build
 ```
+> Catatan: `.github/workflows/ci.yml` **belum ada** di repo ini, jadi cek di atas dijalankan manual.
 
 ---
 
