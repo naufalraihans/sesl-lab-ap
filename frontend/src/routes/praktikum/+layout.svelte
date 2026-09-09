@@ -33,6 +33,3 @@
 	</AppShell>
 {/if}
 
-{#if !isLogin && ready && $user === null}
-	<!-- token ada tapi user store kosong: tetap render shell -->
-{/if}
