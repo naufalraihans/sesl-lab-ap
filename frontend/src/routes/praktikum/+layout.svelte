@@ -9,11 +9,14 @@
 
 	let { children } = $props();
 
-	let isLogin = $derived($page.url.pathname === '/praktikum/login');
+	// Login & register = halaman publik, lewati guard token.
+	let isAuthPage = $derived(
+		$page.url.pathname === '/praktikum/login' || $page.url.pathname === '/praktikum/register'
+	);
 	let ready = $state(false);
 
 	onMount(() => {
-		if (!isLogin && !hasToken()) {
+		if (!isAuthPage && !hasToken()) {
 			goto('/praktikum/login');
 			return;
 		}
@@ -22,7 +25,7 @@
 	});
 </script>
 
-{#if isLogin}
+{#if isAuthPage}
 	{@render children()}
 {:else if ready}
 	<AppShell>

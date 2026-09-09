@@ -2,78 +2,26 @@
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api';
 	import { setAuth } from '$lib/stores/auth';
-	import type { AuthResponse, CekNIMResponse } from '$lib/types';
-	import { ArrowLeft, User, Lock, ArrowRight, AlertCircle } from 'lucide-svelte';
+	import type { AuthResponse } from '$lib/types';
+	import { User, Lock, AlertCircle, ArrowRight, ArrowLeft } from 'lucide-svelte';
 
-	let step = $state<'nim' | 'login' | 'register' | 'blocked'>('nim');
-	let nim = $state('');
-	let email = $state('');
+	let identifier = $state('');
 	let password = $state('');
-	let passwordConfirm = $state('');
-	let nama = $state('');
-	let pesan = $state('');
 	let err = $state('');
 	let loading = $state(false);
 
-	async function cekNim() {
-		err = '';
-		loading = true;
-		const identifier = nim.trim();
-		// Email login: skip cekNIM, langsung ke step login pakai email
-		if (identifier.includes('@')) {
-			const v = identifier.toLowerCase();
-			const [local, domain] = v.split('@');
-			if (!local || !domain) { err = 'Email tidak valid.'; loading = false; return; }
-			if (local.includes('+')) { err = "Karakter '+' tidak diizinkan pada email."; loading = false; return; }
-			if (domain === 'gmail.com' && local.includes('.')) { err = "Karakter '.' tidak diizinkan pada email Gmail."; loading = false; return; }
-			const allowed = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'itpln.ac.id'];
-			if (!allowed.includes(domain)) { err = 'Domain email tidak diizinkan.'; loading = false; return; }
-			nama = identifier;
-			pesan = 'Login dengan Email';
-			step = 'login';
-			loading = false;
-			return;
-		}
-		try {
-			const res = await api.post<CekNIMResponse>('/api/auth/cek-nim', { nim });
-			nama = res.nama ?? '';
-			pesan = res.pesan;
-			if (!res.ditemukan) {
-				step = 'blocked';
-			} else if (res.is_registered) {
-				step = 'login';
-			} else {
-				step = 'register';
-			}
-		} catch (e) {
-			err = (e as Error).message;
-		} finally {
-			loading = false;
-		}
-	}
-
 	function redirectByRole(role: string) {
 		goto(role === 'admin' || role === 'superadmin' ? '/praktikum/admin' : '/praktikum/dashboard');
-	}
-
-	function validateEmail(): string | null {
-		const e = email.trim().toLowerCase();
-		if (!e.includes('@')) return 'Email tidak valid.';
-		const [local, domain] = e.split('@');
-		if (!local || !domain) return 'Email tidak valid.';
-		if (local.includes('+')) return "Karakter '+' tidak diizinkan pada email.";
-		if (domain === 'gmail.com' && local.includes('.')) return "Karakter '.' tidak diizinkan pada email Gmail.";
-		const allowed = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'itpln.ac.id'];
-		if (!allowed.includes(domain)) return 'Domain email tidak diizinkan.';
-		return null;
 	}
 
 	async function doLogin() {
 		err = '';
 		loading = true;
 		try {
-			const loginIdent = nim.trim();
-			const res = await api.post<AuthResponse>('/api/auth/login', { identifier: loginIdent, password });
+			const res = await api.post<AuthResponse>('/api/auth/login', {
+				identifier: identifier.trim(),
+				password
+			});
 			setAuth(res.token, res.user);
 			redirectByRole(res.user.role);
 		} catch (e) {
@@ -81,46 +29,18 @@
 		} finally {
 			loading = false;
 		}
-	}
-
-	async function doRegister() {
-		err = '';
-		if (password !== passwordConfirm) {
-			err = 'Konfirmasi password tidak cocok.';
-			return;
-		}
-		const v = validateEmail();
-		if (v) { err = v; return; }
-		loading = true;
-		try {
-			const res = await api.post<AuthResponse>('/api/auth/register', { nim, email: email.trim().toLowerCase(), password });
-			setAuth(res.token, res.user);
-			redirectByRole(res.user.role);
-		} catch (e) {
-			err = (e as Error).message;
-		} finally {
-			loading = false;
-		}
-	}
-
-	function reset() {
-		step = 'nim';
-		password = '';
-		passwordConfirm = '';
-		email = '';
-		err = '';
 	}
 </script>
 
 <div class="relative flex min-h-screen items-center justify-center p-4 overflow-hidden"
 	style="background: url('/bg_login.jpg') no-repeat center center; background-size: cover;">
-	
+
 	<!-- Cinematic overlay to make the background photo subtle and text readable -->
 	<div class="absolute inset-0 bg-slate-950/65 backdrop-blur-[2px] z-0"></div>
 
 	<!-- Login Card Container (Centered Light Mode Premium Card) -->
 	<div class="relative z-10 w-full max-w-md bg-white border border-rose-100/30 rounded-[2.5rem] p-8 sm:p-10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.4)] text-center">
-		
+
 		<!-- Top border gradient highlight matching the logo maroon -->
 		<div class="absolute top-0 left-12 right-12 h-1 bg-gradient-to-r from-transparent via-[#8A1538] to-transparent rounded-t-[2.5rem]"></div>
 
@@ -140,87 +60,38 @@
 			</div>
 		{/if}
 
-		{#if step === 'nim'}
-			<form onsubmit={(e) => { e.preventDefault(); cekNim(); }} class="space-y-5 text-left">
-				<div>
-					<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="nim">Nomor Induk Mahasiswa / Email</label>
-					<div class="relative">
-						<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
-							<User size={15} />
-						</div>
-						<input id="nim" class="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={nim} placeholder="Masukkan NIM atau Email" required />
+		<!-- Single form: NIM/Email + Password bersamaan (ala mikon) -->
+		<form onsubmit={(e) => { e.preventDefault(); doLogin(); }} class="space-y-5 text-left">
+			<div>
+				<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="identifier">Nomor Induk Mahasiswa / Email</label>
+				<div class="relative">
+					<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+						<User size={15} />
 					</div>
-					<p class="mt-1.5 text-[10px] text-slate-400">Email login: gmail.com, yahoo.com, outlook.com, hotmail.com, itpln.ac.id</p>
+					<input id="identifier" class="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={identifier} placeholder="Masukkan NIM atau Email" required />
 				</div>
-				<button class="w-full h-12 bg-[#8A1538] hover:bg-[#730d2d] text-white rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-[#8A1538]/10 transition-all active:scale-[0.99]" disabled={loading}>
-					{loading ? 'Memeriksa…' : 'Lanjutkan'} 
-					{#if !loading}<ArrowRight size={14} />{/if}
-				</button>
-			</form>
-		{:else if step === 'login'}
-			<form onsubmit={(e) => { e.preventDefault(); doLogin(); }} class="space-y-5 animate-fade-in text-left">
-				<div class="rounded-2xl bg-rose-50/40 p-4 border border-rose-100/50">
-					<p class="text-[9px] font-black text-[#8A1538] uppercase tracking-wider">Praktikan Terdaftar</p>
-					<p class="text-base font-extrabold text-slate-900 mt-1">{nama}</p>
-					<p class="text-[10px] font-bold text-slate-500 mt-0.5">NIM · {nim}</p>
-				</div>
-				<div>
-					<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="pw">Password</label>
-					<div class="relative">
-						<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
-							<Lock size={15} />
-						</div>
-						<input id="pw" type="password" class="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={password} placeholder="Masukkan password Anda" required />
-					</div>
-				</div>
-				<button class="w-full h-12 bg-[#8A1538] hover:bg-[#730d2d] text-white rounded-2xl text-sm font-black flex items-center justify-center shadow-lg shadow-[#8A1538]/10 transition-all active:scale-[0.99]" disabled={loading}>
-					{loading ? 'Autentikasi…' : 'Masuk ke Portal'}
-				</button>
-				<button type="button" class="w-full py-2.5 text-xs font-extrabold text-[#8A1538] hover:text-[#610a24] transition-colors flex items-center justify-center gap-1" onclick={reset}>
-					<ArrowLeft size={13} /> Ganti Akun NIM
-				</button>
-			</form>
-		{:else if step === 'register'}
-			<form onsubmit={(e) => { e.preventDefault(); doRegister(); }} class="space-y-4 animate-fade-in text-left">
-				<div class="rounded-2xl border border-blue-100 bg-blue-50/40 p-4 text-xs font-medium text-blue-800 leading-relaxed">
-					{pesan}
-				</div>
-				<div>
-					<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="email">Email</label>
-					<input id="email" type="email" class="w-full h-12 px-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white" bind:value={email} placeholder="nama@gmail.com" required />
-					<p class="mt-1 text-[10px] text-slate-400">Hanya gmail.com, yahoo.com, outlook.com, hotmail.com, itpln.ac.id — tanpa '+' atau '.' di Gmail.</p>
-				</div>
-				<div>
-					<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="pw1">Buat Password Baru</label>
-					<input id="pw1" type="password" class="w-full h-12 px-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white" bind:value={password} placeholder="Minimal 6 karakter" required minlength="6" />
-				</div>
-				<div>
-					<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="pw2">Konfirmasi Password</label>
-					<input id="pw2" type="password" class="w-full h-12 px-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white" bind:value={passwordConfirm} placeholder="Ketik ulang password baru Anda" required />
-				</div>
-				<button class="w-full h-12 bg-[#8A1538] hover:bg-[#730d2d] text-white rounded-2xl text-sm font-black flex items-center justify-center shadow-lg shadow-[#8A1538]/10 transition-all active:scale-[0.99]" disabled={loading}>
-					{loading ? 'Mendaftarkan Akun…' : 'Daftar & Masuk'}
-				</button>
-				<button type="button" class="w-full py-2.5 text-xs font-extrabold text-[#8A1538] hover:text-[#610a24] transition-colors flex items-center justify-center gap-1" onclick={reset}>
-					<ArrowLeft size={13} /> Ganti Akun NIM
-				</button>
-			</form>
-		{:else if step === 'blocked'}
-			<div class="space-y-5 animate-fade-in text-center">
-				<div class="mx-auto w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center border border-red-100">
-					<AlertCircle size={20} />
-				</div>
-				<div>
-					<h3 class="text-lg font-black text-slate-900">Akses Masuk Ditutup</h3>
-					<p class="text-xs text-slate-500 font-semibold leading-relaxed mt-2">
-						NIM Anda tidak terdaftar atau registrasi kelas Anda belum dibuka oleh asisten. Silakan hubungi asisten penanggung jawab untuk info lebih lanjut.
-					</p>
-				</div>
-				<button type="button" class="w-full h-12 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-2xl text-sm font-bold flex items-center justify-center gap-1.5 transition-all" onclick={reset}>
-					<ArrowLeft size={14} /> Ganti NIM Lain
-				</button>
+				<p class="mt-1.5 text-[10px] text-slate-400">Login NIM atau email: gmail.com, yahoo.com, outlook.com, hotmail.com, itpln.ac.id</p>
 			</div>
-		{/if}
+			<div>
+				<label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2" for="pw">Password</label>
+				<div class="relative">
+					<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+						<Lock size={15} />
+					</div>
+					<input id="pw" type="password" class="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-800 placeholder-slate-400/50 focus:outline-none focus:border-[#8A1538]/50 focus:bg-white transition-all" bind:value={password} placeholder="Masukkan password Anda" required />
+				</div>
+			</div>
+			<button class="w-full h-12 bg-[#8A1538] hover:bg-[#730d2d] text-white rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-[#8A1538]/10 transition-all active:scale-[0.99]" disabled={loading}>
+				{loading ? 'Autentikasi…' : 'Masuk ke Portal'}
+				{#if !loading}<ArrowRight size={14} />{/if}
+			</button>
+		</form>
+
+		<!-- Register link — selalu terlihat (ala mikon) -->
+		<p class="mt-5 text-xs font-bold text-slate-500">
+			Belum punya akun?
+			<a href="/praktikum/register" class="text-[#8A1538] hover:text-[#610a24] transition-colors">Daftar di sini</a>
+		</p>
 
 		<!-- Bottom Back Link -->
 		<div class="pt-6 border-t border-slate-100 mt-6 text-center">
