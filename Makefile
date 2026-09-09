@@ -5,7 +5,7 @@ BACKEND_DIR := backend
 
 MIGRATION_DIR := updateAndPRDERD/migration
 
-.PHONY: run build migrate-up migrate-down migrate-drop migrate-sync migrate-fresh seed swag tidy test mock fe-install fe-dev fe-build help
+.PHONY: run build migrate-up migrate-down migrate-drop migrate-sync migrate-fresh seed swag tidy test mock fe-install fe-dev fe-build fe-check help
 
 help:
 	@echo "Target tersedia:"
@@ -21,6 +21,7 @@ help:
 	@echo "  make fe-install   - Install dependency frontend"
 	@echo "  make fe-dev       - Jalankan frontend dev server"
 	@echo "  make fe-build     - Build frontend"
+	@echo "  make fe-check     - svelte-check frontend"
 	@echo "  make test         - Run all tests (backend)"
 	@echo "  make mock         - Generate mocks untuk testing (backend)"
 
@@ -72,10 +73,13 @@ mock:
 	cd $(BACKEND_DIR) && go run github.com/vektra/mockery/v2@latest --all --keeptree --dir=internal/repository --output=internal/repository/mocks
 
 fe-install:
-	cd frontend && npm install
+	cd frontend && bun install
 
 fe-dev:
-	cd frontend && npm run dev
+	cd frontend && bun run dev
 
 fe-build:
-	cd frontend && npm run build
+	cd frontend && bun run build
+
+fe-check:
+	cd frontend && bun run check
