@@ -165,8 +165,6 @@ definitions:
     properties:
       ditemukan:
         type: boolean
-      is_register_open:
-        type: boolean
       is_registered:
         type: boolean
       nama:
@@ -343,12 +341,12 @@ definitions:
     type: object
   dto.LoginRequest:
     properties:
-      nim:
+      identifier:
         type: string
       password:
         type: string
     required:
-    - nim
+    - identifier
     - password
     type: object
   dto.MulaiCourseRequest:
@@ -396,23 +394,17 @@ definitions:
     - file_url
     - nama_dokumen
     type: object
-  dto.RegisterOpenRequest:
-    properties:
-      kelas_id:
-        type: integer
-      open:
-        type: boolean
-    required:
-    - kelas_id
-    type: object
   dto.RegisterRequest:
     properties:
+      email:
+        type: string
       nim:
         type: string
       password:
         minLength: 6
         type: string
     required:
+    - email
     - nim
     - password
     type: object
@@ -995,8 +987,6 @@ definitions:
     properties:
       id:
         type: integer
-      is_register_open:
-        type: boolean
       nama_kelas:
         type: string
     type: object
@@ -1041,10 +1031,12 @@ definitions:
     enum:
     - user
     - admin
+    - superadmin
     type: string
     x-enum-varnames:
     - RoleUser
     - RoleAdmin
+    - RoleSuperAdmin
   entity.SesiPraktikum:
     properties:
       courses:
@@ -1094,6 +1086,8 @@ definitions:
   entity.User:
     properties:
       created_at:
+        type: string
+      email:
         type: string
       foto_url:
         type: string
@@ -1575,6 +1569,47 @@ paths:
       summary: Perbarui Asisten
       tags:
       - Admin - Asisten
+  /admin/audit-logs:
+    get:
+      description: Mengambil riwayat aktivitas sistem dengan filter & pagination
+      parameters:
+      - description: Cari NIM/Nama/Deskripsi
+        in: query
+        name: search
+        type: string
+      - description: Filter Role (admin/user)
+        in: query
+        name: role
+        type: string
+      - description: Filter Action
+        in: query
+        name: action
+        type: string
+      - description: Nomor Halaman
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah data per halaman
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  type: object
+              type: object
+      security:
+      - bearerAuth: []
+      summary: Lihat Log Aktivitas
+      tags:
+      - Admin - Audit Log
   /admin/course/{courseId}:
     delete:
       description: Menghapus course dari sesi
@@ -1852,30 +1887,6 @@ paths:
       summary: Tambah Kelas
       tags:
       - Admin - Kelas
-  /admin/kelas-register:
-    post:
-      consumes:
-      - application/json
-      description: Membuka atau menutup akses registrasi bagi mahasiswa di suatu kelas
-      parameters:
-      - description: Payload
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.RegisterOpenRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Envelope'
-      security:
-      - bearerAuth: []
-      summary: Buka/Tutup Registrasi
-      tags:
-      - Admin - User
   /admin/kelas/{id}:
     delete:
       description: Menghapus kelas

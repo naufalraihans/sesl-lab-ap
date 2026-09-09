@@ -151,7 +151,6 @@ func Setup(cfg *config.Config, jm *jwt.Manager, userRepo repository.UserReposito
 		admin.POST("/kelas", h.Kelas.Create)
 		admin.PUT("/kelas/:id", h.Kelas.Update)
 		admin.DELETE("/kelas/:id", h.Kelas.Delete)
-		admin.POST("/kelas-register", h.User.SetRegisterOpen)
 
 		// Asisten
 		admin.GET("/asisten", h.User.ListAsisten)

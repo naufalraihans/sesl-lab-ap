@@ -45,11 +45,6 @@ type KelasRequest struct {
 	NamaKelas string `json:"nama_kelas" binding:"required"`
 }
 
-type RegisterOpenRequest struct {
-	KelasID int  `json:"kelas_id" binding:"required"`
-	Open    bool `json:"open"`
-}
-
 // === Jadwal ===
 
 type JadwalRequest struct {

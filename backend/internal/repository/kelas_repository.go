@@ -12,7 +12,6 @@ type KelasRepository interface {
 	Delete(id int) error
 	FindByID(id int) (*entity.Kelas, error)
 	List() ([]entity.Kelas, error)
-	SetRegisterOpen(id int, open bool) error
 }
 
 type kelasRepository struct{ db *gorm.DB }
@@ -36,9 +35,4 @@ func (r *kelasRepository) FindByID(id int) (*entity.Kelas, error) {
 func (r *kelasRepository) List() ([]entity.Kelas, error) {
 	var ks []entity.Kelas
 	return ks, r.db.Order("nama_kelas asc").Find(&ks).Error
-}
-
-func (r *kelasRepository) SetRegisterOpen(id int, open bool) error {
-	return r.db.Model(&entity.Kelas{}).Where("id = ?", id).
-		Update("is_register_open", open).Error
 }

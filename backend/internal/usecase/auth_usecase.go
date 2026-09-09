@@ -48,18 +48,8 @@ func (uc *AuthUsecase) CekNIM(nim string) (*dto.CekNIMResponse, error) {
 		resp.Pesan = "Silakan masukkan password Anda."
 		return resp, nil
 	}
-	// Belum register: dianggap belum ada akun (generic, jangan bocorkan "belum aktivasi")
-	// Namun jika kelas belum dibuka, tetap tampil blocked; frontend akan pakai cek yang sama untuk register flow.
-	if u.KelasID != nil {
-		if k, err := uc.kelas.FindByID(*u.KelasID); err == nil {
-			resp.IsRegisterOpen = k.IsRegisterOpen
-		}
-	}
-	if resp.IsRegisterOpen {
-		resp.Pesan = "Akun belum terdaftar. Silakan buat password."
-	} else {
-		resp.Pesan = "Akses register belum dibuka oleh admin."
-	}
+	// Belum register: roster-gated — NIM ada di roster = boleh buat password.
+	resp.Pesan = "Akun belum terdaftar. Silakan buat password."
 	return resp, nil
 }
 
@@ -136,11 +126,7 @@ func (uc *AuthUsecase) Register(req dto.RegisterRequest) (*dto.AuthResponse, err
 		return nil, ErrConflict
 	}
 	if u.KelasID == nil {
-		return nil, ErrRegisterClosed
-	}
-	k, err := uc.kelas.FindByID(*u.KelasID)
-	if err != nil || !k.IsRegisterOpen {
-		return nil, ErrRegisterClosed
+		return nil, errors.Join(ErrBadRequest, errors.New("data kelas belum lengkap, hubungi asisten"))
 	}
 	// Cek email sudah dipakai (case-insensitive)
 	if _, err := uc.users.FindByEmail(emailNorm); err == nil {

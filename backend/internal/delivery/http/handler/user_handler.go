@@ -167,28 +167,7 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 	response.OK(c, http.StatusOK, "Password direset (mahasiswa harus register ulang)", nil)
 }
 
-// SetRegisterOpen POST /api/admin/kelas-register
-// @Summary Buka/Tutup Registrasi
-// @Description Membuka atau menutup akses registrasi bagi mahasiswa di suatu kelas
-// @Tags Admin - User
-// @Security bearerAuth
-// @Accept json
-// @Produce json
-// @Param request body dto.RegisterOpenRequest true "Payload"
-// @Success 200 {object} response.Envelope
-// @Router /admin/kelas-register [post]
-func (h *UserHandler) SetRegisterOpen(c *gin.Context) {
-	var req dto.RegisterOpenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "Input tidak valid", err.Error())
-		return
-	}
-	if err := h.uc.SetRegisterOpen(req.KelasID, req.Open); err != nil {
-		mapError(c, err)
-		return
-	}
-	response.OK(c, http.StatusOK, "Status register kelas diperbarui", nil)
-}
+
 
 // ---- Asisten ----
 

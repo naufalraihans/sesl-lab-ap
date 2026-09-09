@@ -726,6 +726,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/audit-logs": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "Mengambil riwayat aktivitas sistem dengan filter \u0026 pagination",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Audit Log"
+                ],
+                "summary": "Lihat Log Aktivitas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cari NIM/Nama/Deskripsi",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter Role (admin/user)",
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter Action",
+                        "name": "action",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Nomor Halaman",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Jumlah data per halaman",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Envelope"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/course/{courseId}": {
             "put": {
                 "security": [
@@ -1190,45 +1259,6 @@ const docTemplate = `{
                                     }
                                 }
                             ]
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/kelas-register": {
-            "post": {
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "description": "Membuka atau menutup akses registrasi bagi mahasiswa di suatu kelas",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin - User"
-                ],
-                "summary": "Buka/Tutup Registrasi",
-                "parameters": [
-                    {
-                        "description": "Payload",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.RegisterOpenRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.Envelope"
                         }
                     }
                 }
@@ -3825,9 +3855,6 @@ const docTemplate = `{
                 "ditemukan": {
                     "type": "boolean"
                 },
-                "is_register_open": {
-                    "type": "boolean"
-                },
                 "is_registered": {
                     "type": "boolean"
                 },
@@ -4089,11 +4116,11 @@ const docTemplate = `{
         "dto.LoginRequest": {
             "type": "object",
             "required": [
-                "nim",
+                "identifier",
                 "password"
             ],
             "properties": {
-                "nim": {
+                "identifier": {
                     "type": "string"
                 },
                 "password": {
@@ -4169,27 +4196,17 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.RegisterOpenRequest": {
-            "type": "object",
-            "required": [
-                "kelas_id"
-            ],
-            "properties": {
-                "kelas_id": {
-                    "type": "integer"
-                },
-                "open": {
-                    "type": "boolean"
-                }
-            }
-        },
         "dto.RegisterRequest": {
             "type": "object",
             "required": [
+                "email",
                 "nim",
                 "password"
             ],
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "nim": {
                     "type": "string"
                 },
@@ -5053,9 +5070,6 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "is_register_open": {
-                    "type": "boolean"
-                },
                 "nama_kelas": {
                     "type": "string"
                 }
@@ -5122,11 +5136,13 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "user",
-                "admin"
+                "admin",
+                "superadmin"
             ],
             "x-enum-varnames": [
                 "RoleUser",
-                "RoleAdmin"
+                "RoleAdmin",
+                "RoleSuperAdmin"
             ]
         },
         "entity.SesiPraktikum": {
@@ -5203,6 +5219,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
+                    "type": "string"
+                },
+                "email": {
                     "type": "string"
                 },
                 "foto_url": {

@@ -12,7 +12,6 @@ var (
 	ErrForbidden     = errors.New("akses ditolak")
 	ErrBadRequest    = errors.New("permintaan tidak valid")
 	ErrConflict      = errors.New("konflik data")
-	ErrRegisterClosed = errors.New("akses register belum dibuka")
 	ErrAlreadyDone   = errors.New("course sudah dikerjakan / ditutup")
 	ErrTimeUp        = errors.New("waktu pengerjaan telah habis")
 	ErrHasReferences = errors.New("tidak bisa dihapus: masih dipakai data lain (mis. ada nilai/jawaban mahasiswa)")

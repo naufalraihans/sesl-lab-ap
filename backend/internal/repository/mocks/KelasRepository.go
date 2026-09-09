@@ -109,24 +109,6 @@ func (_m *KelasRepository) List() ([]entity.Kelas, error) {
 	return r0, r1
 }
 
-// SetRegisterOpen provides a mock function with given fields: id, open
-func (_m *KelasRepository) SetRegisterOpen(id int, open bool) error {
-	ret := _m.Called(id, open)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SetRegisterOpen")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(int, bool) error); ok {
-		r0 = rf(id, open)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Update provides a mock function with given fields: k
 func (_m *KelasRepository) Update(k *entity.Kelas) error {
 	ret := _m.Called(k)

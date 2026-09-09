@@ -94,20 +94,13 @@ func TestAuthUsecase_CekNIM_NotRegistered(t *testing.T) {
 		IsRegistered: false,
 		KelasID:      &kelasID,
 	}
-	mockKelas := &entity.Kelas{
-		ID:             1,
-		IsRegisterOpen: true,
-	}
-
 	mockUserRepo.On("FindByNIM", "123456").Return(mockUser, nil)
-	mockKelasRepo.On("FindByID", 1).Return(mockKelas, nil)
 
 	resp, err := uc.CekNIM("123456")
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.False(t, resp.IsRegistered)
-	assert.True(t, resp.IsRegisterOpen)
 	assert.Equal(t, "Akun belum terdaftar. Silakan buat password.", resp.Pesan)
 
 	mockUserRepo.AssertExpectations(t)

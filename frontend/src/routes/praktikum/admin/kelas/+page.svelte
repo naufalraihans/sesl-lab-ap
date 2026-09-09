@@ -54,16 +54,11 @@
 	<div class="lg:col-span-2">
 		<div class="table-wrap">
 			<table class="tbl">
-				<thead><tr><th>Nama</th><th>Register</th><th>Aksi</th></tr></thead>
+				<thead><tr><th>Nama</th><th>Aksi</th></tr></thead>
 				<tbody>
 					{#each list as k}
 						<tr>
 							<td class="font-bold text-slate-800">{k.nama_kelas}</td>
-							<td>
-								<span class="badge {k.is_register_open ? 'bg-state-success-bg text-state-success' : 'bg-slate-100 text-slate-500'}">
-									{k.is_register_open ? 'Dibuka' : 'Ditutup'}
-								</span>
-							</td>
 							<td class="flex items-center gap-1.5 whitespace-nowrap py-3">
 								<button class="inline-flex items-center gap-1 bg-primary/10 hover:bg-primary hover:text-white text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95" onclick={() => edit(k)}>
 									<Edit size={12} /> Edit

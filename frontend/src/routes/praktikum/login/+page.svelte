@@ -42,10 +42,8 @@
 				step = 'blocked';
 			} else if (res.is_registered) {
 				step = 'login';
-			} else if (res.is_register_open) {
-				step = 'register';
 			} else {
-				step = 'blocked';
+				step = 'register';
 			}
 		} catch (e) {
 			err = (e as Error).message;

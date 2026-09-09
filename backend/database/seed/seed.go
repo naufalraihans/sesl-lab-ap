@@ -32,8 +32,8 @@ func main() {
 
 func seedKelas(db *gorm.DB) {
 	kelas := []entity.Kelas{
-		{NamaKelas: "TTL A", IsRegisterOpen: true},
-		{NamaKelas: "TTL B", IsRegisterOpen: true},
+		{NamaKelas: "TTL A"},
+		{NamaKelas: "TTL B"},
 	}
 	for _, k := range kelas {
 		var existing entity.Kelas

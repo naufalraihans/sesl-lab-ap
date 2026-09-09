@@ -131,12 +131,6 @@
 		catch (e) { err = (e as Error).message; }
 	}
 
-	async function toggleRegister(k: Kelas) {
-		try {
-			await api.post('/api/admin/kelas-register', { kelas_id: k.id, open: !k.is_register_open });
-			await load();
-		} catch (e) { err = (e as Error).message; }
-	}
 
 	function onFileChange(e: Event) {
 		const file = (e.target as HTMLInputElement).files?.[0];
@@ -246,20 +240,6 @@
 		{/if}
 	</div>
 {/if}
-
-<!-- Register Status Section -->
-<div class="card mb-6 text-left">
-	<h2 class="mb-2 text-lg font-bold text-slate-800">Akses Register per Kelas</h2>
-	<p class="mb-3 text-xs text-slate-500">Klik badge kelas di bawah untuk membuka atau menutup registrasi praktikan mandiri.</p>
-	<div class="flex flex-wrap gap-2">
-		{#each kelas as k}
-			<button
-				class="badge {k.is_register_open ? 'bg-state-success-bg text-state-success' : 'bg-gray-100 text-ink-caption'} cursor-pointer px-3 py-1 font-semibold"
-				onclick={() => toggleRegister(k)}
-			>{k.nama_kelas}: {k.is_register_open ? 'DIBUKA' : 'DITUTUP'}</button>
-		{/each}
-	</div>
-</div>
 
 <!-- Main Table Card - Full Width -->
 <div class="card w-full text-left space-y-4">

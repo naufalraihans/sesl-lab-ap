@@ -10,7 +10,6 @@ type CekNIMResponse struct {
 	NIM            string `json:"nim"`
 	Ditemukan      bool   `json:"ditemukan"`
 	IsRegistered   bool   `json:"is_registered"`
-	IsRegisterOpen bool   `json:"is_register_open"`
 	Nama           string `json:"nama,omitempty"`
 	Pesan          string `json:"pesan"`
 }

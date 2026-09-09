@@ -35,7 +35,6 @@ export interface CekNIMResponse {
 	nim: string;
 	ditemukan: boolean;
 	is_registered: boolean;
-	is_register_open: boolean;
 	nama?: string;
 	pesan: string;
 }
@@ -43,7 +42,6 @@ export interface CekNIMResponse {
 export interface Kelas {
 	id: number;
 	nama_kelas: string;
-	is_register_open: boolean;
 }
 
 export interface Jadwal {

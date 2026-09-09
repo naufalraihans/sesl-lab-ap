@@ -173,8 +173,4 @@ func (uc *UserUsecase) UpdateAsisten(id int, req dto.AsistenRequest) (*entity.Us
 	return u, nil
 }
 
-// ---- Kelas register open ----
 
-func (uc *UserUsecase) SetRegisterOpen(kelasID int, open bool) error {
-	return uc.kelas.SetRegisterOpen(kelasID, open)
-}
