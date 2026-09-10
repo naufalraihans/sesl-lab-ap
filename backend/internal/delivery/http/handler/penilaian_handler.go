@@ -67,7 +67,7 @@ func (h *PenilaianHandler) SetNilai(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_NILAI", fmt.Sprintf("Menilai jawaban ID %d dengan skor %.1f", req.JawabanID, req.Nilai), c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_NILAI", fmt.Sprintf("Menilai jawaban ID %d dengan skor %.1f", req.JawabanID, req.Nilai), clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Nilai disimpan", res)
 }
 
@@ -91,6 +91,6 @@ func (h *PenilaianHandler) SetKeaktifan(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_KEAKTIFAN", fmt.Sprintf("Mengubah status keaktifan bulk untuk %d item pengerjaan", len(req.Items)), c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_KEAKTIFAN", fmt.Sprintf("Mengubah status keaktifan bulk untuk %d item pengerjaan", len(req.Items)), clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Keaktifan disimpan", nil)
 }

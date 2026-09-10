@@ -63,11 +63,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	res, err := h.auth.Login(req)
 	if err != nil {
-		_ = h.auditLog.LogAction(0, req.Identifier, "LOGIN_FAILED", "Gagal login: "+err.Error(), c.ClientIP(), c.Request.UserAgent())
+		_ = h.auditLog.LogAction(0, req.Identifier, "LOGIN_FAILED", "Gagal login: "+err.Error(), clientIP(c), c.Request.UserAgent())
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(0, req.Identifier, "LOGIN", "Login berhasil", c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(0, req.Identifier, "LOGIN", "Login berhasil", clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Login berhasil", res)
 }
 
@@ -89,18 +89,18 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 	res, err := h.auth.Register(req)
 	if err != nil {
-		_ = h.auditLog.LogAction(0, req.NIM, "REGISTER_FAILED", "Gagal registrasi: "+err.Error(), c.ClientIP(), c.Request.UserAgent())
+		_ = h.auditLog.LogAction(0, req.NIM, "REGISTER_FAILED", "Gagal registrasi: "+err.Error(), clientIP(c), c.Request.UserAgent())
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(0, req.NIM, "REGISTER", "Registrasi akun berhasil", c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(0, req.NIM, "REGISTER", "Registrasi akun berhasil", clientIP(c), c.Request.UserAgent())
 	response.Created(c, "Registrasi berhasil", res)
 }
 
 // Logout POST /api/auth/logout
 func (h *AuthHandler) Logout(c *gin.Context) {
 	userID := middleware.UserID(c)
-	_ = h.auditLog.LogAction(userID, "", "LOGOUT", "Logout berhasil", c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(userID, "", "LOGOUT", "Logout berhasil", clientIP(c), c.Request.UserAgent())
 	h.auth.Logout(userID)
 	response.OK(c, http.StatusOK, "Logout berhasil", nil)
 }

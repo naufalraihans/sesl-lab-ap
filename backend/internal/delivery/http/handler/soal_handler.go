@@ -71,7 +71,7 @@ func (h *SoalHandler) Create(c *gin.Context) {
 	if len(teksRunes) > 30 {
 		shortTeks = string(teksRunes[:30]) + "..."
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_SOAL", "Membuat soal baru: '"+shortTeks+"'", c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_SOAL", "Membuat soal baru: '"+shortTeks+"'", clientIP(c), c.Request.UserAgent())
 	response.Created(c, "Soal dibuat", res)
 }
 
@@ -106,7 +106,7 @@ func (h *SoalHandler) Update(c *gin.Context) {
 	if len(teksRunes) > 30 {
 		shortTeks = string(teksRunes[:30]) + "..."
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_SOAL", fmt.Sprintf("Memperbarui soal: '%s' (ID: %d)", shortTeks, res.ID), c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_SOAL", fmt.Sprintf("Memperbarui soal: '%s' (ID: %d)", shortTeks, res.ID), clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Soal diperbarui", res)
 }
 
@@ -128,6 +128,6 @@ func (h *SoalHandler) Delete(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "DELETE_SOAL", fmt.Sprintf("Menghapus soal dengan ID %d", id), c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "DELETE_SOAL", fmt.Sprintf("Menghapus soal dengan ID %d", id), clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Soal dihapus", nil)
 }

@@ -61,7 +61,7 @@ func (h *KonfigurasiHandler) Set(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_KONFIGURASI", fmt.Sprintf("Mengubah konfigurasi '%s' menjadi '%s'", req.Key, req.Value), c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_KONFIGURASI", fmt.Sprintf("Mengubah konfigurasi '%s' menjadi '%s'", req.Key, req.Value), clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Konfigurasi disimpan", nil)
 }
 
@@ -155,6 +155,6 @@ func (h *KonfigurasiHandler) SetRolePermissions(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_ROLE_PERMISSIONS", "Update role_permissions", c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "SET_ROLE_PERMISSIONS", "Update role_permissions", clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Permissions disimpan", perms)
 }

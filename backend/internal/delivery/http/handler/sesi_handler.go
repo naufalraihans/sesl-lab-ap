@@ -82,7 +82,7 @@ func (h *SesiHandler) Create(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_SESI", "Membuat sesi praktikum baru: '"+res.JudulSesi+"'", c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_SESI", "Membuat sesi praktikum baru: '"+res.JudulSesi+"'", clientIP(c), c.Request.UserAgent())
 	response.Created(c, "Sesi dibuat", res)
 }
 
@@ -112,7 +112,7 @@ func (h *SesiHandler) Update(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_SESI", fmt.Sprintf("Memperbarui sesi praktikum: '%s' (ID: %d)", res.JudulSesi, res.ID), c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_SESI", fmt.Sprintf("Memperbarui sesi praktikum: '%s' (ID: %d)", res.JudulSesi, res.ID), clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Sesi diperbarui", res)
 }
 
@@ -134,7 +134,7 @@ func (h *SesiHandler) Delete(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "DELETE_SESI", fmt.Sprintf("Menghapus sesi praktikum dengan ID %d", id), c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "DELETE_SESI", fmt.Sprintf("Menghapus sesi praktikum dengan ID %d", id), clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Sesi dihapus", nil)
 }
 
@@ -188,7 +188,7 @@ func (h *SesiHandler) CreateCourse(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_COURSE", fmt.Sprintf("Membuat course baru '%s' untuk sesi ID %d", res.Judul, id), c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "CREATE_COURSE", fmt.Sprintf("Membuat course baru '%s' untuk sesi ID %d", res.Judul, id), clientIP(c), c.Request.UserAgent())
 	response.Created(c, "Course dibuat", res)
 }
 
@@ -218,7 +218,7 @@ func (h *SesiHandler) UpdateCourse(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_COURSE", fmt.Sprintf("Memperbarui course: '%s' (ID: %d)", res.Judul, res.ID), c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "UPDATE_COURSE", fmt.Sprintf("Memperbarui course: '%s' (ID: %d)", res.Judul, res.ID), clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Course diperbarui", res)
 }
 
@@ -240,6 +240,6 @@ func (h *SesiHandler) DeleteCourse(c *gin.Context) {
 		mapError(c, err)
 		return
 	}
-	_ = h.auditLog.LogAction(middleware.UserID(c), "", "DELETE_COURSE", fmt.Sprintf("Menghapus course dengan ID %d", cid), c.ClientIP(), c.Request.UserAgent())
+	_ = h.auditLog.LogAction(middleware.UserID(c), "", "DELETE_COURSE", fmt.Sprintf("Menghapus course dengan ID %d", cid), clientIP(c), c.Request.UserAgent())
 	response.OK(c, http.StatusOK, "Course dihapus", nil)
 }
